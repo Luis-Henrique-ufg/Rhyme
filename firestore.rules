@@ -1,0 +1,43 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Regra Global: Ninguém acessa nada por padrão (Fechado)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Coleção: students (onde ficam os perfis de alunos e motoristas)
+    match /students/{userId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // Coleção: trips
+    match /trips/{tripId} {
+      allow read: if request.auth != null;
+      // Qualquer usuário (inclusive aluno) pode criar a viagem do dia se ela não existir
+      allow create: if request.auth != null;
+      // Apenas motoristas podem atualizar a viagem (mudar status, gps, etc)
+      allow update: if request.auth != null 
+                    && get(/databases/$(database)/documents/students/$(request.auth.uid)).data.role == 'driver';
+      allow delete: if false;
+    }
+
+    // Coleção: emergencies (Botão Fui Esquecido)
+    match /emergencies/{emergencyId} {
+      allow read: if request.auth != null;
+      // O aluno só pode criar uma emergência no próprio nome
+      allow create: if request.auth != null 
+                    && request.resource.data.studentId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Coleção: attendance
+    match /attendance/{attendanceId} {
+      allow read, create, update, delete: if request.auth != null;
+    }
+  }
+}

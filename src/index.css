@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #f97316; /* Orange 500 */
+  --color-primary-hover: #ea580c; /* Orange 600 */
+  --color-secondary: #fcd34d; /* Yellow 300 / Amber 300 */
+  --color-accent: #f59e0b; /* Amber 500 */
+  --color-background: #050505; /* Muito Escuro */
+  --color-surface: #0a0a0a; /* Surface 1 */
+  --color-surface-hover: #171717; /* Surface Hover */
+  
+  --font-sans: "Outfit", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", "Outfit", sans-serif;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  
+  body {
+    @apply bg-background text-zinc-100 antialiased;
+    font-family: var(--font-sans);
+  }
+}
+
+/* Glassmorphism Utilities */
+@layer utilities {
+  .glass {
+    @apply bg-white/[0.02] backdrop-blur-md border border-white/5 shadow-xl;
+  }
+  
+  .glass-card {
+    @apply bg-[#0A0A0A] backdrop-blur-sm border border-white/10 rounded-2xl shadow-lg;
+  }
+
+  .electric-card {
+    box-shadow: 0 0 30px rgba(249, 115, 22, 0.2), inset 0 0 20px rgba(249, 115, 22, 0.05);
+  }
+
+  .stars {
+    background-image:
+      radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
+      radial-gradient(1px 1px at 40px 70px, #ffffff, rgba(0,0,0,0)),
+      radial-gradient(1px 1px at 50px 160px, #ffffff, rgba(0,0,0,0)),
+      radial-gradient(1.5px 1.5px at 90px 40px, #ffffff, rgba(0,0,0,0)),
+      radial-gradient(1px 1px at 130px 80px, #ffffff, rgba(0,0,0,0));
+    background-size: 200px 200px;
+    opacity: 0.15;
+  }
+
+  .btn-primary {
+    @apply flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-t from-yellow-200 via-orange-400 to-orange-500 px-8 py-3 font-medium text-[#2c1306] shadow-[0_0_40px_-5px_rgba(249,115,22,0.6)] ring-1 ring-inset ring-white/40 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_60px_-5px_rgba(249,115,22,0.8)];
+  }
+
+  .btn-secondary {
+    @apply px-8 py-3 rounded-full bg-white text-black font-medium hover:bg-neutral-200 transition-colors flex items-center justify-center;
+  }
+
+  .btn-tertiary {
+    @apply hover:brightness-110 transition-all text-white bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 border-white/20 rounded-full border-t pt-3 pb-3 pr-5 pl-5 shadow-[0_4px_15px_rgba(249,115,22,0.4)] flex items-center justify-center font-medium;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Custom Leaflet Popup */
+.leaflet-popup-content-wrapper, .dark-popup .leaflet-popup-content-wrapper {
+  background: #0A0A0A !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.2) !important;
+}
+.leaflet-popup-tip, .dark-popup .leaflet-popup-tip {
+  background: #0A0A0A !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+.leaflet-popup-close-button {
+  color: #a1a1aa !important;
+}
+
+/* Evita o flash branco ao dar zoom no mapa */
+.leaflet-container {
+  background-color: #050505 !important;
+}
+
+/* Ocultar o rotateControl padrão do leaflet-rotate (caso ele injete) */
+.leaflet-control-rotate, .leaflet-compass {
+  display: none !important;
+}
+
+/* Ocultar Polyline enquanto o mapa estiver interagindo (zoom/pan/rotate) */
+.hide-paths path.leaflet-interactive {
+  display: none !important;
+}
