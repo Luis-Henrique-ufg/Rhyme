@@ -23,9 +23,13 @@ export function useCurrentTrip(route) {
   const [trip, setTrip] = useState(null);
   const [tripId, setTripId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!route) return;
+    if (!route) {
+      setLoading(false);
+      return;
+    }
 
     let unsub = () => {};
 
@@ -40,17 +44,26 @@ export function useCurrentTrip(route) {
       unsub = onSnapshot(doc(db, 'trips', id), (snap) => {
         if (snap.exists()) {
           setTrip({ id: snap.id, ...snap.data() });
+          setError(null);
         } else {
           setTrip(null);
         }
         setLoading(false);
+      }, (err) => {
+        console.error("useCurrentTrip snapshot error:", err);
+        setError(err);
+        setLoading(false);
       });
+    }).catch(err => {
+      console.error("useCurrentTrip init error:", err);
+      setError(err);
+      setLoading(false);
     });
 
     return () => unsub();
   }, [route]);
 
-  return { trip, tripId, loading };
+  return { trip, tripId, loading, error };
 }
 
 /**
@@ -61,6 +74,7 @@ export function useCurrentTrip(route) {
 export function useTripAttendances(tripId) {
   const [attendances, setAttendances] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!tripId) {
@@ -75,13 +89,18 @@ export function useTripAttendances(tripId) {
         .map((d) => ({ id: d.id, ...d.data() }))
         .filter((a) => a.studentName); // exclude anonymous/partial docs
       setAttendances(list);
+      setError(null);
+      setLoading(false);
+    }, (err) => {
+      console.error("useTripAttendances snapshot error:", err);
+      setError(err);
       setLoading(false);
     });
 
     return () => unsub();
   }, [tripId]);
 
-  return { attendances, loading };
+  return { attendances, loading, error };
 }
 
 /**
@@ -91,6 +110,7 @@ export function useTripAttendances(tripId) {
 export function useDriverAttendanceMap(tripId) {
   const [attendanceMap, setAttendanceMap] = useState({});
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!tripId) {
@@ -107,13 +127,18 @@ export function useDriverAttendanceMap(tripId) {
         map[data.studentId] = data;
       });
       setAttendanceMap(map);
+      setError(null);
+      setLoading(false);
+    }, (err) => {
+      console.error("useDriverAttendanceMap snapshot error:", err);
+      setError(err);
       setLoading(false);
     });
 
     return () => unsub();
   }, [tripId]);
 
-  return { attendanceMap, loading };
+  return { attendanceMap, loading, error };
 }
 
 /**
@@ -187,4 +212,96 @@ export function useAllTripAttendances(tripIds) {
   }, [JSON.stringify(tripIds)]);
 
   return { allAttendances, loading };
+}
+
+/**
+ * Fetches a real driving ETA (in minutes) from OSRM between two coordinates.
+ * Caches the result for 30 seconds to avoid spamming the public OSRM API.
+ * Falls back to a straight-line Haversine estimate if the request fails.
+ *
+ * Returns { etaMinutes, loading, error }
+ * etaMinutes is null when coordinates are unavailable.
+ */
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+const osrmEtaCache = new Map(); // key → { etaMinutes, timestamp }
+const CACHE_TTL_MS = 30_000;
+
+export function useOsrmEta(busLat, busLng, studentLat, studentLng) {
+  const [etaMinutes, setEtaMinutes] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (
+      busLat == null || busLng == null ||
+      studentLat == null || studentLng == null
+    ) {
+      setEtaMinutes(null);
+      return;
+    }
+
+    const bLat = Number(busLat);
+    const bLng = Number(busLng);
+    const sLat = Number(studentLat);
+    const sLng = Number(studentLng);
+
+    if (isNaN(bLat) || isNaN(bLng) || isNaN(sLat) || isNaN(sLng)) {
+      setEtaMinutes(null);
+      return;
+    }
+
+    const cacheKey = `${bLat.toFixed(4)},${bLng.toFixed(4)};${sLat.toFixed(4)},${sLng.toFixed(4)}`;
+    const cached = osrmEtaCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      setEtaMinutes(cached.etaMinutes);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    const url =
+      `https://router.project-osrm.org/route/v1/driving/` +
+      `${bLng},${bLat};${sLng},${sLat}` +
+      `?overview=false`;
+
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data?.routes?.[0]?.duration != null) {
+          const mins = Math.max(1, Math.round(data.routes[0].duration / 60));
+          osrmEtaCache.set(cacheKey, { etaMinutes: mins, timestamp: Date.now() });
+          setEtaMinutes(mins);
+        } else {
+          throw new Error('OSRM: no route found');
+        }
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        // Fallback: straight-line at ~30 km/h
+        const distKm = haversineKm(busLat, busLng, studentLat, studentLng);
+        const fallback = Math.max(1, Math.round(distKm * 2));
+        setEtaMinutes(fallback);
+        setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [busLat, busLng, studentLat, studentLng]);
+
+  return { etaMinutes, loading, error };
 }

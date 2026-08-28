@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Loader from '../components/Loader';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function Login() {
   const { user, loading, loginWithGoogle, loginWithUsername } = useAuth();
   const [error, setError] = useState('');
-  
+  const [validationErrors, setValidationErrors] = useState({});
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -26,8 +27,22 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (!formData.username.trim() || !formData.password.trim()) {
-      setError('Preencha o usuário e a senha.');
+    setError('');
+    setValidationErrors({});
+    let hasError = false;
+    let errors = {};
+
+    if (!formData.username.trim()) {
+      errors.username = 'O nome de usuário é obrigatório.';
+      hasError = true;
+    }
+    if (!formData.password.trim()) {
+      errors.password = 'A senha é obrigatória.';
+      hasError = true;
+    }
+
+    if (hasError) {
+      setValidationErrors(errors);
       return;
     }
 
@@ -48,47 +63,54 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+      {/* Theme Toggle no topo direito */}
+      <div className="absolute top-5 right-5 z-20">
+        <ThemeToggle />
+      </div>
+
       {/* Background Gradients & Stars */}
       <div className="stars absolute inset-0 pointer-events-none"></div>
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-orange-900/10 blur-[120px] rounded-full pointer-events-none"></div>
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-orange-950/20 blur-[100px] rounded-full pointer-events-none"></div>
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-orange-900/10 [html.light_&]:bg-orange-400/10 blur-[120px] rounded-full pointer-events-none"></div>
+      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-orange-950/20 [html.light_&]:bg-amber-400/10 blur-[100px] rounded-full pointer-events-none"></div>
 
-      <div className="electric-card bg-[#0A0A0A] w-full max-w-md p-8 text-center rounded-[30px] z-10 relative border border-white/5 shadow-2xl">
+      <div className="electric-card bg-[#0A0A0A] [html.light_&]:bg-white/95 w-full max-w-md p-8 text-center rounded-[30px] z-10 relative border border-white/5 [html.light_&]:border-slate-200 shadow-2xl [html.light_&]:shadow-[0_20px_50px_rgba(0,0,0,0.06)]">
         <div className="flex justify-center items-center gap-3 mb-4">
           <img src="/Logo.png" alt="Rhyme Logo" className="h-16 object-contain" />
-          <h1 className="text-4xl lg:text-5xl font-bricolage font-bold text-white tracking-tight">Rhyme.</h1>
+          <h1 className="text-4xl lg:text-5xl font-bricolage font-bold text-white [html.light_&]:text-slate-900 tracking-tight">Rhyme.</h1>
         </div>
-        <p className="text-neutral-400 mb-8 text-sm">Gestão Inteligente de Transporte</p>
+        <p className="text-neutral-400 [html.light_&]:text-slate-500 mb-8 text-sm">Gestão Inteligente de Transporte</p>
         
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-500 p-3 rounded-xl mb-6 text-sm text-left">
+          <div className="bg-red-500/10 border border-red-500/50 text-red-500 [html.light_&]:bg-red-50 [html.light_&]:border-red-200 [html.light_&]:text-red-700 p-3 rounded-xl mb-6 text-sm text-left">
             {error}
           </div>
         )}
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4 text-left mb-6">
           <div>
-            <label className="block text-zinc-400 text-xs font-medium uppercase tracking-wider mb-2">Nome de Usuário</label>
+            <label className="block text-zinc-400 [html.light_&]:text-slate-700 text-xs font-medium uppercase tracking-wider mb-2">Nome de Usuário</label>
             <input 
               type="text" 
               name="username"
               value={formData.username}
               onChange={handleChange}
               placeholder="ex: joaozinho"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-colors"
+              className={`w-full bg-white/5 [html.light_&]:bg-slate-100 border ${validationErrors.username ? 'border-red-500 focus:border-red-500' : 'border-white/10 [html.light_&]:border-slate-200 focus:border-orange-500'} rounded-xl px-4 py-3 text-white [html.light_&]:text-slate-900 placeholder:text-zinc-500 [html.light_&]:placeholder:text-slate-400 focus:outline-none transition-colors`}
             />
+            {validationErrors.username && <p className="text-red-500 text-xs mt-1">{validationErrors.username}</p>}
           </div>
 
           <div>
-            <label className="block text-zinc-400 text-xs font-medium uppercase tracking-wider mb-2">Senha</label>
+            <label className="block text-zinc-400 [html.light_&]:text-slate-700 text-xs font-medium uppercase tracking-wider mb-2">Senha</label>
             <input 
               type="password" 
               name="password"
               value={formData.password}
               onChange={handleChange}
               placeholder="••••••••"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-orange-500 transition-colors"
+              className={`w-full bg-white/5 [html.light_&]:bg-slate-100 border ${validationErrors.password ? 'border-red-500 focus:border-red-500' : 'border-white/10 [html.light_&]:border-slate-200 focus:border-orange-500'} rounded-xl px-4 py-3 text-white [html.light_&]:text-slate-900 placeholder:text-zinc-500 [html.light_&]:placeholder:text-slate-400 focus:outline-none transition-colors`}
             />
+            {validationErrors.password && <p className="text-red-500 text-xs mt-1">{validationErrors.password}</p>}
           </div>
 
           <button 
@@ -102,9 +124,9 @@ export default function Login() {
 
         <div className="flex flex-col gap-4">
           <div className="relative flex py-2 items-center">
-            <div className="flex-grow border-t border-zinc-800"></div>
-            <span className="flex-shrink-0 mx-4 text-zinc-600 text-xs uppercase font-bold tracking-wider">ou</span>
-            <div className="flex-grow border-t border-zinc-800"></div>
+            <div className="flex-grow border-t border-zinc-800 [html.light_&]:border-slate-200"></div>
+            <span className="flex-shrink-0 mx-4 text-zinc-600 [html.light_&]:text-slate-400 text-xs uppercase font-bold tracking-wider">ou</span>
+            <div className="flex-grow border-t border-zinc-800 [html.light_&]:border-slate-200"></div>
           </div>
 
           <button 
@@ -120,7 +142,7 @@ export default function Login() {
                 }
               }
             }}
-            className="w-full bg-white/5 hover:bg-white/10 text-white py-3 rounded-xl transition-colors font-medium flex items-center justify-center gap-3 border border-white/10"
+            className="w-full bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 text-white [html.light_&]:text-slate-800 py-3 rounded-xl transition-colors font-medium flex items-center justify-center gap-3 border border-white/10 [html.light_&]:border-slate-200"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M22.56 12.25C22.56 11.47 22.49 10.72 22.36 10H12V14.26H17.92C17.66 15.63 16.88 16.8 15.71 17.58V20.34H19.28C21.36 18.42 22.56 15.6 22.56 12.25Z" fill="#4285F4"/>
@@ -132,8 +154,8 @@ export default function Login() {
           </button>
         </div>
         
-        <div className="mt-8 pt-6 border-t border-white/5 text-sm">
-          <p className="text-zinc-400">
+        <div className="mt-8 pt-6 border-t border-white/5 [html.light_&]:border-slate-200 text-sm">
+          <p className="text-zinc-400 [html.light_&]:text-slate-600">
             Ainda não tem conta? <Link to="/cadastro" className="text-orange-500 hover:text-orange-400 font-bold ml-1 transition-colors">Crie aqui</Link>
           </p>
         </div>

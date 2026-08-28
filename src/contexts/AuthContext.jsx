@@ -9,23 +9,36 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Diagnóstico do Estado: inscrever o listener e garantir a função de limpeza
+    let nullTimer = null; // debounce para evitar logout instantâneo ao restaurar sessão
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (currentUser) {
-        // Preservando a modularidade e evitando expor a instância completa do Firebase User
+        // Cancela qualquer timer de logout pendente (reconexão após wakeup)
+        if (nullTimer) {
+          clearTimeout(nullTimer);
+          nullTimer = null;
+        }
         setUser({
           uid: currentUser.uid,
           email: currentUser.email,
           displayName: currentUser.displayName,
           photoURL: currentUser.photoURL,
         });
+        setLoading(false);
       } else {
-        setUser(null);
+        // Aguarda 1.5s antes de confirmar logout: cobre o caso de reinicialização
+        // do token Firebase após app ser minimizado (especialmente iOS Safari PWA)
+        nullTimer = setTimeout(() => {
+          setUser(null);
+          setLoading(false);
+        }, 1500);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (nullTimer) clearTimeout(nullTimer);
+    };
   }, []);
 
   const loginAnonymous = async () => {

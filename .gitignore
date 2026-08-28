@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Project Design & Agent Files
+Design System/
+skill.md
+skills-lock.json

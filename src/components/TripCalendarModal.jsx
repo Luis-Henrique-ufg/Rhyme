@@ -87,39 +87,39 @@ export default function TripCalendarModal({ history, onClose, userProfile }) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#111] border border-white/10 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-[#111] [html.light_&]:bg-white border border-white/10 [html.light_&]:border-slate-200 rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         
-        <div className="flex justify-between items-center p-4 border-b border-white/5 bg-black/40">
-          <h2 className="text-white font-bold tracking-wide">Calendário de Viagens</h2>
-          <button onClick={onClose} className="text-zinc-400 hover:text-white transition-colors bg-white/5 rounded-full p-1.5">
+        <div className="flex justify-between items-center p-4 border-b border-white/5 [html.light_&]:border-slate-200 bg-black/40 [html.light_&]:bg-slate-50">
+          <h2 className="text-white [html.light_&]:text-slate-900 font-bold tracking-wide">Calendário de Viagens</h2>
+          <button onClick={onClose} className="text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900 transition-colors bg-white/5 [html.light_&]:bg-slate-100 rounded-full p-1.5">
             <X size={20} />
           </button>
         </div>
 
         <div className="p-5 overflow-y-auto">
-          <div className="flex items-center justify-center gap-3 mb-6 bg-orange-500/10 border border-orange-500/20 py-3 rounded-xl">
-            <Flame className={`w-6 h-6 ${streak > 2 ? 'text-orange-500' : 'text-zinc-500'}`} fill={streak > 2 ? "#f97316" : "none"} />
+          <div className="flex items-center justify-center gap-3 mb-6 bg-orange-500/10 [html.light_&]:bg-orange-50 border border-orange-500/20 [html.light_&]:border-orange-200 py-3 rounded-xl">
+            <Flame className={`w-6 h-6 ${streak > 2 ? 'text-orange-500' : 'text-zinc-500 [html.light_&]:text-slate-400'}`} fill={streak > 2 ? "#f97316" : "none"} />
             <div>
-              <p className="text-sm text-zinc-400 leading-tight">Sua Ofensiva</p>
-              <p className="text-lg font-black text-white leading-tight">{streak} Dias <span className="text-xs text-orange-500 font-bold ml-1 uppercase">{streak > 5 ? '🔥 On Fire!' : ''}</span></p>
+              <p className="text-sm text-zinc-400 [html.light_&]:text-slate-600 leading-tight">Sua Ofensiva</p>
+              <p className="text-lg font-black text-white [html.light_&]:text-slate-900 leading-tight">{streak} Dias <span className="text-xs text-orange-500 font-bold ml-1 uppercase">{streak > 5 ? '🔥 On Fire!' : ''}</span></p>
             </div>
           </div>
 
           <div className="flex items-center justify-between mb-4 px-2">
-            <button onClick={prevMonth} className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+            <button onClick={prevMonth} className="p-1.5 text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900 hover:bg-white/10 [html.light_&]:hover:bg-slate-100 rounded-lg transition-colors">
               <ChevronLeft size={20} />
             </button>
-            <span className="text-white font-bold tracking-wider uppercase text-sm">
+            <span className="text-white [html.light_&]:text-slate-900 font-bold tracking-wider uppercase text-sm">
               {monthNames[month]} {year}
             </span>
-            <button onClick={nextMonth} className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+            <button onClick={nextMonth} className="p-1.5 text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900 hover:bg-white/10 [html.light_&]:hover:bg-slate-100 rounded-lg transition-colors">
               <ChevronRight size={20} />
             </button>
           </div>
 
           <div className="grid grid-cols-7 gap-2 text-center mb-2">
             {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
-              <div key={d} className="text-[10px] font-bold text-zinc-500 uppercase">{d}</div>
+              <div key={d} className="text-[10px] font-bold text-zinc-500 [html.light_&]:text-slate-400 uppercase">{d}</div>
             ))}
           </div>
 
@@ -131,21 +131,21 @@ export default function TripCalendarModal({ history, onClose, userProfile }) {
               const status = historyMap[dateString];
               const isToday = isCurrentMonth && day === today.getDate();
 
-              let bgColor = 'bg-white/5';
+              let bgColor = 'bg-white/5 [html.light_&]:bg-slate-50';
               let borderColor = 'border-transparent';
-              let textColor = 'text-zinc-300';
+              let textColor = 'text-zinc-300 [html.light_&]:text-slate-700';
 
               if (status === 'confirmado' || status === 'finished' || status === 'in_progress') {
-                bgColor = 'bg-orange-500/20';
-                borderColor = 'border-orange-500/40';
+                bgColor = 'bg-orange-500/20 [html.light_&]:bg-orange-50';
+                borderColor = 'border-orange-500/40 [html.light_&]:border-orange-300';
                 textColor = 'text-orange-500 font-bold';
               } else if (status === 'cancelado') {
-                bgColor = 'bg-zinc-800/50';
-                borderColor = 'border-zinc-700/50';
-                textColor = 'text-zinc-500 line-through';
+                bgColor = 'bg-zinc-800/50 [html.light_&]:bg-slate-100';
+                borderColor = 'border-zinc-700/50 [html.light_&]:border-slate-200';
+                textColor = 'text-zinc-500 [html.light_&]:text-slate-400 line-through';
               } else if (isToday) {
-                borderColor = 'border-orange-500/50';
-                textColor = 'text-white font-bold';
+                borderColor = 'border-orange-500/50 [html.light_&]:border-orange-500';
+                textColor = 'text-white [html.light_&]:text-slate-900 font-bold';
               }
 
               return (
@@ -159,14 +159,14 @@ export default function TripCalendarModal({ history, onClose, userProfile }) {
             })}
           </div>
 
-          <div className="mt-6 flex justify-center gap-4 text-xs font-medium text-zinc-400">
+          <div className="mt-6 flex justify-center gap-4 text-xs font-medium text-zinc-400 [html.light_&]:text-slate-600">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded bg-orange-500/20 border border-orange-500/40"></div>
               <span>Presente</span>
             </div>
             {isStudent && (
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded bg-zinc-800/50 border border-zinc-700/50"></div>
+                <div className="w-3 h-3 rounded bg-zinc-800/50 [html.light_&]:bg-slate-100 border border-zinc-700/50 [html.light_&]:border-slate-200"></div>
                 <span>Faltou</span>
               </div>
             )}

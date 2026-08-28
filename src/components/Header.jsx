@@ -1,12 +1,15 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { Settings, User, History, LogOut, Camera, X, Check, Download } from 'lucide-react';
-import { doc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { Settings, User, History, LogOut, Camera, X, Check, Download, MapPin, Sparkles } from 'lucide-react';
+import { doc, updateDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useCustomAlert } from '../contexts/AlertContext';
 import { useRef } from 'react';
+import { migrateStudentAttendance, normalizeRoute } from '../utils/tripManager';
 import TripCalendarModal from './TripCalendarModal';
+import LocationPickerMap from './LocationPickerMap';
+import ThemeToggle from './ThemeToggle';
 
 export default function Header({ userProfile }) {
   const { user, logout } = useAuth();
@@ -31,10 +34,10 @@ const DropdownSelect = ({ value, onChange, options }) => {
     <div className="relative group text-left">
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-black/50 border border-white/10 rounded-xl pl-4 pr-10 py-2.5 text-zinc-100 text-sm focus:outline-none focus:border-orange-500 transition-colors cursor-pointer flex items-center justify-between"
+        className="w-full bg-black/50 [html.light_&]:bg-white border border-white/10 [html.light_&]:border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-zinc-100 [html.light_&]:text-slate-900 text-sm focus:outline-none focus:border-orange-500 transition-colors cursor-pointer flex items-center justify-between shadow-inner [html.light_&]:shadow-sm"
       >
         <span className="truncate">{selectedOption.label}</span>
-        <div className={`absolute right-3 text-zinc-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}>
+        <div className={`absolute right-3 text-zinc-400 [html.light_&]:text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}>
            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
       </div>
@@ -42,12 +45,12 @@ const DropdownSelect = ({ value, onChange, options }) => {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
-          <ul className="absolute z-50 w-full mt-2 bg-zinc-900 border border-zinc-700/80 rounded-xl shadow-2xl max-h-48 overflow-y-auto">
+          <ul className="absolute z-50 w-full mt-2 bg-zinc-900 [html.light_&]:bg-white border border-zinc-700/80 [html.light_&]:border-slate-200 rounded-xl shadow-2xl [html.light_&]:shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
             {options.map((opt) => (
               <li
                 key={opt.value}
                 onClick={() => { onChange(opt.value); setIsOpen(false); }}
-                className={`px-4 py-3 cursor-pointer transition-colors text-sm ${value === opt.value ? 'bg-orange-500/20 text-orange-500 font-bold border-l-2 border-orange-500 pl-3' : 'text-zinc-300 hover:bg-zinc-800 hover:text-white border-l-2 border-transparent'}`}
+                className={`px-4 py-3 cursor-pointer transition-colors text-sm ${value === opt.value ? 'bg-orange-500/20 [html.light_&]:bg-orange-50 text-orange-500 font-bold border-l-2 border-orange-500 pl-3' : 'text-zinc-300 [html.light_&]:text-slate-700 hover:bg-zinc-800 [html.light_&]:hover:bg-slate-100 hover:text-white [html.light_&]:hover:text-slate-900 border-l-2 border-transparent'}`}
               >
                 {opt.label}
               </li>
@@ -69,6 +72,21 @@ const DropdownSelect = ({ value, onChange, options }) => {
   const [fullTripHistory, setFullTripHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [showFacultyPicker, setShowFacultyPicker] = useState(false);
+
+  const FACULTY_COORDS = {
+    'UFG': [-16.603568359752572, -49.26557447462434],
+    'UFG - Campus Colemar': [-16.676109190074012, -49.24516058049558],
+    'PUC': [-16.67475162780121, -49.24209015441784],
+    'IFG': [-16.665844796098604, -49.25484595828902],
+    'UNIP': [-16.71913305820549, -49.23738118914336],
+    'FASAM': [-16.72238689347141, -49.23657627622922],
+    'Estácio': [-16.661400045241248, -49.261822432566476],
+    'Unicamps': [-16.675166089095736, -49.28430043030609],
+    'Eseffego': [-16.667398357525514, -49.242543618586815],
+    'Colégio Vitória': [-16.672587769018502, -49.252661376350915],
+    'Outra': [-16.675707046574686, -49.24547515495722],
+  };
 
   useEffect(() => {
     if (!isSettingsOpen || !user || !userProfile) return;
@@ -181,8 +199,41 @@ const DropdownSelect = ({ value, onChange, options }) => {
       }
 
       await updateDoc(doc(db, collectionName, userProfile.uid), updateData);
+
+      // Se for aluno, sincroniza imediatamente a presença do dia com o motorista
+      if (userProfile.role === 'student') {
+        if (isRouteChanged) {
+          // Remove da viagem do motorista anterior e adiciona na do novo motorista
+          await migrateStudentAttendance(
+            userProfile.uid,
+            userProfile.route,
+            newRoute.trim(),
+            {
+              name: newName.trim(),
+              faculty: newFaculty.trim(),
+              photoURL: userProfile.photoURL || null
+            }
+          );
+        } else if (isNameChanged || isFacultyChanged) {
+          // Atualiza dados na presença da viagem atual
+          const today = new Date();
+          const yyyy = today.getFullYear();
+          const mm = String(today.getMonth() + 1).padStart(2, '0');
+          const dd = String(today.getDate()).padStart(2, '0');
+          const dateString = `${yyyy}-${mm}-${dd}`;
+          const currentTripId = `trip_${normalizeRoute(userProfile.route)}_${dateString}`;
+          const attRef = doc(db, 'attendance', `${currentTripId}_${userProfile.uid}`);
+          await setDoc(attRef, {
+            studentName: newName.trim(),
+            faculty: newFaculty.trim(),
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
+      }
+
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
+      showAlert("Perfil e rota atualizados com sucesso!");
     } catch (err) {
       console.error(err);
       showAlert('Erro ao atualizar perfil.');
@@ -228,20 +279,20 @@ const DropdownSelect = ({ value, onChange, options }) => {
 
   return (
     <>
-    <div className="px-6 py-4 bg-[#050505]/80 backdrop-blur-md border-b border-white/5 flex justify-between items-center z-50 sticky top-0 shadow-sm shrink-0">
+    <div className="px-4 sm:px-6 py-3.5 bg-[#050505]/80 [html.light_&]:bg-white/90 backdrop-blur-md border-b border-white/5 [html.light_&]:border-slate-200/80 flex justify-between items-center z-50 sticky top-0 shadow-sm shrink-0 transition-colors">
       <div className="flex flex-col">
         {userProfile ? (
           <div className="flex items-center">
             <div className="flex items-center gap-3">
               {userProfile.photoURL ? (
-                <img src={userProfile.photoURL} alt={userProfile.name} className="w-10 h-10 rounded-full object-cover shadow-inner border border-white/10" />
+                <img src={userProfile.photoURL} alt={userProfile.name} className="w-10 h-10 rounded-full object-cover shadow-inner border border-white/10 [html.light_&]:border-slate-200" />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-yellow-500 text-black flex items-center justify-center font-bold text-lg shadow-inner">
                   {userProfile.name.charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="flex flex-col">
-                <span className="text-sm font-bold text-white tracking-wide">{userProfile.name}</span>
+                <span className="text-sm font-bold text-white [html.light_&]:text-slate-900 tracking-wide">{userProfile.name}</span>
                 <span className="text-[10px] font-bold text-orange-500 uppercase tracking-wider">
                   {userProfile.role === 'driver' ? `Rota: ${userProfile.route}` : userProfile.faculty}
                 </span>
@@ -250,36 +301,34 @@ const DropdownSelect = ({ value, onChange, options }) => {
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-neutral-800 animate-pulse"></div>
+            <div className="w-10 h-10 rounded-full bg-neutral-800 [html.light_&]:bg-slate-200 animate-pulse"></div>
             <div className="flex flex-col gap-2">
-              <div className="h-3 w-24 bg-neutral-800 rounded animate-pulse"></div>
-              <div className="h-2 w-16 bg-neutral-800 rounded animate-pulse"></div>
+              <div className="h-3 w-24 bg-neutral-800 [html.light_&]:bg-slate-200 rounded animate-pulse"></div>
+              <div className="h-2 w-16 bg-neutral-800 [html.light_&]:bg-slate-200 rounded animate-pulse"></div>
             </div>
           </div>
         )}
       </div>
-        <div className="flex items-center gap-3 sm:gap-4">
-          {/* Logo RHYME na direita */}
-          <div className="flex items-center border-r border-white/10 pr-4 mr-1">
-            <span className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-yellow-400 tracking-[0.2em] drop-shadow-[0_0_12px_rgba(249,115,22,0.8)] font-sans" style={{fontFamily: "'Inter', sans-serif"}}>RHYME</span>
-          </div>
-          
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Theme Toggle Button */}
+          <ThemeToggle />
+
           {(deferredPrompt || isIOSAndNotInstalled) && (
             <button
               onClick={handleInstallClick}
               title="Instalar App"
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 transition-all border border-orange-500/30 group shadow-sm"
+              className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 transition-all border border-orange-500/30 group shadow-sm"
             >
-              <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
+              <Download className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-y-0.5 transition-transform" />
             </button>
           )}
           
           <button
             onClick={() => setIsSettingsOpen(true)}
             title="Configurações"
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-neutral-400 hover:bg-orange-500/10 hover:text-orange-500 transition-all border border-white/10 hover:border-orange-500/30 group"
+            className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-white/5 [html.light_&]:bg-slate-100 text-neutral-400 [html.light_&]:text-slate-600 hover:bg-orange-500/10 hover:text-orange-500 transition-all border border-white/10 [html.light_&]:border-slate-200 hover:border-orange-500/30 group"
           >
-            <Settings className="w-5 h-5 group-hover:rotate-45 transition-transform duration-300" />
+            <Settings className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-45 transition-transform duration-300" />
           </button>
         </div>
     </div>
@@ -289,14 +338,14 @@ const DropdownSelect = ({ value, onChange, options }) => {
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsSettingsOpen(false)}></div>
         
-        <div className="relative w-full max-w-md electric-card bg-[#0A0A0A] rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="relative w-full max-w-md electric-card bg-[#0A0A0A] [html.light_&]:bg-white rounded-[2rem] border border-white/10 [html.light_&]:border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
           {/* Header do Modal */}
-          <div className="p-6 border-b border-white/10 bg-gradient-to-b from-orange-500/10 to-transparent flex justify-between items-center shrink-0">
-            <h2 className="text-xl font-display font-bold text-white flex items-center gap-2">
+          <div className="p-6 border-b border-white/10 [html.light_&]:border-slate-200 bg-gradient-to-b from-orange-500/10 to-transparent flex justify-between items-center shrink-0">
+            <h2 className="text-xl font-display font-bold text-white [html.light_&]:text-slate-900 flex items-center gap-2">
               <Settings size={20} className="text-orange-500" />
               Configurações
             </h2>
-            <button onClick={() => setIsSettingsOpen(false)} className="text-zinc-400 hover:text-white p-2 rounded-full hover:bg-white/5 transition-colors">
+            <button onClick={() => setIsSettingsOpen(false)} className="text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900 p-2 rounded-full hover:bg-white/5 [html.light_&]:hover:bg-slate-100 transition-colors">
               <X size={24} />
             </button>
           </div>
@@ -307,9 +356,9 @@ const DropdownSelect = ({ value, onChange, options }) => {
             <div className="flex flex-col items-center gap-4">
               <div className="relative">
                 {userProfile?.photoURL ? (
-                  <img src={userProfile.photoURL} alt="Profile" className="w-24 h-24 rounded-full object-cover shadow-inner border-4 border-[#0A0A0A]" />
+                  <img src={userProfile.photoURL} alt="Profile" className="w-24 h-24 rounded-full object-cover shadow-inner border-4 border-[#0A0A0A] [html.light_&]:border-white" />
                 ) : (
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-orange-500 to-yellow-500 text-black flex items-center justify-center font-bold text-4xl shadow-inner border-4 border-[#0A0A0A]">
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-orange-500 to-yellow-500 text-black flex items-center justify-center font-bold text-4xl shadow-inner border-4 border-[#0A0A0A] [html.light_&]:border-white">
                     {userProfile?.name.charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -324,43 +373,57 @@ const DropdownSelect = ({ value, onChange, options }) => {
                 <button 
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingPhoto}
-                  className={`absolute bottom-0 right-0 w-8 h-8 bg-zinc-800 border-2 border-[#0A0A0A] rounded-full flex items-center justify-center transition-colors ${isUploadingPhoto ? 'text-zinc-500 cursor-not-allowed' : 'text-orange-500 hover:bg-zinc-700'}`}
+                  className={`absolute bottom-0 right-0 w-8 h-8 bg-zinc-800 [html.light_&]:bg-slate-100 border-2 border-[#0A0A0A] [html.light_&]:border-white rounded-full flex items-center justify-center transition-colors ${isUploadingPhoto ? 'text-zinc-500 cursor-not-allowed' : 'text-orange-500 hover:bg-zinc-700 [html.light_&]:hover:bg-slate-200'}`}
                 >
                   {isUploadingPhoto ? <div className="w-3 h-3 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div> : <Camera size={14} />}
                 </button>
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-zinc-500">{userProfile?.email}</p>
+                <p className="text-sm font-medium text-zinc-500 [html.light_&]:text-slate-500">{userProfile?.email}</p>
               </div>
             </div>
 
+            {/* Aparência / Tema */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-white [html.light_&]:text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Sparkles size={16} className="text-orange-500" />
+                Aparência
+              </h3>
+              <div className="bg-white/5 [html.light_&]:bg-slate-50 border border-white/10 [html.light_&]:border-slate-200 rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                  <span className="text-sm font-bold text-white [html.light_&]:text-slate-900 block">Tema Visual</span>
+                  <span className="text-xs text-zinc-400 [html.light_&]:text-slate-500">Alternar entre modo claro e escuro</span>
+                </div>
+                <ThemeToggle />
+              </div>
+            </div>
             {/* Informações Pessoais */}
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white [html.light_&]:text-slate-900 uppercase tracking-wider flex items-center gap-2">
                 <User size={16} className="text-orange-500" />
                 Seu Perfil
               </h3>
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-4">
+              <div className="bg-white/5 [html.light_&]:bg-slate-50 border border-white/10 [html.light_&]:border-slate-200 rounded-2xl p-4 space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-400 ml-1">Nome de Exibição</label>
+                  <label className="text-xs font-medium text-zinc-400 [html.light_&]:text-slate-600 ml-1">Nome de Exibição</label>
                   <div className="flex gap-2">
                     <input 
                       type="text" 
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
-                      className="flex-1 min-w-0 bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-orange-500 transition-colors"
+                      className="flex-1 min-w-0 bg-black/50 [html.light_&]:bg-white border border-white/10 [html.light_&]:border-slate-200 rounded-xl px-4 py-2.5 text-white [html.light_&]:text-slate-900 text-sm focus:outline-none focus:border-orange-500 transition-colors shadow-inner"
                     />
                     <button 
                       onClick={handleUpdateProfile}
                       disabled={isSaving || (newName.trim() === userProfile?.name && newRoute.trim() === userProfile?.route && (userProfile?.role === 'driver' || newFaculty.trim() === userProfile?.faculty))}
-                      className="shrink-0 bg-orange-500 hover:bg-orange-600 disabled:bg-zinc-800 disabled:text-zinc-500 text-black px-4 rounded-xl font-bold text-sm transition-colors flex items-center gap-2"
+                      className="shrink-0 bg-orange-500 hover:bg-orange-600 disabled:bg-zinc-800 [html.light_&]:disabled:bg-slate-200 disabled:text-zinc-500 text-black px-4 rounded-xl font-bold text-sm transition-colors flex items-center gap-2"
                     >
                       {isSaving ? '...' : saveSuccess ? <Check size={18} /> : 'Salvar'}
                     </button>
                   </div>
                 </div>
                 <div className="space-y-1.5 mt-4">
-                  <label className="text-xs font-medium text-zinc-400 ml-1">Rota</label>
+                  <label className="text-xs font-medium text-zinc-400 [html.light_&]:text-slate-600 ml-1">Rota</label>
                   <DropdownSelect
                     value={newRoute}
                     onChange={(val) => setNewRoute(val)}
@@ -369,25 +432,42 @@ const DropdownSelect = ({ value, onChange, options }) => {
                 </div>
 
                 {userProfile?.role === 'student' && (
+                  <>
                   <div className="space-y-1.5 mt-4">
-                    <label className="text-xs font-medium text-zinc-400 ml-1">Faculdade</label>
+                    <label className="text-xs font-medium text-zinc-400 [html.light_&]:text-slate-600 ml-1">Faculdade</label>
                     <DropdownSelect
                       value={newFaculty}
                       onChange={(val) => setNewFaculty(val)}
                       options={['UFG', 'UFG - Campus Colemar', 'PUC', 'IFG', 'UNIP', 'FASAM', 'Estácio', 'Unicamps', 'Eseffego', 'Colégio Vitória', 'Outra'].map(f => ({ label: f, value: f }))}
                     />
                   </div>
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowFacultyPicker(true)}
+                      className="w-full flex items-center justify-center gap-2 text-sm font-medium text-orange-400 [html.light_&]:text-orange-600 border border-orange-500/30 [html.light_&]:border-orange-200 hover:bg-orange-500/10 [html.light_&]:hover:bg-orange-50 bg-orange-500/5 [html.light_&]:bg-orange-50/50 py-2.5 rounded-xl transition-colors"
+                    >
+                      <MapPin size={15} />
+                      {userProfile?.facultyLocation ? 'Ajustar localização da faculdade' : 'Marcar localização da faculdade'}
+                    </button>
+                    {userProfile?.facultyLocation && (
+                      <p className="text-[10px] text-zinc-500 [html.light_&]:text-slate-500 text-center mt-1.5">
+                        ✅ Localização personalizada ativa
+                      </p>
+                    )}
+                  </div>
+                  </>
                 )}
               </div>
             </div>
 
             {/* Histórico */}
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white [html.light_&]:text-slate-900 uppercase tracking-wider flex items-center gap-2">
                 <History size={16} className="text-orange-500" />
                 Últimas Viagens
               </h3>
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+              <div className="bg-white/5 [html.light_&]:bg-slate-50 border border-white/10 [html.light_&]:border-slate-200 rounded-2xl p-4">
                 {loadingHistory ? (
                   <div className="flex justify-center py-4"><div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div></div>
                 ) : tripHistory.length > 0 ? (
@@ -395,10 +475,10 @@ const DropdownSelect = ({ value, onChange, options }) => {
                     {tripHistory.map((item, idx) => {
                       const date = item.updatedAt ? item.updatedAt.toDate() : (item.createdAt ? item.createdAt.toDate() : new Date());
                       return (
-                        <div key={idx} className="flex items-center justify-between border-b border-white/5 pb-3 last:border-0 last:pb-0">
+                        <div key={idx} className="flex items-center justify-between border-b border-white/5 [html.light_&]:border-slate-200 pb-3 last:border-0 last:pb-0">
                           <div className="flex flex-col">
-                            <span className="text-sm font-medium text-zinc-200">{date.toLocaleDateString('pt-BR')} {date.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</span>
-                            <span className="text-xs text-zinc-400 mt-0.5">
+                            <span className="text-sm font-medium text-zinc-200 [html.light_&]:text-slate-800">{date.toLocaleDateString('pt-BR')} {date.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</span>
+                            <span className="text-xs text-zinc-400 [html.light_&]:text-slate-500 mt-0.5">
                               {userProfile.role === 'student' ? (
                                 item.status === 'confirmado' ? 'Embarcou' :
                                 item.status === 'cancelado' ? 'Não foi' : 'Aguardando'
@@ -420,7 +500,7 @@ const DropdownSelect = ({ value, onChange, options }) => {
                 ) : (
                   <div className="text-center py-4">
                     <History size={32} className="text-zinc-600 mx-auto mb-3 opacity-50" />
-                    <p className="text-zinc-400 text-sm font-medium">Nenhuma viagem registrada ainda.</p>
+                    <p className="text-zinc-400 [html.light_&]:text-slate-500 text-sm font-medium">Nenhuma viagem registrada ainda.</p>
                   </div>
                 )}
                 
@@ -444,7 +524,7 @@ const DropdownSelect = ({ value, onChange, options }) => {
             </div>
 
             {/* Zona de Perigo / Logout */}
-            <div className="pt-4 border-t border-white/10">
+            <div className="pt-4 border-t border-white/10 [html.light_&]:border-slate-200">
               <button 
                 onClick={handleLogout}
                 className="w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 rounded-xl py-3.5 font-bold text-sm transition-colors"
@@ -464,6 +544,31 @@ const DropdownSelect = ({ value, onChange, options }) => {
         history={fullTripHistory} 
         onClose={() => setIsCalendarOpen(false)} 
         userProfile={userProfile}
+      />
+    )}
+
+    {showFacultyPicker && userProfile?.role === 'student' && (
+      <LocationPickerMap
+        title="Localização da Faculdade"
+        subtitle="Marque o ponto exato onde o ônibus deverá parar para te pegar."
+        initialCenter={
+          userProfile.facultyLocation
+            ? [userProfile.facultyLocation.lat, userProfile.facultyLocation.lng]
+            : (FACULTY_COORDS[userProfile.faculty] || FACULTY_COORDS['Outra'])
+        }
+        initialPin={userProfile.facultyLocation || null}
+        onConfirm={async (loc) => {
+          setShowFacultyPicker(false);
+          if (!userProfile?.uid) return;
+          try {
+            await updateDoc(doc(db, 'students', userProfile.uid), { facultyLocation: loc });
+            showAlert(loc ? 'Localização da faculdade atualizada!' : 'Localização restaurada para o padrão!');
+          } catch (err) {
+            console.error(err);
+            showAlert('Erro ao salvar localização.');
+          }
+        }}
+        onClose={() => setShowFacultyPicker(false)}
       />
     )}
     </>

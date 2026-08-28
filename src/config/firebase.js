@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getMessaging, isSupported } from 'firebase/messaging';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -14,3 +15,17 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Garante que a sessão persiste no localStorage mesmo após o app ser suspenso/minimizado
+// Essencial para PWAs em dispositivos móveis (iOS Safari, Android Chrome)
+setPersistence(auth, browserLocalPersistence).catch((e) => {
+  console.warn('[Auth] Falha ao definir persistência local:', e);
+});
+
+// Inicializa o Messaging (somente se suportado pelo navegador)
+export let messaging = null;
+isSupported().then((supported) => {
+  if (supported) {
+    messaging = getMessaging(app);
+  }
+});

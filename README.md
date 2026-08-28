@@ -1,7 +1,7 @@
 <!-- prettier-ignore -->
 <div align="center">
 
-<img src="./public/RhymeTextLogo.png" alt="Logo Rhyme" width="300" />
+<img src="./public/Logo.png" alt="Logo Rhyme" width="300" />
 
 # Rhyme
 
@@ -15,7 +15,7 @@
 
 </div>
 
-Rhyme (anteriormente UniTrack) é um sistema de gerenciamento de transporte universitário projetado para substituir as listas de presença manuais do WhatsApp. Ele oferece uma plataforma digital em tempo real que reduz a carga cognitiva do motorista e melhora a experiência de locomoção dos alunos através do rastreamento de ônibus ao vivo e da coordenação automatizada de status.
+Rhyme é um sistema de gerenciamento de transporte universitário projetado para substituir as listas de presença manuais do WhatsApp. Ele oferece uma plataforma digital em tempo real que reduz a carga cognitiva do motorista e melhora a experiência de locomoção dos alunos através do rastreamento de ônibus ao vivo e da coordenação automatizada de status.
 
 > [!NOTE]
 > Este aplicativo foi construído como um Progressive Web App (PWA) para garantir um acesso fácil em todos os dispositivos sem a necessidade de instalação por meio das lojas de aplicativos.
