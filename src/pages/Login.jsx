@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Loader from '../components/Loader';
-import ThemeToggle from '../components/ThemeToggle';
 
 export default function Login() {
   const { user, loading, loginWithGoogle, loginWithUsername } = useAuth();
@@ -63,11 +62,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
-      {/* Theme Toggle no topo direito */}
-      <div className="absolute top-5 right-5 z-20">
-        <ThemeToggle />
-      </div>
-
       {/* Background Gradients & Stars */}
       <div className="stars absolute inset-0 pointer-events-none"></div>
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-orange-900/10 [html.light_&]:bg-orange-400/10 blur-[120px] rounded-full pointer-events-none"></div>
