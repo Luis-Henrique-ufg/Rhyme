@@ -515,7 +515,9 @@ export default function DriverDashboard() {
 
       try {
         await updateDoc(doc(db, 'trips', trip.id), {
-          busLocation: { lat: latitude, lng: longitude }
+          busLocation: { lat: latitude, lng: longitude },
+          locationProviderName: trip.driverName || 'Motorista',
+          locationProviderId: user.uid
         });
         setGpsStatus('active');
         setLastGpsUpdate(new Date());
@@ -1264,6 +1266,11 @@ export default function DriverDashboard() {
                       avatarBg = 'bg-zinc-700 [html.light_&]:bg-slate-300 text-zinc-400 [html.light_&]:text-slate-600';
                       nameColor = 'text-zinc-500 [html.light_&]:text-slate-400 line-through opacity-70';
                     }
+
+                    let tripTypeLabel = '';
+                    if (att.tripType === 'ida_volta') tripTypeLabel = 'Ida e Volta';
+                    else if (att.tripType === 'ida') tripTypeLabel = 'Só Ida';
+                    else if (att.tripType === 'volta') tripTypeLabel = 'Só Volta';
                     
                     return (
                       <div key={att.studentId} className={`flex items-center justify-between border p-4 rounded-2xl transition-colors ${bgColor}`}>
@@ -1272,7 +1279,14 @@ export default function DriverDashboard() {
                             {(att.studentName || 'A').charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className={`font-bold leading-tight ${nameColor}`}>{att.studentName || 'Aluno'}</p>
+                            <p className={`font-bold leading-tight flex items-center gap-2 flex-wrap ${nameColor}`}>
+                              {att.studentName || 'Aluno'}
+                              {tripTypeLabel && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 [html.light_&]:bg-slate-200 border border-white/20 [html.light_&]:border-slate-300 uppercase tracking-wider font-bold">
+                                  {tripTypeLabel}
+                                </span>
+                              )}
+                            </p>
                             <p className="text-xs text-zinc-400 [html.light_&]:text-slate-500 mt-1">{att.faculty} • {att.status}</p>
                           </div>
                         </div>

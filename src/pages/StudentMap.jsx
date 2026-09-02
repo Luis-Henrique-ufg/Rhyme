@@ -266,6 +266,7 @@ export default function StudentMap() {
   const [attendance, setAttendance] = useState(null);
   const [studentLoading, setStudentLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedTripType, setSelectedTripType] = useState('ida_volta');
   const [hasNotified, setHasNotified] = useState(false);
   const [isEditingLocation, setIsEditingLocation] = useState(false);
   const [tempLocation, setTempLocation] = useState(null);
@@ -273,6 +274,9 @@ export default function StudentMap() {
   const [isRouteBadgeOpen, setIsRouteBadgeOpen] = useState(false);
   const [routePath, setRoutePath] = useState([]);
   const [isPublicListOpen, setIsPublicListOpen] = useState(false);
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const watchIdRef = useRef(null);
+  const fallbackIntervalRef = useRef(null);
   const simulationInterval = useRef(null);
 
   // --- Data Adapter hooks (deep modules) ---
@@ -419,6 +423,13 @@ export default function StudentMap() {
   const isLiberado = attendance?.status === 'liberado';
   const isCancelado = attendance?.status === 'cancelado';
   const isEmbarcado = attendance?.status === 'embarcado';
+  const isAguardando = attendance?.status === 'aguardando';
+
+  useEffect(() => {
+    if (attendance?.tripType) {
+      setSelectedTripType(attendance.tripType);
+    }
+  }, [attendance?.tripType]);
 
   // Garante que a rota seja traçada ao carregar a página (F5) caso já esteja liberado
   useEffect(() => {
@@ -427,9 +438,56 @@ export default function StudentMap() {
     }
   }, [isLiberado, attendance?.lat, attendance?.lng, trip?.busLocation]);
 
+  useEffect(() => {
+    if (isBroadcasting && trip?.id && user?.uid) {
+      const sendLocation = async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          await updateDoc(doc(db, 'trips', trip.id), {
+            busLocation: { lat: latitude, lng: longitude },
+            locationProviderName: student?.name || 'Aluno',
+            locationProviderId: user.uid
+          });
+        } catch (e) {
+          console.error("Erro ao enviar GPS como aluno:", e);
+        }
+      };
+
+      if (navigator.geolocation) {
+        watchIdRef.current = navigator.geolocation.watchPosition(sendLocation, (err) => console.error(err), {
+          enableHighAccuracy: true,
+          maximumAge: 0
+        });
+
+        fallbackIntervalRef.current = setInterval(() => {
+          navigator.geolocation.getCurrentPosition(sendLocation, () => {}, {
+            enableHighAccuracy: true,
+            maximumAge: 5000
+          });
+        }, 10000);
+      }
+
+      return () => {
+        if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
+        if (fallbackIntervalRef.current) clearInterval(fallbackIntervalRef.current);
+      };
+    }
+  }, [isBroadcasting, trip?.id, user?.uid, student?.name]);
+
+
+  const handleTripTypeChange = async (type) => {
+    setSelectedTripType(type);
+    if (attendance && attendance.status !== 'cancelado') {
+      try {
+        await updateDoc(doc(db, 'attendance', `${trip.id}_${user.uid}`), { tripType: type, updatedAt: serverTimestamp() });
+      } catch (e) {
+        console.error("Erro ao atualizar trajeto", e);
+      }
+    }
+  };
 
   const handleLiberarEmbarque = async () => {
-    if (!trip || !user) return;
+    if (!trip || !user || !selectedTripType) return;
     setIsSubmitting(true);
     
     // Pede a localização atual do aluno
@@ -451,6 +509,7 @@ export default function StudentMap() {
             route: student?.route || 'Professor Jamil',
             photoURL: student?.photoURL || null,
             status: 'liberado',
+            tripType: selectedTripType,
             lat: position.coords.latitude,
             lng: position.coords.longitude,
             updatedAt: serverTimestamp()
@@ -633,55 +692,56 @@ export default function StudentMap() {
             attribution={isDark ? TILE_ATTR_NIGHT : TILE_ATTR_DAY}
             key={isDark ? 'night' : 'day'}
           />
-          {/* Marcador da faculdade do próprio aluno — usa localização customizada se disponível */}
-          {(() => {
-            const hasLiberated = publicList.some(p => p.faculty === student.faculty && p.status === 'liberado' && p.studentId !== user?.uid);
-            if (hasLiberated) return null;
-            const coords = getFacultyCoords(student);
-            if (!coords || coords[0] == null || coords[1] == null || isNaN(coords[0]) || isNaN(coords[1])) return null;
-            const isCrominiaS = student.route === 'Cromínia';
+          {/* Marcador do próprio aluno (bolinha) — antes de liberar */}
+          {attendance?.status !== 'liberado' && attendance?.status !== 'embarcado' && attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && (() => {
+            const accent = student.route === 'Cromínia' ? (isDark ? '#71717a' : '#475569') : '#f97316';
+            const dotIcon = L.divIcon({
+              html: `
+                <div style="position:relative;display:flex;align-items:center;justify-content:center;width:56px;height:56px;pointer-events:none;">
+                  <div style="width:22px;height:22px;background:${accent};border-radius:50%;border:3px solid ${isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.35)'};box-shadow:0 3px 10px rgba(0,0,0,0.45);"></div>
+                </div>
+              `,
+              className: 'bg-transparent border-none',
+              iconSize: [56, 56],
+              iconAnchor: [28, 28]
+            });
             return (
-              <Marker key={`own-faculty`} position={coords} icon={createFacultyIcon(student.faculty, isCrominiaS, isDark)}>
+              <Marker position={[attendance.lat, attendance.lng]} icon={dotIcon} zIndexOffset={900}>
                 <Popup className="dark-popup">
-                  <span className="font-bold text-white [html.light_&]:text-slate-900">{student.faculty}</span>
-                  {student.facultyLocation && <span className="block text-[10px] text-orange-400 mt-0.5">📍 Localização personalizada</span>}
+                  <span className="font-bold text-white [html.light_&]:text-slate-900">Sua localização</span>
                 </Popup>
               </Marker>
             );
           })()}
 
-          {/* Faculdades de outros alunos na lista (usa MOCK_FACULTIES) */}
-          {Object.entries(MOCK_FACULTIES)
-            .filter(([facName, coords]) => {
-              if (facName === student.faculty) return false; // já renderizado acima
-              if (!coords || coords[0] == null || coords[1] == null || isNaN(coords[0]) || isNaN(coords[1])) return false;
-              const hasLiberated = publicList.some(p => p.faculty === facName && p.status === 'liberado');
-              if (hasLiberated) return false;
-              return publicList.some(p => p.faculty === facName && p.status !== 'cancelado');
-            })
-            .map(([facName, coords]) => (
-              <Marker key={facName} position={coords} icon={createFacultyIcon(facName, student.route === 'Cromínia', isDark)}>
-                <Popup className="dark-popup">
-                  <span className="font-bold text-white [html.light_&]:text-slate-900">{facName}</span>
-                </Popup>
-              </Marker>
-            ))}
-
-
-          {/* Marcadores de Todos os Alunos Liberados na Rota */}
+          {/* Marcadores de Alunos Liberados — bolinha laranja com sonar */}
           {publicList.filter(a => a.status === 'liberado' && a.lat != null && a.lng != null && !isNaN(a.lat) && !isNaN(a.lng)).map(att => {
             const isMe = att.studentId === user?.uid;
-            const currentPhoto = isMe ? student.photoURL : att.photoURL;
-            const pinName = isMe ? 'Você' : (att.studentName || 'Aluno');
-            return (
-            <Marker key={att.id} position={[att.lat, att.lng]} icon={createStudentPinIcon(pinName, student.route === 'Cromínia', isDark)} zIndexOffset={800}>
-              <Popup className="dark-popup">
-                <div className="flex items-center gap-3">
-                  {currentPhoto && <img src={currentPhoto} alt="" className="w-10 h-10 rounded-full object-cover border border-white/20 shrink-0" />}
-                  <span className="font-bold text-white [html.light_&]:text-slate-900 text-base">{isMe ? `Você (${att.studentName})` : att.studentName}</span>
+            const accent = student.route === 'Cromínia' ? (isDark ? '#71717a' : '#475569') : '#f97316';
+            const sonarIcon = L.divIcon({
+              html: `
+                <div style="position:relative;display:flex;align-items:center;justify-content:center;width:56px;height:56px;pointer-events:none;">
+                  <style>
+                    @keyframes sonar-ring {
+                      0%   { transform: scale(0.6); opacity: 0.65; }
+                      100% { transform: scale(2.8); opacity: 0; }
+                    }
+                  </style>
+                  <div style="position:absolute;width:22px;height:22px;border-radius:50%;background:${accent};opacity:0.2;animation:sonar-ring 3.5s ease-out infinite;"></div>
+                  <div style="position:absolute;width:22px;height:22px;border-radius:50%;background:${accent};opacity:0.15;animation:sonar-ring 3.5s ease-out 1.2s infinite;"></div>
+                  <div style="position:relative;width:22px;height:22px;background:${accent};border-radius:50%;border:3px solid ${isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.35)'};box-shadow:0 3px 10px rgba(0,0,0,0.45);z-index:1;"></div>
                 </div>
-              </Popup>
-            </Marker>
+              `,
+              className: 'bg-transparent border-none',
+              iconSize: [56, 56],
+              iconAnchor: [28, 28]
+            });
+            return (
+              <Marker key={att.id} position={[att.lat, att.lng]} icon={sonarIcon} zIndexOffset={800}>
+                <Popup className="dark-popup">
+                  <span className="font-bold text-white [html.light_&]:text-slate-900">{isMe ? `Você (${att.studentName})` : att.studentName}</span>
+                </Popup>
+              </Marker>
             );
           })}
 
@@ -689,7 +749,19 @@ export default function StudentMap() {
           {trip?.busLocation?.lat != null && trip?.busLocation?.lng != null && !isNaN(trip.busLocation.lat) && !isNaN(trip.busLocation.lng) && (
             <Marker key={trip.id} position={[trip.busLocation.lat, trip.busLocation.lng]} icon={student.route === 'Cromínia' ? busIconAlt : busIcon} zIndexOffset={1000}>
               <Popup className="dark-popup">
-                <span className="font-bold text-orange-500">{student.route === 'Cromínia' ? 'Ônibus' : 'Van'} ({trip.driverName || 'Motorista'} - {trip.route})</span>
+                <span className="font-bold text-orange-500 flex flex-col gap-1">
+                  <span>{student.route === 'Cromínia' ? 'Ônibus' : 'Van'} ({trip.route})</span>
+                  {trip.locationProviderName && (
+                    <span className="text-[10px] text-zinc-400 [html.light_&]:text-slate-500 uppercase tracking-wider font-semibold">
+                      📍 Via: {trip.locationProviderName}
+                    </span>
+                  )}
+                  {!trip.locationProviderName && (
+                    <span className="text-[10px] text-zinc-400 [html.light_&]:text-slate-500 uppercase tracking-wider font-semibold">
+                      📍 Via: {trip.driverName || 'Motorista'}
+                    </span>
+                  )}
+                </span>
               </Popup>
             </Marker>
           )}
@@ -765,6 +837,11 @@ export default function StudentMap() {
                         nameColor = 'text-zinc-500 [html.light_&]:text-slate-400 line-through opacity-70';
                       }
                       
+                      let tripTypeLabel = '';
+                      if (att.tripType === 'ida_volta') tripTypeLabel = 'Ida e Volta';
+                      else if (att.tripType === 'ida') tripTypeLabel = 'Só Ida';
+                      else if (att.tripType === 'volta') tripTypeLabel = 'Só Volta';
+                      
                       return (
                         <div key={att.id} className={`flex items-center justify-between border p-4 rounded-2xl transition-colors ${bgColor}`}>
                           <div className="flex items-center gap-3">
@@ -772,7 +849,14 @@ export default function StudentMap() {
                               {(att.studentName || 'A').charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <p className={`font-bold leading-tight ${nameColor}`}>{att.studentName || 'Aluno'}</p>
+                              <p className={`font-bold leading-tight flex items-center gap-2 flex-wrap ${nameColor}`}>
+                                {att.studentName || 'Aluno'}
+                                {tripTypeLabel && (
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 [html.light_&]:bg-slate-200 border border-white/20 [html.light_&]:border-slate-300 uppercase tracking-wider font-bold">
+                                    {tripTypeLabel}
+                                  </span>
+                                )}
+                              </p>
                               <p className="text-xs text-zinc-400 [html.light_&]:text-slate-500 mt-1">{att.faculty || 'Outra'} • {att.status}</p>
                             </div>
                           </div>
@@ -909,45 +993,99 @@ export default function StudentMap() {
                 )}
               </div>
 
-              {/* Botão de Ação Principal (Liberar Embarque) */}
-              <div className="pt-2">
+              {/* Seletor de Trajeto (Pré-embarque) */}
+              <div className="bg-[#050505] [html.light_&]:bg-white border border-white/10 [html.light_&]:border-slate-200 rounded-2xl p-1 mb-2 flex">
                 <button
-                  onClick={handleLiberarEmbarque}
-                  disabled={isSubmitting || isEmbarcado || isLiberado}
-                  className={`w-full py-4 rounded-full font-display font-black text-base uppercase tracking-wider transition-all duration-300 relative overflow-hidden flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] ${
-                    isEmbarcado
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-default'
-                      : isLiberado
-                      ? 'bg-orange-500/10 text-orange-400 border border-orange-500/30 cursor-default'
-                      : isCancelado
-                      ? 'bg-zinc-800 [html.light_&]:bg-slate-200 text-zinc-300 [html.light_&]:text-slate-700 hover:bg-zinc-700 [html.light_&]:hover:bg-slate-300 border border-zinc-700'
-                      : 'btn-primary'
-                  }`}
+                  onClick={() => handleTripTypeChange('ida_volta')}
+                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${selectedTripType === 'ida_volta' ? 'bg-orange-500 text-black shadow-md' : 'text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900'}`}
                 >
-                  <span className="relative z-10 flex items-center gap-2">
-                    {isEmbarcado ? (
+                  Ida e Volta
+                </button>
+                <button
+                  onClick={() => handleTripTypeChange('ida')}
+                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${selectedTripType === 'ida' ? 'bg-orange-500 text-black shadow-md' : 'text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900'}`}
+                >
+                  Só Ida
+                </button>
+                <button
+                  onClick={() => handleTripTypeChange('volta')}
+                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${selectedTripType === 'volta' ? 'bg-orange-500 text-black shadow-md' : 'text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900'}`}
+                >
+                  Só Volta
+                </button>
+              </div>
+
+              {/* Botão de Ação Principal */}
+              <div className="pt-2 flex flex-col gap-2">
+                {/* Botão Cancelar Embarque — visível só quando liberado */}
+                {isLiberado && (
+                  <button
+                    onClick={() => handleCancelarEmbarque()}
+                    disabled={isSubmitting}
+                    className="w-full py-4 rounded-full font-display font-black text-base uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] bg-zinc-800 [html.light_&]:bg-slate-100 text-zinc-300 [html.light_&]:text-slate-600 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/40 border border-zinc-700 [html.light_&]:border-slate-300"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                    Cancelar Embarque
+                  </button>
+                )}
+
+                {/* Botão principal de liberar / reativar / status */}
+                {!isLiberado && (
+                  <button
+                    onClick={() => handleLiberarEmbarque()}
+                    disabled={isSubmitting || isEmbarcado}
+                    className={`w-full py-4 rounded-full font-display font-black text-base uppercase tracking-wider transition-all duration-300 relative overflow-hidden flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] ${
+                      isEmbarcado
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-default'
+                        : isCancelado
+                        ? 'bg-zinc-800 [html.light_&]:bg-slate-200 text-zinc-300 [html.light_&]:text-slate-700 hover:bg-zinc-700 [html.light_&]:hover:bg-slate-300 border border-zinc-700'
+                        : 'btn-primary'
+                    }`}
+                  >
+                    <span className="relative z-10 flex items-center gap-2">
+                      {isEmbarcado ? (
+                        <>
+                          <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                          EMBARCADO
+                        </>
+                      ) : isCancelado ? (
+                        <>
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                          REATIVAR EMBARQUE
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                          LIBERADO
+                        </>
+                      )}
+                    </span>
+                  </button>
+                )}
+
+                {/* Botão de Compartilhar GPS (Fallback do Motorista) - Apenas se estiver embarcado */}
+                {isEmbarcado && (
+                  <button
+                    onClick={() => setIsBroadcasting(!isBroadcasting)}
+                    className={`w-full mt-2 py-3 rounded-full font-bold text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 border ${
+                      isBroadcasting
+                        ? 'bg-red-500/20 text-red-500 border-red-500/50 hover:bg-red-500/30'
+                        : 'bg-[#1a1a1a] [html.light_&]:bg-slate-100 text-zinc-400 [html.light_&]:text-slate-600 border-white/5 [html.light_&]:border-slate-200 hover:text-white [html.light_&]:hover:text-slate-900 hover:border-white/20'
+                    }`}
+                  >
+                    {isBroadcasting ? (
                       <>
-                        <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                        EMBARCADO
-                      </>
-                    ) : isLiberado ? (
-                      <>
-                        <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                        LIBERADO (GPS OK)
-                      </>
-                    ) : isCancelado ? (
-                      <>
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                        REATIVAR EMBARQUE
+                        <svg className="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" /></svg>
+                        Parar Transmissão de GPS
                       </>
                     ) : (
                       <>
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        LIBERADO
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" /></svg>
+                        Transmitir GPS (Substituir Motorista)
                       </>
                     )}
-                  </span>
-                </button>
+                  </button>
+                )}
               </div>
 
             </div>
@@ -1008,6 +1146,7 @@ export default function StudentMap() {
 
         </div>
       )}
+
     </div>
   );
 }
