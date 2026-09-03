@@ -556,8 +556,6 @@ export default function StudentMap() {
     );
   };
 
-  const handleLiberado = handleLiberarEmbarque;
-
   const handleSaveLocation = async () => {
     if (!tempLocation || !trip || !user) return;
     setIsSubmitting(true);
