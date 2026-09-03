@@ -269,6 +269,8 @@ export default function StudentMap() {
   const [selectedTripType, setSelectedTripType] = useState('ida_volta');
   const [hasNotified, setHasNotified] = useState(false);
   const [isEditingLocation, setIsEditingLocation] = useState(false);
+  const [showCheckInModal, setShowCheckInModal] = useState(false);
+  const [hasSeenCheckInModal, setHasSeenCheckInModal] = useState(false);
   const [tempLocation, setTempLocation] = useState(null);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [isRouteBadgeOpen, setIsRouteBadgeOpen] = useState(false);
@@ -426,6 +428,13 @@ export default function StudentMap() {
   const isAguardando = attendance?.status === 'aguardando';
 
   useEffect(() => {
+    if (isAguardando && !hasSeenCheckInModal) {
+      setShowCheckInModal(true);
+      setHasSeenCheckInModal(true);
+    }
+  }, [isAguardando, hasSeenCheckInModal]);
+
+  useEffect(() => {
     if (attendance?.tripType) {
       setSelectedTripType(attendance.tripType);
     }
@@ -486,8 +495,11 @@ export default function StudentMap() {
     }
   };
 
-  const handleLiberarEmbarque = async () => {
-    if (!trip || !user || !selectedTripType) return;
+  const handleCheckIn = async (type) => {
+    if (!trip || !user) return;
+    
+    // Set local state
+    setSelectedTripType(type);
     setIsSubmitting(true);
     
     // Pede a localização atual do aluno
@@ -509,12 +521,17 @@ export default function StudentMap() {
             route: student?.route || 'Professor Jamil',
             photoURL: student?.photoURL || null,
             status: 'liberado',
-            tripType: selectedTripType,
+            tripType: type, // usa o type passado
             lat: position.coords.latitude,
             lng: position.coords.longitude,
             updatedAt: serverTimestamp()
           });
           drawRouteToBus(position.coords.latitude, position.coords.longitude);
+          
+          // Confirmação visual: abre a lista
+          setIsPublicListOpen(true);
+          setIsPanelCollapsed(true);
+          
         } catch (err) {
           console.error("Erro ao marcar liberação:", err);
           showAlert("Erro ao salvar presença. Tente novamente.");
@@ -790,6 +807,51 @@ export default function StudentMap() {
           )}
         </MapContainer>
 
+        {/* Modal de Check-in (Trajeto) */}
+        {showCheckInModal && (
+          <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowCheckInModal(false)}></div>
+            <div className="relative electric-card bg-[#0A0A0A] [html.light_&]:bg-white w-full max-w-sm rounded-3xl border border-white/10 [html.light_&]:border-slate-200 shadow-2xl overflow-hidden p-6 text-center animate-in zoom-in-95 duration-300">
+              <div className="w-16 h-16 bg-orange-500/10 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(249,115,22,0.2)]">
+                <Navigation size={32} />
+              </div>
+              <h2 className="text-2xl font-bold text-white [html.light_&]:text-slate-900 mb-2">Vai embarcar hoje?</h2>
+              <p className="text-sm text-zinc-400 [html.light_&]:text-slate-500 mb-6">Selecione seu trajeto para confirmar sua presença na lista do motorista.</p>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={() => { setShowCheckInModal(false); handleCheckIn('ida_volta'); }}
+                  disabled={isSubmitting}
+                  className="w-full py-4 rounded-xl font-bold bg-orange-500 hover:bg-orange-600 text-black transition-colors flex items-center justify-center"
+                >
+                  Ida e Volta
+                </button>
+                <button
+                  onClick={() => { setShowCheckInModal(false); handleCheckIn('ida'); }}
+                  disabled={isSubmitting}
+                  className="w-full py-4 rounded-xl font-bold bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 text-white [html.light_&]:text-slate-900 border border-white/10 [html.light_&]:border-slate-300 transition-colors flex items-center justify-center"
+                >
+                  Só Ida
+                </button>
+                <button
+                  onClick={() => { setShowCheckInModal(false); handleCheckIn('volta'); }}
+                  disabled={isSubmitting}
+                  className="w-full py-4 rounded-xl font-bold bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 text-white [html.light_&]:text-slate-900 border border-white/10 [html.light_&]:border-slate-300 transition-colors flex items-center justify-center"
+                >
+                  Só Volta
+                </button>
+              </div>
+
+              <button 
+                onClick={() => setShowCheckInModal(false)}
+                className="mt-6 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+              >
+                Decidir mais tarde
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Modal da Lista Pública */}
         {isPublicListOpen && (
           <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4">
@@ -993,28 +1055,6 @@ export default function StudentMap() {
                 )}
               </div>
 
-              {/* Seletor de Trajeto (Pré-embarque) */}
-              <div className="bg-[#050505] [html.light_&]:bg-white border border-white/10 [html.light_&]:border-slate-200 rounded-2xl p-1 mb-2 flex">
-                <button
-                  onClick={() => handleTripTypeChange('ida_volta')}
-                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${selectedTripType === 'ida_volta' ? 'bg-orange-500 text-black shadow-md' : 'text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900'}`}
-                >
-                  Ida e Volta
-                </button>
-                <button
-                  onClick={() => handleTripTypeChange('ida')}
-                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${selectedTripType === 'ida' ? 'bg-orange-500 text-black shadow-md' : 'text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900'}`}
-                >
-                  Só Ida
-                </button>
-                <button
-                  onClick={() => handleTripTypeChange('volta')}
-                  className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${selectedTripType === 'volta' ? 'bg-orange-500 text-black shadow-md' : 'text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900'}`}
-                >
-                  Só Volta
-                </button>
-              </div>
-
               {/* Botão de Ação Principal */}
               <div className="pt-2 flex flex-col gap-2">
                 {/* Botão Cancelar Embarque — visível só quando liberado */}
@@ -1032,7 +1072,7 @@ export default function StudentMap() {
                 {/* Botão principal de liberar / reativar / status */}
                 {!isLiberado && (
                   <button
-                    onClick={() => handleLiberarEmbarque()}
+                    onClick={() => isAguardando ? setShowCheckInModal(true) : handleCheckIn(selectedTripType)}
                     disabled={isSubmitting || isEmbarcado}
                     className={`w-full py-4 rounded-full font-display font-black text-base uppercase tracking-wider transition-all duration-300 relative overflow-hidden flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] ${
                       isEmbarcado
@@ -1056,7 +1096,7 @@ export default function StudentMap() {
                       ) : (
                         <>
                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                          LIBERADO
+                          FAZER CHECK-IN
                         </>
                       )}
                     </span>
@@ -1107,18 +1147,28 @@ export default function StudentMap() {
           <div id="navbar-recenter-slot" className="flex items-center justify-center empty:hidden"></div>
 
           {isLiberado && (
-             <button 
-               onClick={() => {
-                 setIsEditingLocation(true);
-                 setTempLocation(attendance?.lat && attendance?.lng ? { lat: attendance.lat, lng: attendance.lng } : null);
-                 setIsPanelCollapsed(true);
-                 setIsPublicListOpen(false);
-               }}
-               className="flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
-             >
-               <div className="p-2"><MapPin size={24} /></div>
-               <span className="text-[11px] font-medium mt-0.5">Ajustar</span>
-             </button>
+             <>
+               <button 
+                 onClick={() => {
+                   setIsEditingLocation(true);
+                   setTempLocation(attendance?.lat && attendance?.lng ? { lat: attendance.lat, lng: attendance.lng } : null);
+                   setIsPanelCollapsed(true);
+                   setIsPublicListOpen(false);
+                 }}
+                 className="flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
+               >
+                 <div className="p-2"><MapPin size={24} /></div>
+                 <span className="text-[11px] font-medium mt-0.5">Ajustar</span>
+               </button>
+
+               <button 
+                 onClick={() => setShowCheckInModal(true)}
+                 className="flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
+               >
+                 <div className="p-2"><Navigation size={24} /></div>
+                 <span className="text-[11px] font-medium mt-0.5">Trajeto</span>
+               </button>
+             </>
           )}
 
           {isEmbarcado && (
