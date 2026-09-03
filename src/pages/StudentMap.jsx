@@ -272,7 +272,7 @@ export default function StudentMap() {
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [hasSeenCheckInModal, setHasSeenCheckInModal] = useState(false);
   const [tempLocation, setTempLocation] = useState(null);
-  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);
   const [isRouteBadgeOpen, setIsRouteBadgeOpen] = useState(false);
   const [routePath, setRoutePath] = useState([]);
   const [isPublicListOpen, setIsPublicListOpen] = useState(false);
@@ -805,147 +805,6 @@ export default function StudentMap() {
           )}
         </MapContainer>
 
-        {/* Modal de Check-in (Trajeto) */}
-        {showCheckInModal && (
-          <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowCheckInModal(false)}></div>
-            <div className="relative electric-card bg-[#0A0A0A] [html.light_&]:bg-white w-full max-w-sm rounded-3xl border border-white/10 [html.light_&]:border-slate-200 shadow-2xl overflow-hidden p-6 text-center animate-in zoom-in-95 duration-300">
-              <div className="w-16 h-16 bg-orange-500/10 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(249,115,22,0.2)]">
-                <Navigation size={32} />
-              </div>
-              <h2 className="text-2xl font-bold text-white [html.light_&]:text-slate-900 mb-2">Vai embarcar hoje?</h2>
-              <p className="text-sm text-zinc-400 [html.light_&]:text-slate-500 mb-6">Selecione seu trajeto para confirmar sua presença na lista do motorista.</p>
-              
-              <div className="space-y-3">
-                <button
-                  onClick={() => { setShowCheckInModal(false); handleCheckIn('ida_volta'); }}
-                  disabled={isSubmitting}
-                  className="w-full py-4 rounded-xl font-bold bg-orange-500 hover:bg-orange-600 text-black transition-colors flex items-center justify-center"
-                >
-                  Ida e Volta
-                </button>
-                <button
-                  onClick={() => { setShowCheckInModal(false); handleCheckIn('ida'); }}
-                  disabled={isSubmitting}
-                  className="w-full py-4 rounded-xl font-bold bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 text-white [html.light_&]:text-slate-900 border border-white/10 [html.light_&]:border-slate-300 transition-colors flex items-center justify-center"
-                >
-                  Só Ida
-                </button>
-                <button
-                  onClick={() => { setShowCheckInModal(false); handleCheckIn('volta'); }}
-                  disabled={isSubmitting}
-                  className="w-full py-4 rounded-xl font-bold bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 text-white [html.light_&]:text-slate-900 border border-white/10 [html.light_&]:border-slate-300 transition-colors flex items-center justify-center"
-                >
-                  Só Volta
-                </button>
-              </div>
-
-              <button 
-                onClick={() => setShowCheckInModal(false)}
-                className="mt-6 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
-              >
-                Decidir mais tarde
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Modal da Lista Pública */}
-        {isPublicListOpen && (
-          <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsPublicListOpen(false)}></div>
-            <div className="relative electric-card bg-[#0A0A0A]/95 [html.light_&]:bg-white/95 w-full max-w-md rounded-3xl border border-white/10 [html.light_&]:border-slate-200 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/20 blur-[50px] rounded-full pointer-events-none"></div>
-              
-              <div className="p-6 border-b border-white/10 [html.light_&]:border-slate-200 bg-gradient-to-b from-orange-500/10 to-transparent z-10 flex justify-between items-center">
-                <h2 className="text-xl font-display font-bold text-white [html.light_&]:text-slate-900 flex items-center gap-2">
-                  <Users size={20} className="text-orange-500" />
-                  Lista de Passageiros
-                </h2>
-                <button onClick={() => setIsPublicListOpen(false)} className="text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900 p-2 rounded-full hover:bg-white/5 [html.light_&]:hover:bg-slate-100 transition-colors">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-              </div>
-              
-              <div className="p-4 overflow-y-auto flex-1 z-10 space-y-3 custom-scrollbar">
-                {publicList.length === 0 ? (
-                  <p className="text-zinc-500 [html.light_&]:text-slate-400 text-center py-8">Ninguém na lista ainda.</p>
-                ) : (
-                  publicList
-                    .sort((a, b) => {
-                      const statusOrder = { 'aguardando': 0, 'liberado': 0, 'embarcado': 1, 'cancelado': 2 };
-                      const orderA = statusOrder[a.status] ?? 0;
-                      const orderB = statusOrder[b.status] ?? 0;
-                      if (orderA !== orderB) return orderA - orderB;
-                      return (a.studentName || '').localeCompare(b.studentName || '');
-                    })
-                    .map(att => {
-                      const isEmbarcado = att.status === 'embarcado';
-                      const isCancelado = att.status === 'cancelado';
-                      
-                      let bgColor = 'bg-white/5 [html.light_&]:bg-slate-50 border-white/5 [html.light_&]:border-slate-200 hover:bg-white/10 [html.light_&]:hover:bg-slate-100';
-                      let avatarBg = 'bg-gradient-to-br from-orange-500 to-yellow-500 text-black';
-                      let nameColor = 'text-white [html.light_&]:text-slate-900';
-                      
-                      if (isEmbarcado) {
-                        bgColor = 'bg-orange-500/10 border-orange-500/30';
-                        avatarBg = 'bg-orange-500 text-black';
-                        nameColor = 'text-orange-500 line-through opacity-70';
-                      } else if (isCancelado) {
-                        bgColor = 'bg-zinc-800/50 [html.light_&]:bg-slate-100 border-zinc-700/50 [html.light_&]:border-slate-200';
-                        avatarBg = 'bg-zinc-700 [html.light_&]:bg-slate-300 text-zinc-400 [html.light_&]:text-slate-600';
-                        nameColor = 'text-zinc-500 [html.light_&]:text-slate-400 line-through opacity-70';
-                      }
-                      
-                      let tripTypeLabel = '';
-                      if (att.tripType === 'ida_volta') tripTypeLabel = 'Ida e Volta';
-                      else if (att.tripType === 'ida') tripTypeLabel = 'Só Ida';
-                      else if (att.tripType === 'volta') tripTypeLabel = 'Só Volta';
-                      
-                      return (
-                        <div key={att.id} className={`flex items-center justify-between border p-4 rounded-2xl transition-colors ${bgColor}`}>
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${avatarBg}`}>
-                              {(att.studentName || 'A').charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <p className={`font-bold leading-tight flex items-center gap-2 flex-wrap ${nameColor}`}>
-                                {att.studentName || 'Aluno'}
-                                {tripTypeLabel && (
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 [html.light_&]:bg-slate-200 border border-white/20 [html.light_&]:border-slate-300 uppercase tracking-wider font-bold">
-                                    {tripTypeLabel}
-                                  </span>
-                                )}
-                              </p>
-                              <p className="text-xs text-zinc-400 [html.light_&]:text-slate-500 mt-1">{att.faculty || 'Outra'} • {att.status}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <button 
-                              onClick={() => handleStudentStatus(att.studentId, att.status, 'cancelado')}
-                              className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all shadow-sm ${isCancelado ? 'bg-zinc-800 [html.light_&]:bg-slate-200 text-zinc-400 [html.light_&]:text-slate-700 border-zinc-700 [html.light_&]:border-slate-300 hover:bg-zinc-700' : 'bg-white/10 [html.light_&]:bg-slate-100 text-zinc-400 [html.light_&]:text-slate-600 border-white/10 [html.light_&]:border-slate-200 hover:bg-zinc-800 hover:text-zinc-300'}`}
-                              title={isCancelado ? "Desfazer ausência" : "Marcar como não vai"}
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
-                            <button 
-                              onClick={() => handleStudentStatus(att.studentId, att.status, 'embarcado')}
-                              className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all shadow-sm ${isEmbarcado ? 'bg-orange-500 text-black border-orange-500 hover:bg-orange-600' : 'bg-white/10 [html.light_&]:bg-slate-100 text-zinc-400 [html.light_&]:text-slate-600 border-white/10 [html.light_&]:border-slate-200 hover:bg-orange-500 hover:text-black hover:border-orange-500'}`}
-                              title={isEmbarcado ? "Desfazer embarque" : "Marcar como embarcado"}
-                            >
-                              <Check size={20} strokeWidth={3} />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* UI do Modo de Edição de Local */}
         {isEditingLocation && (
           <>
@@ -1191,6 +1050,147 @@ export default function StudentMap() {
         </div>
       )}
 
-    </div>
+{/* Modal de Check-in (Trajeto) */}
+        {showCheckInModal && (
+          <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowCheckInModal(false)}></div>
+            <div className="relative electric-card bg-[#0A0A0A] [html.light_&]:bg-white w-full max-w-sm rounded-3xl border border-white/10 [html.light_&]:border-slate-200 shadow-2xl overflow-hidden p-6 text-center animate-in zoom-in-95 duration-300">
+              <div className="w-16 h-16 bg-orange-500/10 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(249,115,22,0.2)]">
+                <Navigation size={32} />
+              </div>
+              <h2 className="text-2xl font-bold text-white [html.light_&]:text-slate-900 mb-2">Vai embarcar hoje?</h2>
+              <p className="text-sm text-zinc-400 [html.light_&]:text-slate-500 mb-6">Selecione seu trajeto para confirmar sua presença na lista do motorista.</p>
+              
+              <div className="space-y-3">
+                <button
+                  onClick={() => { setShowCheckInModal(false); handleCheckIn('ida_volta'); }}
+                  disabled={isSubmitting}
+                  className="w-full py-4 rounded-xl font-bold bg-orange-500 hover:bg-orange-600 text-black transition-colors flex items-center justify-center"
+                >
+                  Ida e Volta
+                </button>
+                <button
+                  onClick={() => { setShowCheckInModal(false); handleCheckIn('ida'); }}
+                  disabled={isSubmitting}
+                  className="w-full py-4 rounded-xl font-bold bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 text-white [html.light_&]:text-slate-900 border border-white/10 [html.light_&]:border-slate-300 transition-colors flex items-center justify-center"
+                >
+                  Só Ida
+                </button>
+                <button
+                  onClick={() => { setShowCheckInModal(false); handleCheckIn('volta'); }}
+                  disabled={isSubmitting}
+                  className="w-full py-4 rounded-xl font-bold bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 text-white [html.light_&]:text-slate-900 border border-white/10 [html.light_&]:border-slate-300 transition-colors flex items-center justify-center"
+                >
+                  Só Volta
+                </button>
+              </div>
+
+              <button 
+                onClick={() => setShowCheckInModal(false)}
+                className="mt-6 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+              >
+                Decidir mais tarde
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Modal da Lista Pública */}
+        {isPublicListOpen && (
+          <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsPublicListOpen(false)}></div>
+            <div className="relative electric-card bg-[#0A0A0A]/95 [html.light_&]:bg-white/95 w-full max-w-md rounded-3xl border border-white/10 [html.light_&]:border-slate-200 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/20 blur-[50px] rounded-full pointer-events-none"></div>
+              
+              <div className="p-6 border-b border-white/10 [html.light_&]:border-slate-200 bg-gradient-to-b from-orange-500/10 to-transparent z-10 flex justify-between items-center">
+                <h2 className="text-xl font-display font-bold text-white [html.light_&]:text-slate-900 flex items-center gap-2">
+                  <Users size={20} className="text-orange-500" />
+                  Lista de Passageiros
+                </h2>
+                <button onClick={() => setIsPublicListOpen(false)} className="text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900 p-2 rounded-full hover:bg-white/5 [html.light_&]:hover:bg-slate-100 transition-colors">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </div>
+              
+              <div className="p-4 overflow-y-auto flex-1 z-10 space-y-3 custom-scrollbar">
+                {publicList.length === 0 ? (
+                  <p className="text-zinc-500 [html.light_&]:text-slate-400 text-center py-8">Ninguém na lista ainda.</p>
+                ) : (
+                  publicList
+                    .sort((a, b) => {
+                      const statusOrder = { 'aguardando': 0, 'liberado': 0, 'embarcado': 1, 'cancelado': 2 };
+                      const orderA = statusOrder[a.status] ?? 0;
+                      const orderB = statusOrder[b.status] ?? 0;
+                      if (orderA !== orderB) return orderA - orderB;
+                      return (a.studentName || '').localeCompare(b.studentName || '');
+                    })
+                    .map(att => {
+                      const isEmbarcado = att.status === 'embarcado';
+                      const isCancelado = att.status === 'cancelado';
+                      
+                      let bgColor = 'bg-white/5 [html.light_&]:bg-slate-50 border-white/5 [html.light_&]:border-slate-200 hover:bg-white/10 [html.light_&]:hover:bg-slate-100';
+                      let avatarBg = 'bg-gradient-to-br from-orange-500 to-yellow-500 text-black';
+                      let nameColor = 'text-white [html.light_&]:text-slate-900';
+                      
+                      if (isEmbarcado) {
+                        bgColor = 'bg-orange-500/10 border-orange-500/30';
+                        avatarBg = 'bg-orange-500 text-black';
+                        nameColor = 'text-orange-500 line-through opacity-70';
+                      } else if (isCancelado) {
+                        bgColor = 'bg-zinc-800/50 [html.light_&]:bg-slate-100 border-zinc-700/50 [html.light_&]:border-slate-200';
+                        avatarBg = 'bg-zinc-700 [html.light_&]:bg-slate-300 text-zinc-400 [html.light_&]:text-slate-600';
+                        nameColor = 'text-zinc-500 [html.light_&]:text-slate-400 line-through opacity-70';
+                      }
+                      
+                      let tripTypeLabel = '';
+                      if (att.tripType === 'ida_volta') tripTypeLabel = 'Ida e Volta';
+                      else if (att.tripType === 'ida') tripTypeLabel = 'Só Ida';
+                      else if (att.tripType === 'volta') tripTypeLabel = 'Só Volta';
+                      
+                      return (
+                        <div key={att.id} className={`flex items-center justify-between border p-4 rounded-2xl transition-colors ${bgColor}`}>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${avatarBg}`}>
+                              {(att.studentName || 'A').charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className={`font-bold leading-tight flex items-center gap-2 flex-wrap ${nameColor}`}>
+                                {att.studentName || 'Aluno'}
+                                {tripTypeLabel && (
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 [html.light_&]:bg-slate-200 border border-white/20 [html.light_&]:border-slate-300 uppercase tracking-wider font-bold">
+                                    {tripTypeLabel}
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-xs text-zinc-400 [html.light_&]:text-slate-500 mt-1">{att.faculty || 'Outra'} • {att.status}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <button 
+                              onClick={() => handleStudentStatus(att.studentId, att.status, 'cancelado')}
+                              className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all shadow-sm ${isCancelado ? 'bg-zinc-800 [html.light_&]:bg-slate-200 text-zinc-400 [html.light_&]:text-slate-700 border-zinc-700 [html.light_&]:border-slate-300 hover:bg-zinc-700' : 'bg-white/10 [html.light_&]:bg-slate-100 text-zinc-400 [html.light_&]:text-slate-600 border-white/10 [html.light_&]:border-slate-200 hover:bg-zinc-800 hover:text-zinc-300'}`}
+                              title={isCancelado ? "Desfazer ausência" : "Marcar como não vai"}
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                            <button 
+                              onClick={() => handleStudentStatus(att.studentId, att.status, 'embarcado')}
+                              className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all shadow-sm ${isEmbarcado ? 'bg-orange-500 text-black border-orange-500 hover:bg-orange-600' : 'bg-white/10 [html.light_&]:bg-slate-100 text-zinc-400 [html.light_&]:text-slate-600 border-white/10 [html.light_&]:border-slate-200 hover:bg-orange-500 hover:text-black hover:border-orange-500'}`}
+                              title={isEmbarcado ? "Desfazer embarque" : "Marcar como embarcado"}
+                            >
+                              <Check size={20} strokeWidth={3} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+            </div>
   );
 }
