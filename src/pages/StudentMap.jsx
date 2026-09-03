@@ -997,7 +997,9 @@ export default function StudentMap() {
             className={`flex flex-col items-center justify-center transition-colors ${!isPanelCollapsed ? 'text-orange-500' : 'text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500'}`}
           >
             <div className="p-2"><Navigation size={24} /></div>
-            <span className="text-[11px] font-medium mt-0.5">Embarque</span>
+            <span className="text-[11px] font-medium mt-0.5">
+              {isEmbarcado ? 'Embarcado' : isLiberado ? 'Liberado' : 'Embarque'}
+            </span>
           </button>
 
           <div id="navbar-compass-slot" className="flex items-center justify-center empty:hidden"></div>
