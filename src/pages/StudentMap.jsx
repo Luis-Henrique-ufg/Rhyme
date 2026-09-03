@@ -6,7 +6,7 @@ import { doc, collection, setDoc, updateDoc, onSnapshot, serverTimestamp } from 
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { db } from '../config/firebase';
-import { joinTrip } from '../utils/tripManager';
+import { joinTrip, normalizeRoute } from '../utils/tripManager';
 import { useCurrentTrip, useTripAttendances, useOsrmEta } from '../utils/useTripData';
 import Header from '../components/Header';
 import Loader from '../components/Loader';
@@ -496,64 +496,72 @@ export default function StudentMap() {
   };
 
   const handleCheckIn = async (type) => {
-    if (!trip || !user) return;
+    if (!trip || !user) {
+      console.warn("handleCheckIn abortado: trip ou user não carregados", { trip, user });
+      return;
+    }
     
-    // Set local state
     setSelectedTripType(type);
     setIsSubmitting(true);
     
-    // Pede a localização atual do aluno
-    if (!navigator.geolocation) {
-      showAlert("Seu navegador não suporta GPS. Não é possível marcar presença.");
+    // Coordenadas base imediatas (do attendance existente, faculdade ou centro)
+    const facCoords = getFacultyCoords(student);
+    const initialLat = attendance?.lat ?? (facCoords ? facCoords[0] : CENTER[0]);
+    const initialLng = attendance?.lng ?? (facCoords ? facCoords[1] : CENTER[1]);
+
+    const attendanceId = `${trip.id}_${user.uid}`;
+    
+    try {
+      // 1. Salva o check-in IMEDIATAMENTE no Firestore com status 'liberado' e tripType
+      await setDoc(doc(db, 'attendance', attendanceId), {
+        tripId: trip.id,
+        studentId: user.uid,
+        studentName: student?.name || 'Aluno',
+        faculty: student?.faculty || 'Outra',
+        route: normalizeRoute(student?.route) || 'Professor Jamil',
+        photoURL: student?.photoURL || null,
+        status: 'liberado',
+        tripType: type,
+        lat: initialLat,
+        lng: initialLng,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      drawRouteToBus(initialLat, initialLng);
+      
+      // 2. Confirmação visual imediata: abre a lista e recolhe o painel inferior
+      setIsPublicListOpen(true);
+      setIsPanelCollapsed(true);
+    } catch (err) {
+      console.error("Erro ao salvar check-in:", err);
+      showAlert("Erro ao salvar presença. Tente novamente.");
+    } finally {
       setIsSubmitting(false);
-      return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          const attendanceId = `${trip.id}_${user.uid}`;
-          await setDoc(doc(db, 'attendance', attendanceId), {
-            tripId: trip.id,
-            studentId: user.uid,
-            studentName: student?.name || 'Aluno',
-            faculty: student?.faculty || 'Outra',
-            route: student?.route || 'Professor Jamil',
-            photoURL: student?.photoURL || null,
-            status: 'liberado',
-            tripType: type, // usa o type passado
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            updatedAt: serverTimestamp()
-          });
-          drawRouteToBus(position.coords.latitude, position.coords.longitude);
-          
-          // Confirmação visual: abre a lista
-          setIsPublicListOpen(true);
-          setIsPanelCollapsed(true);
-          
-        } catch (err) {
-          console.error("Erro ao marcar liberação:", err);
-          showAlert("Erro ao salvar presença. Tente novamente.");
-        } finally {
-          setIsSubmitting(false);
-        }
-      },
-      (error) => {
-        console.error("Erro GPS Aluno:", error);
-        let msg = "Não conseguimos acessar seu GPS automaticamente. Por favor, toque no mapa para definir onde você está esperando.";
-        if (error.code === 1) msg = "Permissão de GPS negada. Toque no mapa para definir onde você está esperando.";
-        else if (error.code === 2) msg = "Sinal de GPS indisponível no momento. Toque no mapa para definir onde você está esperando.";
-        else if (error.code === 3) msg = "O GPS demorou muito para responder. Toque no mapa para definir onde você está esperando.";
-        
-        showAlert(msg);
-        setIsEditingLocation(true);
-        const facCoords = getFacultyCoords(student);
-        setTempLocation(facCoords ? { lat: facCoords[0], lng: facCoords[1] } : { lat: CENTER[0], lng: CENTER[1] });
-        setIsSubmitting(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+    // 3. Em segundo plano (sem travar o check-in nem a UI), tenta obter o GPS preciso
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const preciseLat = position.coords.latitude;
+            const preciseLng = position.coords.longitude;
+            await updateDoc(doc(db, 'attendance', attendanceId), {
+              lat: preciseLat,
+              lng: preciseLng,
+              updatedAt: serverTimestamp()
+            });
+            drawRouteToBus(preciseLat, preciseLng);
+          } catch (e) {
+            console.error("Erro ao refinar GPS no check-in:", e);
+          }
+        },
+        (error) => {
+          console.log("GPS preciso não disponível no momento, mantendo localização base:", error?.message || error);
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+      );
+    }
   };
 
   const handleSaveLocation = async () => {
@@ -914,19 +922,29 @@ export default function StudentMap() {
 
               {/* Botão de Ação Principal */}
               <div className="pt-2 flex flex-col gap-2">
-                {/* Botão Cancelar Embarque — visível só quando liberado */}
+                {/* Se liberado: Mostra o botão LIBERADO com status e opção de alterar trajeto */}
                 {isLiberado && (
-                  <button
-                    onClick={() => handleCancelarEmbarque()}
-                    disabled={isSubmitting}
-                    className="w-full py-4 rounded-full font-display font-black text-base uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] bg-zinc-800 [html.light_&]:bg-slate-100 text-zinc-300 [html.light_&]:text-slate-600 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/40 border border-zinc-700 [html.light_&]:border-slate-300"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                    Cancelar Embarque
-                  </button>
+                  <>
+                    <button
+                      onClick={() => setShowCheckInModal(true)}
+                      className="w-full py-4 rounded-full font-display font-black text-base uppercase tracking-wider transition-all duration-300 relative overflow-hidden flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30"
+                    >
+                      <Check size={22} strokeWidth={3} />
+                      LIBERADO {attendance?.tripType === 'ida' ? '(SÓ IDA)' : attendance?.tripType === 'volta' ? '(SÓ VOLTA)' : '(IDA E VOLTA)'}
+                    </button>
+                    
+                    <button
+                      onClick={() => handleCancelarEmbarque()}
+                      disabled={isSubmitting}
+                      className="w-full py-2.5 rounded-full font-display font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 border border-white/10 [html.light_&]:border-slate-200"
+                    >
+                      <X size={15} />
+                      Cancelar Embarque
+                    </button>
+                  </>
                 )}
 
-                {/* Botão principal de liberar / reativar / status */}
+                {/* Se não liberado (aguardando / cancelado / embarcado) */}
                 {!isLiberado && (
                   <button
                     onClick={() => isAguardando ? setShowCheckInModal(true) : handleCheckIn(selectedTripType)}
@@ -952,7 +970,7 @@ export default function StudentMap() {
                         </>
                       ) : (
                         <>
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                          <Navigation size={22} />
                           FAZER CHECK-IN
                         </>
                       )}
@@ -994,9 +1012,17 @@ export default function StudentMap() {
               setIsPanelCollapsed(!isPanelCollapsed);
               setIsPublicListOpen(false);
             }}
-            className={`flex flex-col items-center justify-center transition-colors ${!isPanelCollapsed ? 'text-orange-500' : 'text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500'}`}
+            className={`flex flex-col items-center justify-center transition-colors ${
+              !isPanelCollapsed
+                ? 'text-orange-500'
+                : isLiberado
+                ? 'text-emerald-400'
+                : 'text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500'
+            }`}
           >
-            <div className="p-2"><Navigation size={24} /></div>
+            <div className="p-2 relative">
+              {isLiberado ? <Check size={24} className="text-emerald-400" strokeWidth={2.5} /> : <Navigation size={24} />}
+            </div>
             <span className="text-[11px] font-medium mt-0.5">
               {isEmbarcado ? 'Embarcado' : isLiberado ? 'Liberado' : 'Embarque'}
             </span>
@@ -1065,23 +1091,23 @@ export default function StudentMap() {
               
               <div className="space-y-3">
                 <button
+                  type="button"
                   onClick={() => { setShowCheckInModal(false); handleCheckIn('ida_volta'); }}
-                  disabled={isSubmitting}
-                  className="w-full py-4 rounded-xl font-bold bg-orange-500 hover:bg-orange-600 text-black transition-colors flex items-center justify-center"
+                  className="w-full py-4 rounded-xl font-bold bg-orange-500 hover:bg-orange-600 active:scale-[0.98] text-black transition-all flex items-center justify-center cursor-pointer shadow-md"
                 >
                   Ida e Volta
                 </button>
                 <button
+                  type="button"
                   onClick={() => { setShowCheckInModal(false); handleCheckIn('ida'); }}
-                  disabled={isSubmitting}
-                  className="w-full py-4 rounded-xl font-bold bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 text-white [html.light_&]:text-slate-900 border border-white/10 [html.light_&]:border-slate-300 transition-colors flex items-center justify-center"
+                  className="w-full py-4 rounded-xl font-bold bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 active:scale-[0.98] text-white [html.light_&]:text-slate-900 border border-white/10 [html.light_&]:border-slate-300 transition-all flex items-center justify-center cursor-pointer"
                 >
                   Só Ida
                 </button>
                 <button
+                  type="button"
                   onClick={() => { setShowCheckInModal(false); handleCheckIn('volta'); }}
-                  disabled={isSubmitting}
-                  className="w-full py-4 rounded-xl font-bold bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 text-white [html.light_&]:text-slate-900 border border-white/10 [html.light_&]:border-slate-300 transition-colors flex items-center justify-center"
+                  className="w-full py-4 rounded-xl font-bold bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 active:scale-[0.98] text-white [html.light_&]:text-slate-900 border border-white/10 [html.light_&]:border-slate-300 transition-all flex items-center justify-center cursor-pointer"
                 >
                   Só Volta
                 </button>
