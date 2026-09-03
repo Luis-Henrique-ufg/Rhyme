@@ -1127,27 +1127,35 @@ export default function StudentMap() {
               <p className="text-sm text-zinc-400 [html.light_&]:text-slate-500 mb-6">Selecione seu trajeto para confirmar sua presença na lista do motorista.</p>
               
               <div className="space-y-3">
-                <button
-                  type="button"
-                  onClick={() => { setShowCheckInModal(false); handleCheckIn('ida_volta'); }}
-                  className="w-full py-4 rounded-xl font-bold bg-orange-500 hover:bg-orange-600 active:scale-[0.98] text-black transition-all flex items-center justify-center cursor-pointer shadow-md"
-                >
-                  Ida e Volta
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowCheckInModal(false); handleCheckIn('ida'); }}
-                  className="w-full py-4 rounded-xl font-bold bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 active:scale-[0.98] text-white [html.light_&]:text-slate-900 border border-white/10 [html.light_&]:border-slate-300 transition-all flex items-center justify-center cursor-pointer"
-                >
-                  Só Ida
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setShowCheckInModal(false); handleCheckIn('volta'); }}
-                  className="w-full py-4 rounded-xl font-bold bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 active:scale-[0.98] text-white [html.light_&]:text-slate-900 border border-white/10 [html.light_&]:border-slate-300 transition-all flex items-center justify-center cursor-pointer"
-                >
-                  Só Volta
-                </button>
+                {[
+                  { id: 'ida_volta', label: 'Ida e Volta' },
+                  { id: 'ida', label: 'Só Ida' },
+                  { id: 'volta', label: 'Só Volta' }
+                ].map((option) => {
+                  const currentSelection = attendance?.tripType || selectedTripType || 'ida_volta';
+                  const isSelected = currentSelection === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedTripType(option.id);
+                        setShowCheckInModal(false);
+                        handleCheckIn(option.id);
+                      }}
+                      className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-between px-5 cursor-pointer active:scale-[0.98] ${
+                        isSelected
+                          ? 'bg-orange-500 hover:bg-orange-600 text-black shadow-lg shadow-orange-500/20'
+                          : 'bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 text-white [html.light_&]:text-slate-900 border border-white/10 [html.light_&]:border-slate-300'
+                      }`}
+                    >
+                      <span className="flex-1 text-center font-black tracking-wide">{option.label}</span>
+                      {isSelected && (
+                        <Check size={20} strokeWidth={3} className="text-black shrink-0 -ml-5" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
               <button 
