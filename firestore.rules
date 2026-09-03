@@ -22,9 +22,11 @@ service cloud.firestore {
       allow read: if request.auth != null;
       // Qualquer usuário (inclusive aluno) pode criar a viagem do dia se ela não existir
       allow create: if request.auth != null;
-      // Apenas motoristas podem atualizar a viagem (mudar status, gps, etc)
-      allow update: if request.auth != null 
-                    && get(/databases/$(database)/documents/students/$(request.auth.uid)).data.role == 'driver';
+      // Motoristas podem atualizar tudo; Alunos embarcados podem transmitir localização da van
+      allow update: if request.auth != null && (
+        get(/databases/$(database)/documents/students/$(request.auth.uid)).data.role == 'driver'
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['busLocation', 'locationProviderName', 'locationProviderId'])
+      );
       allow delete: if false;
     }
 

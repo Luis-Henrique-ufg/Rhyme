@@ -38,10 +38,10 @@ const TILE_NIGHT = `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/
 const TILE_ATTR_DAY = '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>';
 const TILE_ATTR_NIGHT = '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>';
 
-// Ícone do motorista (Van / Ônibus) — estilo Uber, adapta ao horário
-const createBusIcon = (isCrominia, isDark = true) => {
+// Ícone do motorista (Van / Ônibus) — estilo Uber, adapta ao horário e transmissão ao vivo
+const createBusIcon = (isCrominia, isDark = true, isBroadcasting = false) => {
   const night = isDark;
-  const label = isCrominia ? 'Ônibus' : 'VAN';
+  const label = isCrominia ? 'Ônibus' : (isBroadcasting ? 'VAN (AO VIVO)' : 'VAN');
   const bgColor = isCrominia
     ? (night ? '#ffffff' : '#18181b')
     : '#f97316';
@@ -50,17 +50,35 @@ const createBusIcon = (isCrominia, isDark = true) => {
     : (night ? '#111' : '#fff7ed');
   const iconColor = isCrominia ? (night ? '#111' : '#f4f4f5') : '#ffffff';
   const wheelColor = isCrominia ? (night ? '#f4f4f5' : '#111') : '#111';
+
+  const pulseRing = isBroadcasting ? `
+    <div style="
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2.5px solid #f97316;
+      background: radial-gradient(circle, rgba(249, 115, 22, 0.35) 0%, transparent 70%);
+      animation: radarPulse 2s ease-out infinite;
+      pointer-events: none;
+    "></div>
+  ` : '';
+
   return L.divIcon({
     html: `
       <div style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:none;">
+        ${pulseRing}
         <div style="
           background: ${night ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.96)'};
-          color: ${night ? '#f4f4f5' : '#18181b'};
+          color: ${isBroadcasting ? '#f97316' : (night ? '#f4f4f5' : '#18181b')};
           font-size: 10px; font-weight: 800;
           font-family: Inter, system-ui, sans-serif;
           padding: 2px 7px; border-radius: 6px; white-space: nowrap;
           box-shadow: 0 2px 6px rgba(0,0,0,${night ? '0.5' : '0.15'});
-          border: 1px solid ${night ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'};
+          border: 1px solid ${isBroadcasting ? 'rgba(249,115,22,0.4)' : (night ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)')};
           margin-bottom: 4px; letter-spacing: 0.02em; text-transform: uppercase;
         ">${label}</div>
         <div style="
@@ -68,6 +86,7 @@ const createBusIcon = (isCrominia, isDark = true) => {
           border: 3.5px solid ${borderColor};
           box-shadow: 0 6px 20px rgba(0,0,0,${night ? '0.6' : '0.2'});
           display:flex; align-items:center; justify-content:center; color:${iconColor};
+          position: relative;
         ">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none">
             <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h2"></path>
@@ -255,13 +274,27 @@ const MapInteractionListener = ({ onInteract }) => {
   return null;
 };
 
+const MapFlyTo = ({ target, trigger }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (trigger && target?.lat && target?.lng) {
+      map.flyTo([target.lat, target.lng], 16, { duration: 1.2 });
+    }
+  }, [trigger]);
+  return null;
+};
+
 export default function StudentMap() {
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
   const navigate = useNavigate();
   const { showAlert } = useCustomAlert();
-  const busIcon = useMemo(() => createBusIcon(false, isDark), [isDark]);
-  const busIconAlt = useMemo(() => createBusIcon(true, isDark), [isDark]);
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [broadcastingLocation, setBroadcastingLocation] = useState(null);
+  const [focusTrigger, setFocusTrigger] = useState(0);
+
+  const busIcon = useMemo(() => createBusIcon(false, isDark, isBroadcasting), [isDark, isBroadcasting]);
+  const busIconAlt = useMemo(() => createBusIcon(true, isDark, isBroadcasting), [isDark, isBroadcasting]);
   const [student, setStudent] = useState(null);
   const [attendance, setAttendance] = useState(null);
   const [studentLoading, setStudentLoading] = useState(true);
@@ -276,7 +309,6 @@ export default function StudentMap() {
   const [isRouteBadgeOpen, setIsRouteBadgeOpen] = useState(false);
   const [routePath, setRoutePath] = useState([]);
   const [isPublicListOpen, setIsPublicListOpen] = useState(false);
-  const [isBroadcasting, setIsBroadcasting] = useState(false);
   const watchIdRef = useRef(null);
   const fallbackIntervalRef = useRef(null);
   const simulationInterval = useRef(null);
@@ -287,8 +319,12 @@ export default function StudentMap() {
 
   const loading = studentLoading || (Boolean(student?.route) && tripLoading);
 
-  // ETA real via OSRM (atualiza quando o ônibus se move)
-  const busLocation = trip?.busLocation;
+  // Posição ativa da Van: se o aluno estiver transmitindo seu GPS, a van aparece na posição dele em tempo real
+  const activeBusLocation = (isBroadcasting && broadcastingLocation)
+    ? broadcastingLocation
+    : (trip?.busLocation?.lat != null && trip?.busLocation?.lng != null ? trip.busLocation : null);
+  const busLocation = activeBusLocation;
+
   const _isLiberadoForEta = attendance?.status === 'liberado';
   const { etaMinutes } = useOsrmEta(
     _isLiberadoForEta ? (busLocation?.lat ?? null) : null,
@@ -447,41 +483,92 @@ export default function StudentMap() {
     }
   }, [isLiberado, attendance?.lat, attendance?.lng, trip?.busLocation]);
 
+  // Efeito de transmissão de GPS da Van pelo aluno embarcado
   useEffect(() => {
-    if (isBroadcasting && trip?.id && user?.uid) {
+    if (isBroadcasting && user?.uid) {
+      // 1. Imediatamente inicializa a posição com os dados disponíveis para não ter delay visual
+      if (!broadcastingLocation) {
+        if (attendance?.lat && attendance?.lng) {
+          setBroadcastingLocation({ lat: attendance.lat, lng: attendance.lng });
+        } else if (trip?.busLocation?.lat && trip?.busLocation?.lng) {
+          setBroadcastingLocation({ lat: trip.busLocation.lat, lng: trip.busLocation.lng });
+        }
+      }
+
       const sendLocation = async (position) => {
         const { latitude, longitude } = position.coords;
-        try {
-          await updateDoc(doc(db, 'trips', trip.id), {
-            busLocation: { lat: latitude, lng: longitude },
-            locationProviderName: student?.name || 'Aluno',
-            locationProviderId: user.uid
-          });
-        } catch (e) {
-          console.error("Erro ao enviar GPS como aluno:", e);
+        setBroadcastingLocation({ lat: latitude, lng: longitude });
+
+        const targetTripId = tripId || trip?.id;
+        if (targetTripId) {
+          try {
+            await updateDoc(doc(db, 'trips', targetTripId), {
+              busLocation: { lat: latitude, lng: longitude },
+              locationProviderName: student?.name || 'Aluno',
+              locationProviderId: user.uid
+            });
+          } catch (e) {
+            console.error("Erro ao enviar GPS como aluno:", e);
+          }
         }
       };
 
       if (navigator.geolocation) {
-        watchIdRef.current = navigator.geolocation.watchPosition(sendLocation, (err) => console.error(err), {
+        // Chamada imediata para primeira captura precisa
+        navigator.geolocation.getCurrentPosition(sendLocation, (err) => {
+          console.warn("GPS inicial:", err);
+        }, {
           enableHighAccuracy: true,
-          maximumAge: 0
+          timeout: 8000,
+          maximumAge: 1000
         });
 
+        // Observador contínuo em tempo real (dispara a cada movimento do veículo)
+        watchIdRef.current = navigator.geolocation.watchPosition(sendLocation, (err) => {
+          console.error("watchPosition erro:", err);
+        }, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 1000
+        });
+
+        // Polling de garantia
         fallbackIntervalRef.current = setInterval(() => {
           navigator.geolocation.getCurrentPosition(sendLocation, () => {}, {
             enableHighAccuracy: true,
             maximumAge: 5000
           });
-        }, 10000);
+        }, 6000);
+      } else {
+        showAlert("Geolocalização não disponível no dispositivo.");
       }
 
       return () => {
         if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
         if (fallbackIntervalRef.current) clearInterval(fallbackIntervalRef.current);
       };
+    } else if (!isBroadcasting) {
+      setBroadcastingLocation(null);
     }
-  }, [isBroadcasting, trip?.id, user?.uid, student?.name]);
+  }, [isBroadcasting, trip?.id, tripId, user?.uid, student?.name, attendance?.lat, attendance?.lng]);
+
+  const handleToggleBroadcasting = () => {
+    const nextState = !isBroadcasting;
+    setIsBroadcasting(nextState);
+
+    if (nextState) {
+      if (attendance?.lat && attendance?.lng) {
+        setBroadcastingLocation({ lat: attendance.lat, lng: attendance.lng });
+      } else if (trip?.busLocation?.lat && trip?.busLocation?.lng) {
+        setBroadcastingLocation({ lat: trip.busLocation.lat, lng: trip.busLocation.lng });
+      }
+      setFocusTrigger(prev => prev + 1);
+      showAlert("📍 Transmissão da Van ativada! O ícone da Van agora segue sua posição em tempo real.");
+    } else {
+      setBroadcastingLocation(null);
+      showAlert("Transmissão da Van pausada.");
+    }
+  };
 
 
   const handleTripTypeChange = async (type) => {
@@ -725,8 +812,18 @@ export default function StudentMap() {
           )}
         </div>
 
+        {/* Banner: Transmitindo GPS como aluno embarcado */}
+        {isBroadcasting && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1001] w-max max-w-[90vw]">
+            <div className="flex items-center gap-2 bg-black/85 [html.light_&]:bg-white/95 backdrop-blur-md border border-orange-500/40 text-orange-400 [html.light_&]:text-orange-600 text-xs font-bold px-4 py-2 rounded-full shadow-2xl">
+              <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-ping"></span>
+              Transmitindo localização da Van em tempo real
+            </div>
+          </div>
+        )}
+
         {/* Banner: aguardando GPS do motorista */}
-        {trip?.status === 'in_progress' && !busLocation && (
+        {!isBroadcasting && trip?.status === 'in_progress' && !busLocation && (
           <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1001] w-max max-w-[90vw]">
             <div className="flex items-center gap-2 bg-black/80 [html.light_&]:bg-white/95 backdrop-blur-md border border-white/10 [html.light_&]:border-slate-200 text-zinc-300 [html.light_&]:text-slate-700 text-xs font-medium px-4 py-2 rounded-full shadow-xl animate-pulse">
               <svg className="w-3.5 h-3.5 text-orange-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -810,22 +907,20 @@ export default function StudentMap() {
             );
           })}
 
-          {/* Marcador do Ônibus da Rota Atual em Tempo Real */}
-          {trip?.busLocation?.lat != null && trip?.busLocation?.lng != null && !isNaN(trip.busLocation.lat) && !isNaN(trip.busLocation.lng) && (
-            <Marker key={trip.id} position={[trip.busLocation.lat, trip.busLocation.lng]} icon={student.route === 'Cromínia' ? busIconAlt : busIcon} zIndexOffset={1000}>
+          {/* Marcador do Ônibus / Van em Tempo Real */}
+          {activeBusLocation?.lat != null && activeBusLocation?.lng != null && !isNaN(activeBusLocation.lat) && !isNaN(activeBusLocation.lng) && (
+            <Marker 
+              key={trip?.id ? `${trip.id}_bus` : 'active_bus'} 
+              position={[activeBusLocation.lat, activeBusLocation.lng]} 
+              icon={student.route === 'Cromínia' ? busIconAlt : busIcon} 
+              zIndexOffset={1000}
+            >
               <Popup className="dark-popup">
                 <span className="font-bold text-orange-500 flex flex-col gap-1">
-                  <span>{student.route === 'Cromínia' ? 'Ônibus' : 'Van'} ({trip.route})</span>
-                  {trip.locationProviderName && (
-                    <span className="text-[10px] text-zinc-400 [html.light_&]:text-slate-500 uppercase tracking-wider font-semibold">
-                      📍 Via: {trip.locationProviderName}
-                    </span>
-                  )}
-                  {!trip.locationProviderName && (
-                    <span className="text-[10px] text-zinc-400 [html.light_&]:text-slate-500 uppercase tracking-wider font-semibold">
-                      📍 Via: {trip.driverName || 'Motorista'}
-                    </span>
-                  )}
+                  <span>{student.route === 'Cromínia' ? 'Ônibus' : 'Van'} ({trip?.route || student.route})</span>
+                  <span className="text-[10px] text-zinc-400 [html.light_&]:text-slate-500 uppercase tracking-wider font-semibold">
+                    📍 {isBroadcasting ? 'Transmitido por você (Você está a bordo)' : `Via: ${trip?.locationProviderName || trip?.driverName || 'Motorista'}`}
+                  </span>
                 </span>
               </Popup>
             </Marker>
@@ -849,10 +944,17 @@ export default function StudentMap() {
             <Marker position={[tempLocation.lat, tempLocation.lng]} icon={createStudentPinIcon('Novo Local', student.route === 'Cromínia', isDark)} zIndexOffset={900} />
           )}
 
-          {/* Botão de Centralizar no GPS do Aluno */}
-          {attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && !isEditingLocation && (
-            <RecenterButton lat={attendance.lat} lng={attendance.lng} isPanelCollapsed={isPanelCollapsed} />
+          {/* Botão de Centralizar no GPS */}
+          {!isEditingLocation && (
+            isEmbarcado && activeBusLocation?.lat != null && activeBusLocation?.lng != null ? (
+              <RecenterButton lat={activeBusLocation.lat} lng={activeBusLocation.lng} isPanelCollapsed={isPanelCollapsed} />
+            ) : attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) ? (
+              <RecenterButton lat={attendance.lat} lng={attendance.lng} isPanelCollapsed={isPanelCollapsed} />
+            ) : null
           )}
+
+          {/* Controlador de Voo Suave no Início da Transmissão */}
+          <MapFlyTo target={activeBusLocation} trigger={focusTrigger} />
         </MapContainer>
 
         {/* UI do Modo de Edição de Local */}
@@ -1095,17 +1197,18 @@ export default function StudentMap() {
 
           {isEmbarcado && (
             <button 
-              onClick={() => setIsBroadcasting(!isBroadcasting)}
-              className={`flex flex-col items-center justify-center transition-colors ${
+              onClick={handleToggleBroadcasting}
+              className={`flex flex-col items-center justify-center transition-all cursor-pointer ${
                 isBroadcasting 
-                  ? 'text-red-500 hover:text-red-400' 
+                  ? 'text-red-500 hover:text-red-400 font-bold scale-105' 
                   : 'text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500'
               }`}
+              title={isBroadcasting ? "Pausar transmissão de GPS da van" : "Transmitir GPS da van para os outros alunos"}
             >
               <div className="p-2 relative">
                 <Radio size={24} className={isBroadcasting ? "animate-pulse" : ""} />
                 {isBroadcasting && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full shadow-[0_0_8px_#ef4444] animate-ping"></span>
                 )}
               </div>
               <span className="text-[11px] font-medium mt-0.5">{isBroadcasting ? 'GPS Ativo' : 'Enviar GPS'}</span>
