@@ -314,7 +314,8 @@ export default function Register() {
               onChange={handleChange}
               options={[
                 { value: 'Professor Jamil', label: 'Professor Jamil' },
-                { value: 'Cromínia', label: 'Cromínia' }
+                { value: 'Cromínia', label: 'Cromínia' },
+                { value: 'Hidrolândia', label: 'Hidrolândia' }
               ]}
             />
           </div>

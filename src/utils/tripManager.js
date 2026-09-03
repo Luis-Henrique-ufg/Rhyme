@@ -10,6 +10,7 @@ export function normalizeRoute(route) {
   const r = route.trim();
   if (r.toLowerCase().includes('jamil')) return 'Professor Jamil';
   if (r.toLowerCase().includes('crom')) return 'Cromínia';
+  if (r.toLowerCase().includes('hidrol')) return 'Hidrolândia';
   return r;
 }
 

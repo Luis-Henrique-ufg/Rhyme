@@ -425,7 +425,7 @@ const DropdownSelect = ({ value, onChange, options }) => {
                   <DropdownSelect
                     value={newRoute}
                     onChange={(val) => setNewRoute(val)}
-                    options={['Professor Jamil', 'Cromínia'].map(f => ({ label: f, value: f }))}
+                    options={['Professor Jamil', 'Cromínia', 'Hidrolândia'].map(f => ({ label: f, value: f }))}
                   />
                 </div>
 
