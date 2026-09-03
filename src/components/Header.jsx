@@ -310,8 +310,6 @@ const DropdownSelect = ({ value, onChange, options }) => {
         )}
       </div>
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Theme Toggle Button */}
-          <ThemeToggle />
 
           {(deferredPrompt || isIOSAndNotInstalled) && (
             <button

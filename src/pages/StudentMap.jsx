@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline } from 'react-leaflet';
-import { Users, Check, RefreshCcw, MapPin, Navigation, LocateFixed, X } from 'lucide-react';
+import { Users, Check, RefreshCcw, MapPin, Navigation, LocateFixed, X, Radio } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -1062,30 +1062,7 @@ export default function StudentMap() {
                     </span>
                   </button>
                 )}
-
-                {/* Botão de Compartilhar GPS (Fallback do Motorista) - Apenas se estiver embarcado */}
-                {isEmbarcado && (
-                  <button
-                    onClick={() => setIsBroadcasting(!isBroadcasting)}
-                    className={`w-full mt-2 py-3 rounded-full font-bold text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 border ${
-                      isBroadcasting
-                        ? 'bg-red-500/20 text-red-500 border-red-500/50 hover:bg-red-500/30'
-                        : 'bg-[#1a1a1a] [html.light_&]:bg-slate-100 text-zinc-400 [html.light_&]:text-slate-600 border-white/5 [html.light_&]:border-slate-200 hover:text-white [html.light_&]:hover:text-slate-900 hover:border-white/20'
-                    }`}
-                  >
-                    {isBroadcasting ? (
-                      <>
-                        <svg className="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" /></svg>
-                        Parar Transmissão de GPS
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" /></svg>
-                        Transmitir GPS (Substituir Motorista)
-                      </>
-                    )}
-                  </button>
-                )}
+                {/* Botão de Compartilhar GPS foi movido para a barra inferior */}
               </div>
 
             </div>
@@ -1142,6 +1119,25 @@ export default function StudentMap() {
                <div className="p-2"><MapPin size={24} /></div>
                <span className="text-[11px] font-medium mt-0.5">Ajustar</span>
              </button>
+          )}
+
+          {isEmbarcado && (
+            <button 
+              onClick={() => setIsBroadcasting(!isBroadcasting)}
+              className={`flex flex-col items-center justify-center transition-colors ${
+                isBroadcasting 
+                  ? 'text-red-500 hover:text-red-400' 
+                  : 'text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500'
+              }`}
+            >
+              <div className="p-2 relative">
+                <Radio size={24} className={isBroadcasting ? "animate-pulse" : ""} />
+                {isBroadcasting && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
+              </div>
+              <span className="text-[11px] font-medium mt-0.5">{isBroadcasting ? 'GPS Ativo' : 'Enviar GPS'}</span>
+            </button>
           )}
 
         </div>
