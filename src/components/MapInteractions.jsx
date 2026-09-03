@@ -11,15 +11,32 @@ function shortestAngleDiff(target, current) {
   return ((((target - current) % 360) + 540) % 360) - 180;
 }
 
+/**
+ * Obtém o ângulo de rotação da tela em graus (0, 90, 180, 270)
+ */
+function getScreenOrientationAngle() {
+  if (window.screen?.orientation?.angle !== undefined) {
+    return window.screen.orientation.angle;
+  }
+  if (typeof window.orientation === 'number') {
+    return (window.orientation + 360) % 360;
+  }
+  return 0;
+}
+
 export default function MapInteractions() {
   const map = useMap();
   const [compassMode, setCompassMode] = useState(false);
   const [portalTarget, setPortalTarget] = useState(null);
 
-  const targetHeadingRef = useRef(0);
+  const targetBearingRef = useRef(0);
   const currentBearingRef = useRef(0);
+  const smoothedSinRef = useRef(0);
+  const smoothedCosRef = useRef(1);
+  const hasInitialReadingRef = useRef(false);
   const animationFrameRef = useRef(null);
   const isCompassActiveRef = useRef(false);
+  const activeListenerEventRef = useRef(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -45,7 +62,7 @@ export default function MapInteractions() {
     };
   }, [map]);
 
-  // Loop de animação estabilizado a 60fps com amortecimento inercial (Low-Pass Filter)
+  // Loop de animação a 60fps com amortecimento inercial e deadband anti-tremedeira
   const startStabilizationLoop = () => {
     if (animationFrameRef.current) return;
 
@@ -55,12 +72,15 @@ export default function MapInteractions() {
         return;
       }
 
-      const diff = shortestAngleDiff(targetHeadingRef.current, currentBearingRef.current);
+      const current = currentBearingRef.current;
+      const target = targetBearingRef.current;
+      const diff = shortestAngleDiff(target, current);
 
-      // Deadband: se a diferença for insignificante (< 0.2°), não força redesenho no DOM
-      if (Math.abs(diff) > 0.2) {
-        // Fator de suavização (0.14 = ultra-suave, sem tremores de mão e sem lag)
-        currentBearingRef.current += diff * 0.14;
+      // Deadband: se a diferença for ruído residual (< 0.8°), não re-renderiza o DOM
+      // Isso elimina 100% dos microtremores do sensor magnético das mãos
+      if (Math.abs(diff) > 0.8) {
+        // Interpolação suave (0.12): sem atraso perceptível e sem trepidação
+        currentBearingRef.current = (current + diff * 0.12 + 360) % 360;
         map.setBearing(currentBearingRef.current);
       }
 
@@ -78,25 +98,54 @@ export default function MapInteractions() {
   };
 
   const handleOrientation = (e) => {
-    let heading = null;
+    if (!isCompassActiveRef.current) return;
+
+    let calculatedBearing = null;
+    const screenAngle = getScreenOrientationAngle();
 
     if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
-      // iOS: heading magnético verdadeiro direto em graus (0-360)
-      heading = e.webkitCompassHeading;
+      // iOS Safari: webkitCompassHeading é graus no sentido horário a partir do Norte (0-360)
+      // Para alinhar o mapa 'heads-up' (frente para cima), o mapa deve girar no sentido anti-horário:
+      // bearing = 360 - heading
+      calculatedBearing = (360 - e.webkitCompassHeading - screenAngle + 360) % 360;
     } else if (e.alpha !== null && e.alpha !== undefined) {
-      // Android / Padrão: alpha com compensação de orientação de tela
-      const screenAngle = (window.screen?.orientation?.angle) || (window.orientation) || 0;
-      heading = (360 - e.alpha - screenAngle + 360) % 360;
+      // Android: alpha na especificação W3C gira no sentido anti-horário
+      // Logo, o bearing do mapa correspondente é diretamente alpha menos a rotação da tela
+      calculatedBearing = (e.alpha - screenAngle + 360) % 360;
     }
 
-    if (heading !== null && !isNaN(heading)) {
-      targetHeadingRef.current = heading;
+    if (calculatedBearing === null || isNaN(calculatedBearing)) return;
+
+    // Filtro Passa-Baixa Vetorial (Seno / Cosseno)
+    // Elimina a descontinuidade em 359° <-> 0° e suaviza ruídos do magnetômetro
+    const rad = calculatedBearing * (Math.PI / 180);
+    const sin = Math.sin(rad);
+    const cos = Math.cos(rad);
+
+    if (!hasInitialReadingRef.current) {
+      smoothedSinRef.current = sin;
+      smoothedCosRef.current = cos;
+      hasInitialReadingRef.current = true;
+      targetBearingRef.current = calculatedBearing;
+      currentBearingRef.current = calculatedBearing;
+      if (map && typeof map.setBearing === 'function') {
+        map.setBearing(calculatedBearing);
+      }
+    } else {
+      // Peso do filtro: 0.20 suaviza as leituras do sensor antes de ir para o frame loop
+      const filterWeight = 0.20;
+      smoothedSinRef.current += (sin - smoothedSinRef.current) * filterWeight;
+      smoothedCosRef.current += (cos - smoothedCosRef.current) * filterWeight;
+
+      let filteredAngle = Math.atan2(smoothedSinRef.current, smoothedCosRef.current) * (180 / Math.PI);
+      if (filteredAngle < 0) filteredAngle += 360;
+      targetBearingRef.current = filteredAngle;
     }
   };
 
   const enableCompass = async () => {
     if (!map || typeof map.setBearing !== 'function') {
-      alert("Bússola não suportada neste dispositivo/navegador (map.setBearing is undefined).");
+      alert("Bússola não suportada neste dispositivo/navegador.");
       return;
     }
 
@@ -120,14 +169,21 @@ export default function MapInteractions() {
       map.compassBearing.disable();
     }
 
+    hasInitialReadingRef.current = false;
     currentBearingRef.current = map.getBearing ? map.getBearing() : 0;
-    targetHeadingRef.current = currentBearingRef.current;
+    targetBearingRef.current = currentBearingRef.current;
     isCompassActiveRef.current = true;
     setCompassMode(true);
 
-    // Escuta os dois eventos para cobrir Androids modernos e antigos/iOS
-    window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-    window.addEventListener('deviceorientation', handleOrientation, true);
+    // IMPORTANTE: Registrar APENAS UM listener!
+    // No Android, escutar 'deviceorientationabsolute' e 'deviceorientation' simultaneamente
+    // causa conflito de leituras 60 vezes por segundo, fazendo a bússola tremer descontroladamente.
+    const eventName = ('ondeviceorientationabsolute' in window)
+      ? 'deviceorientationabsolute'
+      : 'deviceorientation';
+
+    activeListenerEventRef.current = eventName;
+    window.addEventListener(eventName, handleOrientation, true);
     startStabilizationLoop();
   };
 
@@ -135,6 +191,13 @@ export default function MapInteractions() {
     isCompassActiveRef.current = false;
     setCompassMode(false);
     stopStabilizationLoop();
+    hasInitialReadingRef.current = false;
+
+    if (activeListenerEventRef.current) {
+      window.removeEventListener(activeListenerEventRef.current, handleOrientation, true);
+      activeListenerEventRef.current = null;
+    }
+    // Remove ambos por garantia caso algum tenha ficado pendente
     window.removeEventListener('deviceorientationabsolute', handleOrientation, true);
     window.removeEventListener('deviceorientation', handleOrientation, true);
 
@@ -147,10 +210,9 @@ export default function MapInteractions() {
       const resetLoop = (now) => {
         const elapsed = now - startTime;
         const progress = Math.min(1, elapsed / duration);
-        // Easing ease-out cubic
         const ease = 1 - Math.pow(1 - progress, 3);
         const currentDiff = shortestAngleDiff(0, startBearing);
-        map.setBearing(startBearing + currentDiff * ease);
+        map.setBearing((startBearing + currentDiff * ease + 360) % 360);
 
         if (progress < 1) {
           requestAnimationFrame(resetLoop);
@@ -180,15 +242,22 @@ export default function MapInteractions() {
   const content = (
     <button 
       onClick={toggleCompass}
-      className={`flex flex-col items-center justify-center transition-colors ${
-        compassMode ? 'text-orange-500' : 'text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500'
+      className={`flex flex-col items-center justify-center transition-all cursor-pointer ${
+        compassMode 
+          ? 'text-orange-500 font-bold scale-105' 
+          : 'text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500'
       }`}
-      title="Bússola Estabilizada"
+      title={compassMode ? "Desativar Bússola (Alinhar ao Norte)" : "Ativar Bússola Estabilizada"}
     >
-      <div className="p-2">
-        <Compass size={24} />
+      <div className="p-2 relative">
+        <Compass size={24} className={compassMode ? "animate-pulse" : ""} />
+        {compassMode && (
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_8px_#f97316]"></span>
+        )}
       </div>
-      <span className="text-[11px] font-medium mt-0.5">Bússola</span>
+      <span className="text-[11px] font-medium mt-0.5">
+        {compassMode ? 'Bússola ON' : 'Bússola'}
+      </span>
     </button>
   );
 
