@@ -200,9 +200,9 @@ const createFacultyIcon = (name, isCrominia, isDark = true) => {
 };
 
 // Ícone de aluno — teardrop/pin nativo do Mapbox, mas com foto ou inicial
-const createStudentPinIcon = (name, isCrominia, isDark = true) => {
+const createStudentPinIcon = (name, isCrominia, isDark = true, isSoIda = false) => {
   const night = isDark;
-  const accent = isCrominia ? (isDark ? '#71717a' : '#475569') : '#f97316';
+  const accent = isSoIda ? '#71717a' : (isCrominia ? (isDark ? '#71717a' : '#475569') : '#f97316');
   const textColor = night ? '#f4f4f5' : '#18181b';
   const labelBg = night ? 'rgba(10,10,10,0.95)' : 'rgba(255,255,255,0.97)';
   const shadow = night ? '0 4px 14px rgba(0,0,0,0.65)' : '0 3px 10px rgba(0,0,0,0.32)';
@@ -581,11 +581,9 @@ export default function DriverDashboard() {
     const clusters = [];
     
     Object.entries(attendanceMap).forEach(([studentId, att]) => {
-      // Alunos 'só ida' não são marcados no mapa de retorno
-      if (att.tripType === 'ida') return;
-      if ((att.status === 'liberado' || att.status === 'aguardando') && att.lat && att.lng) {
-        // Usa os dados do próprio attendance, sem depender do fetch estático de users
-        const student = { name: att.studentName || 'Aluno', faculty: att.faculty, status: att.status };
+      if ((att.status === 'liberado' || att.status === 'aguardando' || att.tripType === 'ida') && att.status !== 'cancelado' && att.status !== 'embarcado' && att.lat && att.lng) {
+        // Usa os dados do próprio attendance, incluindo tripType
+        const student = { name: att.studentName || 'Aluno', faculty: att.faculty, status: att.status, tripType: att.tripType };
 
         // Tentar adicionar a um cluster custom existente
         let addedToCluster = false;
@@ -1085,9 +1083,9 @@ export default function DriverDashboard() {
               <Polyline positions={activeLocalRoute} color={driver?.route === 'Cromínia' ? (isDark ? "#ffffff" : "#334155") : "#f97316"} weight={6} opacity={0.9} dashArray="10, 10" />
             )}
 
-            {/* Faculdades com passageiros ativos (Apenas da rota do motorista, excluindo só ida) */}
+            {/* Faculdades com passageiros ativos (Apenas da rota do motorista) */}
             {Object.entries(MOCK_FACULTIES)
-              .filter(([facName]) => Object.values(attendanceMap).some(att => att.faculty === facName && att.status !== 'cancelado' && att.tripType !== 'ida'))
+              .filter(([facName]) => Object.values(attendanceMap).some(att => att.faculty === facName && att.status !== 'cancelado'))
               .map(([facName, coords]) => {
                 const isCrominia = driver?.route === 'Cromínia';
                 return (
@@ -1116,9 +1114,11 @@ export default function DriverDashboard() {
               const showTeardrops = mapZoom >= 15;
 
               if (showTeardrops) {
-                // Zoom in: mostra cada aluno como teardrop individual
+                // Zoom in: mostra cada aluno como teardrop individual (cinza se for só ida)
+                const isSoIda = cluster.students.every(s => s.tripType === 'ida');
                 const primaryName = cluster.students[0]?.name || '';
-                const icon = createStudentPinIcon(primaryName, isCrominia, isDark);
+                const displayName = isSoIda ? `${primaryName} (Só Ida)` : primaryName;
+                const icon = createStudentPinIcon(displayName, isCrominia, isDark, isSoIda);
                 return (
                   <Marker 
                     key={cluster.id} 

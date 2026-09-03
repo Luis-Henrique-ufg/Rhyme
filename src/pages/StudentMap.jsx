@@ -748,9 +748,10 @@ export default function StudentMap() {
             attribution={isDark ? TILE_ATTR_NIGHT : TILE_ATTR_DAY}
             key={isDark ? 'night' : 'day'}
           />
-          {/* Marcador do próprio aluno (bolinha) — antes de liberar (não exibe se for só ida) */}
-          {attendance?.tripType !== 'ida' && attendance?.status !== 'liberado' && attendance?.status !== 'embarcado' && attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && (() => {
-            const accent = student.route === 'Cromínia' ? (isDark ? '#71717a' : '#475569') : '#f97316';
+          {/* Marcador do próprio aluno (bolinha) — antes de liberar (bolinha cinza se for só ida) */}
+          {attendance?.status !== 'liberado' && attendance?.status !== 'embarcado' && attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && (() => {
+            const isSoIda = attendance?.tripType === 'ida';
+            const accent = isSoIda ? '#71717a' : (student.route === 'Cromínia' ? (isDark ? '#71717a' : '#475569') : '#f97316');
             const dotIcon = L.divIcon({
               html: `
                 <div style="position:relative;display:flex;align-items:center;justify-content:center;width:56px;height:56px;pointer-events:none;">
@@ -764,27 +765,35 @@ export default function StudentMap() {
             return (
               <Marker position={[attendance.lat, attendance.lng]} icon={dotIcon} zIndexOffset={900}>
                 <Popup className="dark-popup">
-                  <span className="font-bold text-white [html.light_&]:text-slate-900">Sua localização</span>
+                  <span className="font-bold text-white [html.light_&]:text-slate-900">Sua localização {isSoIda ? '(Só Ida)' : ''}</span>
                 </Popup>
               </Marker>
             );
           })()}
 
-          {/* Marcadores de Alunos Liberados — bolinha laranja com sonar (não exibe se for só ida) */}
-          {publicList.filter(a => a.tripType !== 'ida' && a.status === 'liberado' && a.lat != null && a.lng != null && !isNaN(a.lat) && !isNaN(a.lng)).map(att => {
+          {/* Marcadores de Alunos — bolinha cinza para 'só ida', bolinha com sonar para liberados */}
+          {publicList.filter(a => {
+            if (a.studentId === user?.uid && attendance?.status !== 'liberado') return false;
+            if (a.status === 'cancelado' || a.status === 'embarcado') return false;
+            if (!a.lat || !a.lng || isNaN(a.lat) || isNaN(a.lng)) return false;
+            return a.status === 'liberado' || a.tripType === 'ida';
+          }).map(att => {
             const isMe = att.studentId === user?.uid;
-            const accent = student.route === 'Cromínia' ? (isDark ? '#71717a' : '#475569') : '#f97316';
-            const sonarIcon = L.divIcon({
+            const isSoIda = att.tripType === 'ida';
+            const accent = isSoIda ? '#71717a' : (student.route === 'Cromínia' ? (isDark ? '#71717a' : '#475569') : '#f97316');
+            const studentIcon = L.divIcon({
               html: `
                 <div style="position:relative;display:flex;align-items:center;justify-content:center;width:56px;height:56px;pointer-events:none;">
-                  <style>
-                    @keyframes sonar-ring {
-                      0%   { transform: scale(0.6); opacity: 0.65; }
-                      100% { transform: scale(2.8); opacity: 0; }
-                    }
-                  </style>
-                  <div style="position:absolute;width:22px;height:22px;border-radius:50%;background:${accent};opacity:0.2;animation:sonar-ring 3.5s ease-out infinite;"></div>
-                  <div style="position:absolute;width:22px;height:22px;border-radius:50%;background:${accent};opacity:0.15;animation:sonar-ring 3.5s ease-out 1.2s infinite;"></div>
+                  ${!isSoIda ? `
+                    <style>
+                      @keyframes sonar-ring {
+                        0%   { transform: scale(0.6); opacity: 0.65; }
+                        100% { transform: scale(2.8); opacity: 0; }
+                      }
+                    </style>
+                    <div style="position:absolute;width:22px;height:22px;border-radius:50%;background:${accent};opacity:0.2;animation:sonar-ring 3.5s ease-out infinite;"></div>
+                    <div style="position:absolute;width:22px;height:22px;border-radius:50%;background:${accent};opacity:0.15;animation:sonar-ring 3.5s ease-out 1.2s infinite;"></div>
+                  ` : ''}
                   <div style="position:relative;width:22px;height:22px;background:${accent};border-radius:50%;border:3px solid ${isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.35)'};box-shadow:0 3px 10px rgba(0,0,0,0.45);z-index:1;"></div>
                 </div>
               `,
@@ -793,9 +802,9 @@ export default function StudentMap() {
               iconAnchor: [28, 28]
             });
             return (
-              <Marker key={att.id} position={[att.lat, att.lng]} icon={sonarIcon} zIndexOffset={800}>
+              <Marker key={att.id} position={[att.lat, att.lng]} icon={studentIcon} zIndexOffset={isSoIda ? 750 : 800}>
                 <Popup className="dark-popup">
-                  <span className="font-bold text-white [html.light_&]:text-slate-900">{isMe ? `Você (${att.studentName})` : att.studentName}</span>
+                  <span className="font-bold text-white [html.light_&]:text-slate-900">{isMe ? `Você (${att.studentName})` : att.studentName} {isSoIda ? '(Só Ida)' : ''}</span>
                 </Popup>
               </Marker>
             );
@@ -840,8 +849,8 @@ export default function StudentMap() {
             <Marker position={[tempLocation.lat, tempLocation.lng]} icon={createStudentPinIcon('Novo Local', student.route === 'Cromínia', isDark)} zIndexOffset={900} />
           )}
 
-          {/* Botão de Centralizar no GPS do Aluno (se não for só ida) */}
-          {attendance?.tripType !== 'ida' && attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && !isEditingLocation && (
+          {/* Botão de Centralizar no GPS do Aluno */}
+          {attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && !isEditingLocation && (
             <RecenterButton lat={attendance.lat} lng={attendance.lng} isPanelCollapsed={isPanelCollapsed} />
           )}
         </MapContainer>
