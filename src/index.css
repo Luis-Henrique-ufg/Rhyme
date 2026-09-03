@@ -29,10 +29,26 @@
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
+  /* Light theme body: warm off-white with a faint texture */
   html.light body {
-    background-color: #f8fafc;
-    color: #0f172a;
+    background-color: #faf8f5;
+    color: #1a1109;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(249, 115, 22, 0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 90% 110%, rgba(251, 146, 60, 0.05) 0%, transparent 55%);
   }
+
+  /* Light theme scrollbars */
+  html.light ::-webkit-scrollbar { width: 6px; height: 6px; }
+  html.light ::-webkit-scrollbar-track { background: #f0ede8; }
+  html.light ::-webkit-scrollbar-thumb { background: #d4c9bb; border-radius: 3px; }
+  html.light ::-webkit-scrollbar-thumb:hover { background: #b8a99a; }
+
+  /* Dark scrollbars */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0a0a0a; }
+  ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
 }
 
 /* Glassmorphism Utilities */
@@ -42,9 +58,10 @@
   }
 
   html.light .glass {
-    background: rgba(255, 255, 255, 0.85);
-    border-color: rgba(0, 0, 0, 0.08);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    background: rgba(255, 252, 247, 0.88);
+    border-color: rgba(249, 115, 22, 0.12);
+    box-shadow: 0 4px 24px rgba(180, 100, 20, 0.08), 0 1px 3px rgba(0,0,0,0.04);
+    backdrop-filter: blur(12px);
   }
   
   .glass-card {
@@ -52,10 +69,10 @@
   }
 
   html.light .glass-card {
-    background: #ffffff;
-    border-color: rgba(0, 0, 0, 0.08);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-    color: #0f172a;
+    background: rgba(255, 253, 249, 0.95);
+    border-color: rgba(249, 115, 22, 0.15);
+    box-shadow: 0 4px 24px rgba(180, 100, 20, 0.1), 0 1px 4px rgba(0,0,0,0.04);
+    color: #1a1109;
   }
 
   .electric-card {
@@ -63,10 +80,14 @@
   }
 
   html.light .electric-card {
-    background: #ffffff;
-    box-shadow: 0 10px 30px rgba(249, 115, 22, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05);
-    border-color: rgba(249, 115, 22, 0.25);
-    color: #0f172a;
+    background: rgba(255, 253, 249, 0.98);
+    box-shadow:
+      0 0 0 1px rgba(249, 115, 22, 0.18),
+      0 8px 32px rgba(249, 115, 22, 0.12),
+      0 2px 8px rgba(180, 100, 20, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    border-color: rgba(249, 115, 22, 0.2);
+    color: #1a1109;
   }
 
   .stars {
@@ -81,7 +102,7 @@
   }
 
   html.light .stars {
-    opacity: 0.04;
+    opacity: 0;
   }
 
   .btn-primary {
@@ -93,11 +114,40 @@
   }
 
   html.light .btn-secondary {
-    @apply bg-slate-900 text-white hover:bg-slate-800;
+    @apply bg-stone-900 text-white hover:bg-stone-800;
   }
 
   .btn-tertiary {
     @apply hover:brightness-110 transition-all text-white bg-gradient-to-r from-orange-600 via-orange-500 to-amber-500 border-white/20 rounded-full border-t pt-3 pb-3 pr-5 pl-5 shadow-[0_4px_15px_rgba(249,115,22,0.4)] flex items-center justify-center font-medium;
+  }
+
+  /* Light theme: inputs with warm surface and focused orange glow */
+  html.light input,
+  html.light textarea,
+  html.light select {
+    background-color: rgba(255, 250, 244, 0.9);
+    border-color: rgba(214, 180, 148, 0.6);
+    color: #1a1109;
+  }
+
+  html.light input:focus,
+  html.light textarea:focus {
+    border-color: #f97316;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+    outline: none;
+  }
+
+  html.light input::placeholder,
+  html.light textarea::placeholder {
+    color: #a89880;
+  }
+
+  /* Light theme navigation bar */
+  html.light .bottom-nav {
+    background: rgba(255, 253, 249, 0.96);
+    border-top-color: rgba(249, 115, 22, 0.15);
+    box-shadow: 0 -4px 24px rgba(180, 100, 20, 0.08);
+    backdrop-filter: blur(16px);
   }
 }
 
@@ -127,7 +177,7 @@
   }
 }
 
-/* Custom Leaflet Popup */
+/* Custom Leaflet Popup - Dark */
 .leaflet-popup-content-wrapper, .dark-popup .leaflet-popup-content-wrapper {
   background: #0A0A0A !important;
   color: white !important;
@@ -143,29 +193,31 @@
   color: #a1a1aa !important;
 }
 
+/* Custom Leaflet Popup - Light: warm cream with orange accent */
 html.light .leaflet-popup-content-wrapper, 
 html.light .dark-popup .leaflet-popup-content-wrapper {
-  background: #ffffff !important;
-  color: #0f172a !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15) !important;
+  background: rgba(255, 253, 249, 0.98) !important;
+  color: #1a1109 !important;
+  border: 1px solid rgba(249, 115, 22, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(180, 100, 20, 0.18), 0 2px 8px rgba(0,0,0,0.06) !important;
+  border-radius: 14px !important;
 }
 html.light .leaflet-popup-tip, 
 html.light .dark-popup .leaflet-popup-tip {
-  background: #ffffff !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background: rgba(255, 253, 249, 0.98) !important;
+  border: 1px solid rgba(249, 115, 22, 0.15) !important;
 }
 html.light .leaflet-popup-close-button {
-  color: #64748b !important;
+  color: #92704a !important;
 }
 
-/* Evita o flash branco ao dar zoom no mapa */
+/* Map background */
 .leaflet-container {
   background-color: #050505 !important;
 }
 
 html.light .leaflet-container {
-  background-color: #f1f5f9 !important;
+  background-color: #ede8e0 !important;
 }
 
 /* Ocultar o rotateControl padrão do leaflet-rotate (caso ele injete) */
@@ -232,3 +284,15 @@ html.light .leaflet-container {
 html:not(.light) .leaflet-tile-pane {
   filter: contrast(1.3) brightness(0.52) saturate(0.7);
 }
+
+/* Light mode: subtle warmth boost on map tiles */
+html.light .leaflet-tile-pane {
+  filter: saturate(1.05) brightness(1.02);
+}
+
+/* custom-scrollbar for light mode */
+html.light .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+html.light .custom-scrollbar::-webkit-scrollbar-track { background: #f0ede8; border-radius: 2px; }
+html.light .custom-scrollbar::-webkit-scrollbar-thumb { background: #d4c0ab; border-radius: 2px; }
+html.light .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #b89e87; }
+
