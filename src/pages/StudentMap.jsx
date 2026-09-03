@@ -495,6 +495,7 @@ export default function StudentMap() {
     }
   };
 
+  // Check-in: registra apenas o tipo de viagem (ida, volta, ida_volta) mantendo o status aguardando
   const handleCheckIn = async (type) => {
     if (!trip || !user) {
       console.warn("handleCheckIn abortado: trip ou user não carregados", { trip, user });
@@ -504,15 +505,13 @@ export default function StudentMap() {
     setSelectedTripType(type);
     setIsSubmitting(true);
     
-    // Coordenadas base imediatas (do attendance existente, faculdade ou centro)
     const facCoords = getFacultyCoords(student);
     const initialLat = attendance?.lat ?? (facCoords ? facCoords[0] : CENTER[0]);
     const initialLng = attendance?.lng ?? (facCoords ? facCoords[1] : CENTER[1]);
-
     const attendanceId = `${trip.id}_${user.uid}`;
     
     try {
-      // 1. Salva o check-in IMEDIATAMENTE no Firestore com status 'liberado' e tripType
+      // 1. Salva o trajeto no Firestore mantendo o status (aguardando)
       await setDoc(doc(db, 'attendance', attendanceId), {
         tripId: trip.id,
         studentId: user.uid,
@@ -520,47 +519,81 @@ export default function StudentMap() {
         faculty: student?.faculty || 'Outra',
         route: normalizeRoute(student?.route) || 'Professor Jamil',
         photoURL: student?.photoURL || null,
-        status: 'liberado',
+        status: attendance?.status || 'aguardando',
         tripType: type,
         lat: initialLat,
         lng: initialLng,
         updatedAt: serverTimestamp()
       }, { merge: true });
 
-      drawRouteToBus(initialLat, initialLng);
+      if (type === 'ida') {
+        clearRoute();
+      }
       
-      // 2. Confirmação visual imediata: abre a lista e recolhe o painel inferior
+      // 2. Confirmação visual imediata: abre a lista de passageiros com o trajeto atualizado
       setIsPublicListOpen(true);
       setIsPanelCollapsed(true);
     } catch (err) {
-      console.error("Erro ao salvar check-in:", err);
-      showAlert("Erro ao salvar presença. Tente novamente.");
+      console.error("Erro ao salvar trajeto:", err);
+      showAlert("Erro ao salvar trajeto. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
+  };
 
-    // 3. Em segundo plano (sem travar o check-in nem a UI), tenta obter o GPS preciso
+  // Botão LIBERADO: acionado quando o aluno está pronto; realiza nova captura de localização e muda para 'liberado'
+  const handleLiberar = async () => {
+    if (!trip || !user) return;
+    setIsSubmitting(true);
+
+    const attendanceId = `${trip.id}_${user.uid}`;
+
+    const executeLiberacao = async (lat, lng) => {
+      try {
+        await setDoc(doc(db, 'attendance', attendanceId), {
+          tripId: trip.id,
+          studentId: user.uid,
+          studentName: student?.name || 'Aluno',
+          faculty: student?.faculty || 'Outra',
+          route: normalizeRoute(student?.route) || 'Professor Jamil',
+          photoURL: student?.photoURL || null,
+          status: 'liberado',
+          lat,
+          lng,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        if (attendance?.tripType !== 'ida' && selectedTripType !== 'ida') {
+          drawRouteToBus(lat, lng);
+        }
+        showAlert("Você foi liberado! Sua localização foi atualizada para o motorista.");
+      } catch (err) {
+        console.error("Erro ao marcar liberação:", err);
+        showAlert("Erro ao liberar. Tente novamente.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const preciseLat = position.coords.latitude;
-            const preciseLng = position.coords.longitude;
-            await updateDoc(doc(db, 'attendance', attendanceId), {
-              lat: preciseLat,
-              lng: preciseLng,
-              updatedAt: serverTimestamp()
-            });
-            drawRouteToBus(preciseLat, preciseLng);
-          } catch (e) {
-            console.error("Erro ao refinar GPS no check-in:", e);
-          }
+        (position) => {
+          executeLiberacao(position.coords.latitude, position.coords.longitude);
         },
         (error) => {
-          console.log("GPS preciso não disponível no momento, mantendo localização base:", error?.message || error);
+          console.warn("GPS não capturado com precisão, usando coordenadas base:", error?.message || error);
+          const facCoords = getFacultyCoords(student);
+          const fallbackLat = attendance?.lat ?? (facCoords ? facCoords[0] : CENTER[0]);
+          const fallbackLng = attendance?.lng ?? (facCoords ? facCoords[1] : CENTER[1]);
+          executeLiberacao(fallbackLat, fallbackLng);
         },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+        { enableHighAccuracy: true, timeout: 8000 }
       );
+    } else {
+      const facCoords = getFacultyCoords(student);
+      const fallbackLat = attendance?.lat ?? (facCoords ? facCoords[0] : CENTER[0]);
+      const fallbackLng = attendance?.lng ?? (facCoords ? facCoords[1] : CENTER[1]);
+      executeLiberacao(fallbackLat, fallbackLng);
     }
   };
 
@@ -715,8 +748,8 @@ export default function StudentMap() {
             attribution={isDark ? TILE_ATTR_NIGHT : TILE_ATTR_DAY}
             key={isDark ? 'night' : 'day'}
           />
-          {/* Marcador do próprio aluno (bolinha) — antes de liberar */}
-          {attendance?.status !== 'liberado' && attendance?.status !== 'embarcado' && attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && (() => {
+          {/* Marcador do próprio aluno (bolinha) — antes de liberar (não exibe se for só ida) */}
+          {attendance?.tripType !== 'ida' && attendance?.status !== 'liberado' && attendance?.status !== 'embarcado' && attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && (() => {
             const accent = student.route === 'Cromínia' ? (isDark ? '#71717a' : '#475569') : '#f97316';
             const dotIcon = L.divIcon({
               html: `
@@ -737,8 +770,8 @@ export default function StudentMap() {
             );
           })()}
 
-          {/* Marcadores de Alunos Liberados — bolinha laranja com sonar */}
-          {publicList.filter(a => a.status === 'liberado' && a.lat != null && a.lng != null && !isNaN(a.lat) && !isNaN(a.lng)).map(att => {
+          {/* Marcadores de Alunos Liberados — bolinha laranja com sonar (não exibe se for só ida) */}
+          {publicList.filter(a => a.tripType !== 'ida' && a.status === 'liberado' && a.lat != null && a.lng != null && !isNaN(a.lat) && !isNaN(a.lng)).map(att => {
             const isMe = att.studentId === user?.uid;
             const accent = student.route === 'Cromínia' ? (isDark ? '#71717a' : '#475569') : '#f97316';
             const sonarIcon = L.divIcon({
@@ -789,8 +822,8 @@ export default function StudentMap() {
             </Marker>
           )}
 
-          {/* Linha da Rota OSRM (Apenas para o ônibus do próprio aluno) */}
-          {routePath && routePath.length > 0 && (
+          {/* Linha da Rota OSRM (Apenas para o ônibus do próprio aluno, se não for só ida) */}
+          {attendance?.tripType !== 'ida' && routePath && routePath.length > 0 && (
             <Polyline positions={routePath} color={student.route === 'Cromínia' ? (isDark ? "#ffffff" : "#334155") : "#f97316"} weight={5} opacity={0.8} />
           )}
 
@@ -807,8 +840,8 @@ export default function StudentMap() {
             <Marker position={[tempLocation.lat, tempLocation.lng]} icon={createStudentPinIcon('Novo Local', student.route === 'Cromínia', isDark)} zIndexOffset={900} />
           )}
 
-          {/* Botão de Centralizar no GPS do Aluno */}
-          {attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && !isEditingLocation && (
+          {/* Botão de Centralizar no GPS do Aluno (se não for só ida) */}
+          {attendance?.tripType !== 'ida' && attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && !isEditingLocation && (
             <RecenterButton lat={attendance.lat} lng={attendance.lng} isPanelCollapsed={isPanelCollapsed} />
           )}
         </MapContainer>
@@ -922,12 +955,14 @@ export default function StudentMap() {
 
               {/* Botão de Ação Principal */}
               <div className="pt-2 flex flex-col gap-2">
-                {/* Se liberado: Mostra o botão LIBERADO com status e opção de alterar trajeto */}
+                {/* Se liberado: Mostra o botão LIBERADO com status e opção de atualizar localização */}
                 {isLiberado && (
                   <>
                     <button
-                      onClick={() => setShowCheckInModal(true)}
-                      className="w-full py-4 rounded-full font-display font-black text-base uppercase tracking-wider transition-all duration-300 relative overflow-hidden flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30"
+                      onClick={handleLiberar}
+                      disabled={isSubmitting}
+                      className="w-full py-4 rounded-full font-display font-black text-base uppercase tracking-wider transition-all duration-300 relative overflow-hidden flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 cursor-pointer"
+                      title="Toque para atualizar sua localização novamente"
                     >
                       <Check size={22} strokeWidth={3} />
                       LIBERADO {attendance?.tripType === 'ida' ? '(SÓ IDA)' : attendance?.tripType === 'volta' ? '(SÓ VOLTA)' : '(IDA E VOLTA)'}
@@ -936,7 +971,7 @@ export default function StudentMap() {
                     <button
                       onClick={() => handleCancelarEmbarque()}
                       disabled={isSubmitting}
-                      className="w-full py-2.5 rounded-full font-display font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 border border-white/10 [html.light_&]:border-slate-200"
+                      className="w-full py-2.5 rounded-full font-display font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 border border-white/10 [html.light_&]:border-slate-200 cursor-pointer"
                     >
                       <X size={15} />
                       Cancelar Embarque
@@ -944,16 +979,14 @@ export default function StudentMap() {
                   </>
                 )}
 
-                {/* Se não liberado (aguardando / cancelado / embarcado) */}
+                {/* Se não liberado (aguardando ou cancelado): botão LIBERADO que faz a captura de localização */}
                 {!isLiberado && (
                   <button
-                    onClick={() => isAguardando ? setShowCheckInModal(true) : handleCheckIn(selectedTripType)}
+                    onClick={handleLiberar}
                     disabled={isSubmitting || isEmbarcado}
-                    className={`w-full py-4 rounded-full font-display font-black text-base uppercase tracking-wider transition-all duration-300 relative overflow-hidden flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] ${
+                    className={`w-full py-4 rounded-full font-display font-black text-base uppercase tracking-wider transition-all duration-300 relative overflow-hidden flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] cursor-pointer ${
                       isEmbarcado
                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-default'
-                        : isCancelado
-                        ? 'bg-zinc-800 [html.light_&]:bg-slate-200 text-zinc-300 [html.light_&]:text-slate-700 hover:bg-zinc-700 [html.light_&]:hover:bg-slate-300 border border-zinc-700'
                         : 'btn-primary'
                     }`}
                   >
@@ -963,15 +996,10 @@ export default function StudentMap() {
                           <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
                           EMBARCADO
                         </>
-                      ) : isCancelado ? (
-                        <>
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                          REATIVAR EMBARQUE
-                        </>
                       ) : (
                         <>
-                          <Navigation size={22} />
-                          FAZER CHECK-IN
+                          <Check size={24} strokeWidth={2.5} />
+                          LIBERADO
                         </>
                       )}
                     </span>

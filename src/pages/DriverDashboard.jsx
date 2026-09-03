@@ -581,6 +581,8 @@ export default function DriverDashboard() {
     const clusters = [];
     
     Object.entries(attendanceMap).forEach(([studentId, att]) => {
+      // Alunos 'só ida' não são marcados no mapa de retorno
+      if (att.tripType === 'ida') return;
       if ((att.status === 'liberado' || att.status === 'aguardando') && att.lat && att.lng) {
         // Usa os dados do próprio attendance, sem depender do fetch estático de users
         const student = { name: att.studentName || 'Aluno', faculty: att.faculty, status: att.status };
@@ -642,7 +644,7 @@ export default function DriverDashboard() {
     // 2. A partir das Faculdades MOCK_FACULTIES caso não agrupadas em customClusters
     Object.entries(MOCK_FACULTIES).forEach(([facName, coords]) => {
       const facAttendances = Object.values(attendanceMap).filter(att => 
-        att.faculty === facName && att.status !== 'embarcado' && att.status !== 'cancelado'
+        att.faculty === facName && att.status !== 'embarcado' && att.status !== 'cancelado' && att.tripType !== 'ida'
       );
       
       const alreadyInStops = activeStops.some(s => s.faculty === facName);
@@ -1083,9 +1085,9 @@ export default function DriverDashboard() {
               <Polyline positions={activeLocalRoute} color={driver?.route === 'Cromínia' ? (isDark ? "#ffffff" : "#334155") : "#f97316"} weight={6} opacity={0.9} dashArray="10, 10" />
             )}
 
-            {/* Faculdades com passageiros ativos (Apenas da rota do motorista) */}
+            {/* Faculdades com passageiros ativos (Apenas da rota do motorista, excluindo só ida) */}
             {Object.entries(MOCK_FACULTIES)
-              .filter(([facName]) => Object.values(attendanceMap).some(att => att.faculty === facName && att.status !== 'cancelado'))
+              .filter(([facName]) => Object.values(attendanceMap).some(att => att.faculty === facName && att.status !== 'cancelado' && att.tripType !== 'ida'))
               .map(([facName, coords]) => {
                 const isCrominia = driver?.route === 'Cromínia';
                 return (
