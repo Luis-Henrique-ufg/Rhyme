@@ -51,26 +51,46 @@ const createBusIcon = (isCrominia, isDark = true, isBroadcasting = false) => {
   const iconColor = isCrominia ? (night ? '#111' : '#f4f4f5') : '#ffffff';
   const wheelColor = isCrominia ? (night ? '#f4f4f5' : '#111') : '#111';
 
+  const pulseColor = isCrominia ? (night ? '#818cf8' : '#6366f1') : '#f97316';
+  const pulseBg = isCrominia
+    ? (night ? 'rgba(129, 140, 248, 0.25)' : 'rgba(99, 102, 241, 0.25)')
+    : 'rgba(249, 115, 22, 0.25)';
+  const pulseShadow = isCrominia
+    ? (night ? 'rgba(129, 140, 248, 0.45)' : 'rgba(99, 102, 241, 0.45)')
+    : 'rgba(249, 115, 22, 0.45)';
+
   const pulseRing = isBroadcasting ? `
     <div style="
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 80px;
-      height: 80px;
+      inset: 0;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
-      border: 2.5px solid #f97316;
-      background: radial-gradient(circle, rgba(249, 115, 22, 0.35) 0%, transparent 70%);
-      animation: radarPulse 2s ease-out infinite;
+      border: 2.5px solid ${pulseColor};
+      background: radial-gradient(circle, ${pulseBg} 0%, transparent 70%);
+      box-shadow: 0 0 16px ${pulseShadow};
+      animation: radarPulse 2.4s ease-out infinite;
       pointer-events: none;
+      z-index: 1;
+    "></div>
+    <div style="
+      position: absolute;
+      inset: 0;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 2px solid ${pulseColor};
+      background: radial-gradient(circle, ${pulseBg} 0%, transparent 70%);
+      box-shadow: 0 0 12px ${pulseShadow};
+      animation: radarPulse 2.4s ease-out 1.2s infinite;
+      pointer-events: none;
+      z-index: 1;
     "></div>
   ` : '';
 
   return L.divIcon({
     html: `
       <div style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:none;">
-        ${pulseRing}
         <div style="
           background: ${night ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.96)'};
           color: ${isBroadcasting ? '#f97316' : (night ? '#f4f4f5' : '#18181b')};
@@ -80,20 +100,32 @@ const createBusIcon = (isCrominia, isDark = true, isBroadcasting = false) => {
           box-shadow: 0 2px 6px rgba(0,0,0,${night ? '0.5' : '0.15'});
           border: 1px solid ${isBroadcasting ? 'rgba(249,115,22,0.4)' : (night ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)')};
           margin-bottom: 4px; letter-spacing: 0.02em; text-transform: uppercase;
+          z-index: 3;
         ">${label}</div>
         <div style="
-          width:48px; height:48px; background:${bgColor}; border-radius:50%;
-          border: 3.5px solid ${borderColor};
-          box-shadow: 0 6px 20px rgba(0,0,0,${night ? '0.6' : '0.2'});
-          display:flex; align-items:center; justify-content:center; color:${iconColor};
           position: relative;
+          width: 48px;
+          height: 48px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         ">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h2"></path>
-            <circle cx="9" cy="17" r="2" stroke="currentColor" fill="${wheelColor}" stroke-width="1.5"></circle>
-            <path d="M11 17h4"></path>
-            <circle cx="17" cy="17" r="2" stroke="currentColor" fill="${wheelColor}" stroke-width="1.5"></circle>
-          </svg>
+          ${pulseRing}
+          <div style="
+            width:48px; height:48px; background:${bgColor}; border-radius:50%;
+            border: 3.5px solid ${borderColor};
+            box-shadow: 0 6px 20px rgba(0,0,0,${night ? '0.6' : '0.2'});
+            display:flex; align-items:center; justify-content:center; color:${iconColor};
+            position: relative;
+            z-index: 2;
+          ">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+              <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h2"></path>
+              <circle cx="9" cy="17" r="2" stroke="currentColor" fill="${wheelColor}" stroke-width="1.5"></circle>
+              <path d="M11 17h4"></path>
+              <circle cx="17" cy="17" r="2" stroke="currentColor" fill="${wheelColor}" stroke-width="1.5"></circle>
+            </svg>
+          </div>
         </div>
       </div>
     `,
@@ -293,8 +325,6 @@ export default function StudentMap() {
   const [broadcastingLocation, setBroadcastingLocation] = useState(null);
   const [focusTrigger, setFocusTrigger] = useState(0);
 
-  const busIcon = useMemo(() => createBusIcon(false, isDark, isBroadcasting), [isDark, isBroadcasting]);
-  const busIconAlt = useMemo(() => createBusIcon(true, isDark, isBroadcasting), [isDark, isBroadcasting]);
   const [student, setStudent] = useState(null);
   const [attendance, setAttendance] = useState(null);
   const [studentLoading, setStudentLoading] = useState(true);
@@ -316,6 +346,15 @@ export default function StudentMap() {
   // --- Data Adapter hooks (deep modules) ---
   const { trip, tripId, loading: tripLoading, error: tripError } = useCurrentTrip(student?.route?.trim());
   const { attendances: publicList, error: attendancesError } = useTripAttendances(tripId);
+
+  // Transmissão ao vivo do veículo (seja pelo próprio aluno ou outro aluno a bordo)
+  const isVehicleLiveBroadcasting = isBroadcasting || Boolean(
+    trip?.locationProviderName &&
+    trip?.locationProviderName !== 'Motorista' &&
+    trip?.locationProviderName !== trip?.driverName
+  );
+  const busIcon = useMemo(() => createBusIcon(false, isDark, isVehicleLiveBroadcasting), [isDark, isVehicleLiveBroadcasting]);
+  const busIconAlt = useMemo(() => createBusIcon(true, isDark, isVehicleLiveBroadcasting), [isDark, isVehicleLiveBroadcasting]);
 
   const loading = studentLoading || (Boolean(student?.route) && tripLoading);
 
