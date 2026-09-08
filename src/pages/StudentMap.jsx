@@ -218,6 +218,110 @@ const createStudentPinIcon = (name, isCrominia, isDark = true) => {
 const StudentIcon = createStudentPinIcon('', false);
 const StudentIconAlt = createStudentPinIcon('', true);
 
+// Marcador de Aluno/Passageiro — completamente diferenciado da Van (avatar de pessoa, cores azul/verde/cinza, sem radar de veículo)
+const createStudentMapIcon = (name, isMe, isLiberado, isSoIda, isDark = true) => {
+  const night = isDark;
+
+  // Paleta de passageiro:
+  // - Você: Azul Real (#2563eb / #3b82f6) padrão GPS mundial (Google Maps / Uber)
+  // - Liberado: Verde Esmeralda (#10b981) indicando "pronto para embarque"
+  // - Só Ida: Cinza Neutro (#71717a)
+  let bg = '#10b981';
+  let haloBg = 'rgba(16, 185, 129, 0.22)';
+  let haloBorder = 'rgba(16, 185, 129, 0.5)';
+  let roleLabel = name || '';
+
+  if (isSoIda) {
+    bg = '#71717a';
+    haloBg = 'transparent';
+    haloBorder = 'transparent';
+  } else if (isMe && !isLiberado) {
+    bg = '#2563eb';
+    haloBg = 'rgba(37, 99, 235, 0.25)';
+    haloBorder = 'rgba(37, 99, 235, 0.55)';
+    roleLabel = 'Você';
+  } else if (isMe && isLiberado) {
+    bg = '#10b981';
+    haloBg = 'rgba(16, 185, 129, 0.28)';
+    haloBorder = 'rgba(16, 185, 129, 0.65)';
+    roleLabel = 'Você (Liberado)';
+  }
+
+  const borderCol = night ? '#18181b' : '#ffffff';
+  const labelBg = night ? 'rgba(15,15,15,0.94)' : 'rgba(255,255,255,0.96)' ;
+  const labelText = night ? '#f4f4f5' : '#18181b';
+
+  // Halo suave apenas para status liberado ou localização própria
+  const haloHtml = (!isSoIda && (isLiberado || isMe)) ? `
+    <div style="
+      position: absolute;
+      inset: -5px;
+      border-radius: 50%;
+      border: 1.5px solid ${haloBorder};
+      background: ${haloBg};
+      animation: studentHalo 2.5s ease-out infinite;
+      pointer-events: none;
+      z-index: 1;
+    "></div>
+  ` : '';
+
+  // Silhueta de pessoa / estudante (Avatar 👤)
+  const userSvg = `
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="white" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
+      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+    </svg>
+  `;
+
+  const labelHtml = roleLabel ? `
+    <div style="
+      background: ${labelBg};
+      color: ${labelText};
+      font-size: 9.5px;
+      font-weight: 700;
+      font-family: Inter, system-ui, sans-serif;
+      padding: 1px 6px;
+      border-radius: 5px;
+      white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(0,0,0,${night ? '0.6' : '0.15'});
+      border: 1px solid ${night ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'};
+      margin-bottom: 3px;
+      max-width: 90px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      z-index: 3;
+    ">${roleLabel}</div>
+  ` : '';
+
+  return L.divIcon({
+    html: `
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:none;">
+        ${labelHtml}
+        <div style="position:relative;width:26px;height:26px;display:flex;align-items:center;justify-content:center;">
+          ${haloHtml}
+          <div style="
+            width: 26px;
+            height: 26px;
+            background: ${bg};
+            border-radius: 50%;
+            border: 2px solid ${borderCol};
+            box-shadow: 0 3px 10px rgba(0,0,0,${night ? '0.6' : '0.25'}), 0 0 0 1px ${bg}44;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+          ">
+            ${userSvg}
+          </div>
+        </div>
+      </div>
+    `,
+    className: 'bg-transparent border-none',
+    iconSize: [26, roleLabel ? 48 : 26],
+    iconAnchor: [13, roleLabel ? 34 : 13]
+  });
+};
+
 const MOCK_FACULTIES = {
   'UFG': [-16.603568359752572, -49.26557447462434],
   'UFG - Campus Colemar': [-16.676109190074012, -49.24516058049558],
@@ -884,22 +988,12 @@ export default function StudentMap() {
             attribution={isDark ? TILE_ATTR_NIGHT : TILE_ATTR_DAY}
             key={isDark ? 'night' : 'day'}
           />
-          {/* Marcador do próprio aluno (bolinha) — antes de liberar (bolinha cinza se for só ida) */}
-          {attendance?.status !== 'liberado' && attendance?.status !== 'embarcado' && attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && (() => {
+          {/* Marcador do próprio aluno — antes de liberar (oculto se o aluno estiver transmitindo como a Van) */}
+          {attendance?.status !== 'liberado' && attendance?.status !== 'embarcado' && !isBroadcasting && attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && (() => {
             const isSoIda = attendance?.tripType === 'ida';
-            const accent = isSoIda ? '#71717a' : (student.route === 'Cromínia' ? (isDark ? '#71717a' : '#475569') : '#f97316');
-            const dotIcon = L.divIcon({
-              html: `
-                <div style="position:relative;display:flex;align-items:center;justify-content:center;width:56px;height:56px;pointer-events:none;">
-                  <div style="width:22px;height:22px;background:${accent};border-radius:50%;border:3px solid ${isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.35)'};box-shadow:0 3px 10px rgba(0,0,0,0.45);"></div>
-                </div>
-              `,
-              className: 'bg-transparent border-none',
-              iconSize: [56, 56],
-              iconAnchor: [28, 28]
-            });
+            const icon = createStudentMapIcon('Você', true, false, isSoIda, isDark);
             return (
-              <Marker position={[attendance.lat, attendance.lng]} icon={dotIcon} zIndexOffset={900}>
+              <Marker position={[attendance.lat, attendance.lng]} icon={icon} zIndexOffset={900}>
                 <Popup className="dark-popup">
                   <span className="font-bold text-white [html.light_&]:text-slate-900">Sua localização {isSoIda ? '(Só Ida)' : ''}</span>
                 </Popup>
@@ -907,8 +1001,12 @@ export default function StudentMap() {
             );
           })()}
 
-          {/* Marcadores de Alunos — bolinha cinza para 'só ida', bolinha com sonar para liberados */}
+          {/* Marcadores de Alunos — Alunos com status liberado ou só ida */}
           {publicList.filter(a => {
+            // Se o próprio aluno está transmitindo o GPS da van, a Van já representa sua posição na rota
+            if (isBroadcasting && a.studentId === user?.uid) return false;
+            // Se este aluno é o transmissor da viagem (a bordo), a Van já representa sua posição
+            if (trip?.locationProviderId && a.studentId === trip.locationProviderId) return false;
             if (a.studentId === user?.uid && attendance?.status !== 'liberado') return false;
             if (a.status === 'cancelado' || a.status === 'embarcado') return false;
             if (!a.lat || !a.lng || isNaN(a.lat) || isNaN(a.lng)) return false;
@@ -916,29 +1014,10 @@ export default function StudentMap() {
           }).map(att => {
             const isMe = att.studentId === user?.uid;
             const isSoIda = att.tripType === 'ida';
-            const accent = isSoIda ? '#71717a' : (student.route === 'Cromínia' ? (isDark ? '#71717a' : '#475569') : '#f97316');
-            const studentIcon = L.divIcon({
-              html: `
-                <div style="position:relative;display:flex;align-items:center;justify-content:center;width:56px;height:56px;pointer-events:none;">
-                  ${!isSoIda ? `
-                    <style>
-                      @keyframes sonar-ring {
-                        0%   { transform: scale(0.6); opacity: 0.65; }
-                        100% { transform: scale(2.8); opacity: 0; }
-                      }
-                    </style>
-                    <div style="position:absolute;width:22px;height:22px;border-radius:50%;background:${accent};opacity:0.2;animation:sonar-ring 3.5s ease-out infinite;"></div>
-                    <div style="position:absolute;width:22px;height:22px;border-radius:50%;background:${accent};opacity:0.15;animation:sonar-ring 3.5s ease-out 1.2s infinite;"></div>
-                  ` : ''}
-                  <div style="position:relative;width:22px;height:22px;background:${accent};border-radius:50%;border:3px solid ${isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.35)'};box-shadow:0 3px 10px rgba(0,0,0,0.45);z-index:1;"></div>
-                </div>
-              `,
-              className: 'bg-transparent border-none',
-              iconSize: [56, 56],
-              iconAnchor: [28, 28]
-            });
+            const displayName = isMe ? 'Você' : (att.studentName ? att.studentName.split(' ')[0] : 'Aluno');
+            const icon = createStudentMapIcon(displayName, isMe, true, isSoIda, isDark);
             return (
-              <Marker key={att.id} position={[att.lat, att.lng]} icon={studentIcon} zIndexOffset={isSoIda ? 750 : 800}>
+              <Marker key={att.id} position={[att.lat, att.lng]} icon={icon} zIndexOffset={isMe ? 850 : (isSoIda ? 750 : 800)}>
                 <Popup className="dark-popup">
                   <span className="font-bold text-white [html.light_&]:text-slate-900">{isMe ? `Você (${att.studentName})` : att.studentName} {isSoIda ? '(Só Ida)' : ''}</span>
                 </Popup>

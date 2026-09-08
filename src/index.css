@@ -250,6 +250,17 @@ html.light .leaflet-container {
   }
 }
 
+@keyframes studentHalo {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
 .proximity-halo-container {
   position: relative;
   width: 90px;
