@@ -307,3 +307,9 @@ html.light .custom-scrollbar::-webkit-scrollbar-track { background: #f0ede8; bor
 html.light .custom-scrollbar::-webkit-scrollbar-thumb { background: #d4c0ab; border-radius: 2px; }
 html.light .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #b89e87; }
 
+/* Safe area inset utility for mobile bottom navigation */
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+}
+
+

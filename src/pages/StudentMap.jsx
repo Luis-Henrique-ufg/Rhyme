@@ -403,11 +403,11 @@ const RecenterButton = ({ lat, lng }) => {
         e.stopPropagation();
         if (lat && lng) map.flyTo([lat, lng], 15, { duration: 1.5 });
       }}
-      className="flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
+      className="w-full min-w-0 flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
       title="Centralizar"
     >
-      <div className="p-2"><LocateFixed size={24} strokeWidth={2.5} /></div>
-      <span className="text-[11px] font-medium mt-0.5">Focar</span>
+      <div className="p-1.5 sm:p-2"><LocateFixed size={22} strokeWidth={2.5} /></div>
+      <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Focar</span>
     </button>
   );
 
@@ -1355,7 +1355,10 @@ export default function StudentMap() {
 
       {/* Bottom Navigation Bar (WhatsApp style) */}
       {!isEditingLocation && (
-        <div className="bg-[#050505] [html.light_&]:bg-white border-t border-white/5 [html.light_&]:border-slate-200 flex items-center justify-around gap-2 py-2 px-2 md:justify-center md:gap-8 md:px-6 z-[3000] shrink-0 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.5)] [html.light_&]:shadow-[0_-5px_20px_rgba(0,0,0,0.06)] w-full overflow-x-auto [&>button]:shrink-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div 
+          className="bg-[#050505] [html.light_&]:bg-white border-t border-white/5 [html.light_&]:border-slate-200 flex items-center justify-around gap-1 py-2 px-2 md:justify-center md:gap-8 md:px-6 z-[3000] shrink-0 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.5)] [html.light_&]:shadow-[0_-5px_20px_rgba(0,0,0,0.06)] w-full overflow-hidden select-none touch-none overscroll-none"
+          onWheel={(e) => e.preventDefault()}
+        >
           
           <button 
             onClick={() => {
@@ -1363,15 +1366,15 @@ export default function StudentMap() {
               setIsPublicListOpen(newState);
               if (newState) setIsPanelCollapsed(true);
             }}
-            className="flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors relative"
+            className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors relative"
           >
-            <div className="relative p-2">
-              <Users size={24} />
+            <div className="relative p-1.5 sm:p-2">
+              <Users size={22} />
               <span className="absolute top-0 right-0 bg-orange-500 text-black px-1.5 py-0.5 rounded-full text-[9px] font-black translate-x-1/2 -translate-y-1/4 shadow-sm border border-black">
                 {publicList.length}
               </span>
             </div>
-            <span className="text-[11px] font-medium mt-0.5">Lista</span>
+            <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Lista</span>
           </button>
 
           <button 
@@ -1379,7 +1382,7 @@ export default function StudentMap() {
               setIsPanelCollapsed(!isPanelCollapsed);
               setIsPublicListOpen(false);
             }}
-            className={`flex flex-col items-center justify-center transition-colors ${
+            className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center transition-colors ${
               !isPanelCollapsed
                 ? 'text-orange-500'
                 : isLiberado
@@ -1387,16 +1390,16 @@ export default function StudentMap() {
                 : 'text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500'
             }`}
           >
-            <div className="p-2 relative">
-              {isLiberado ? <Check size={24} className="text-emerald-400" strokeWidth={2.5} /> : <Navigation size={24} />}
+            <div className="p-1.5 sm:p-2 relative">
+              {isLiberado ? <Check size={22} className="text-emerald-400" strokeWidth={2.5} /> : <Navigation size={22} />}
             </div>
-            <span className="text-[11px] font-medium mt-0.5">
+            <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
               {isEmbarcado ? 'Embarcado' : isLiberado ? 'Liberado' : 'Embarque'}
             </span>
           </button>
 
-          <div id="navbar-compass-slot" className="flex items-center justify-center empty:hidden"></div>
-          <div id="navbar-recenter-slot" className="flex items-center justify-center empty:hidden"></div>
+          <div id="navbar-compass-slot" className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex items-center justify-center empty:hidden"></div>
+          <div id="navbar-recenter-slot" className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex items-center justify-center empty:hidden"></div>
 
           {isLiberado && (
              <>
@@ -1407,18 +1410,18 @@ export default function StudentMap() {
                    setIsPanelCollapsed(true);
                    setIsPublicListOpen(false);
                  }}
-                 className="flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
+                 className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
                >
-                 <div className="p-2"><MapPin size={24} /></div>
-                 <span className="text-[11px] font-medium mt-0.5">Ajustar</span>
+                 <div className="p-1.5 sm:p-2"><MapPin size={22} /></div>
+                 <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Ajustar</span>
                </button>
 
                <button 
                  onClick={() => setShowCheckInModal(true)}
-                 className="flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
+                 className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
                >
-                 <div className="p-2"><Navigation size={24} /></div>
-                 <span className="text-[11px] font-medium mt-0.5">Trajeto</span>
+                 <div className="p-1.5 sm:p-2"><Navigation size={22} /></div>
+                 <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Trajeto</span>
                </button>
              </>
           )}
@@ -1426,20 +1429,20 @@ export default function StudentMap() {
           {isEmbarcado && (
             <button 
               onClick={handleToggleBroadcasting}
-              className={`flex flex-col items-center justify-center transition-all cursor-pointer ${
+              className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center transition-all cursor-pointer ${
                 isBroadcasting 
                   ? 'text-red-500 hover:text-red-400 font-bold scale-105' 
                   : 'text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500'
               }`}
               title={isBroadcasting ? "Pausar transmissão de GPS da van" : "Transmitir GPS da van para os outros alunos"}
             >
-              <div className="p-2 relative">
-                <Radio size={24} className={isBroadcasting ? "animate-pulse" : ""} />
+              <div className="p-1.5 sm:p-2 relative">
+                <Radio size={22} className={isBroadcasting ? "animate-pulse" : ""} />
                 {isBroadcasting && (
                   <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full shadow-[0_0_8px_#ef4444] animate-ping"></span>
                 )}
               </div>
-              <span className="text-[11px] font-medium mt-0.5">{isBroadcasting ? 'GPS Ativo' : 'Enviar GPS'}</span>
+              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">{isBroadcasting ? 'GPS Ativo' : 'Enviar GPS'}</span>
             </button>
           )}
 

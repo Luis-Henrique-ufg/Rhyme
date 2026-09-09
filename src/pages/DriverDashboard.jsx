@@ -1323,7 +1323,10 @@ export default function DriverDashboard() {
 
       {/* Bottom Navigation Bar (WhatsApp style) */}
       {trip && (
-        <div className="bg-[#050505] [html.light_&]:bg-white/95 border-t border-white/5 [html.light_&]:border-slate-200 flex items-center justify-around gap-2 py-2 px-2 md:justify-center md:gap-8 md:px-6 z-50 shrink-0 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.5)] [html.light_&]:shadow-[0_-4px_20px_rgba(0,0,0,0.06)] w-full overflow-x-auto [&>button]:shrink-0" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <div 
+          className="bg-[#050505] [html.light_&]:bg-white/95 border-t border-white/5 [html.light_&]:border-slate-200 flex items-center justify-around gap-1 py-2 px-2 md:justify-center md:gap-8 md:px-6 z-50 shrink-0 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.5)] [html.light_&]:shadow-[0_-4px_20px_rgba(0,0,0,0.06)] w-full overflow-hidden select-none touch-none overscroll-none"
+          onWheel={(e) => e.preventDefault()}
+        >
           
           <button 
             onClick={() => {
@@ -1331,58 +1334,58 @@ export default function DriverDashboard() {
               setIsPublicListOpen(newState);
               if (newState) setIsPanelOpen(false);
             }}
-            className="flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors relative"
+            className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors relative"
           >
-            <div className="relative p-2">
-              <Users size={24} />
+            <div className="relative p-1.5 sm:p-2">
+              <Users size={22} />
               <span className="absolute top-0 right-0 bg-orange-500 text-black px-1.5 py-0.5 rounded-full text-[9px] font-black translate-x-1/2 -translate-y-1/4 shadow-sm border border-black">
                 {Object.values(attendanceMap).filter(att => att.status === 'liberado' || att.status === 'aguardando').length}
               </span>
             </div>
-            <span className="text-[11px] font-medium mt-0.5">Lista</span>
+            <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Lista</span>
           </button>
 
           <button 
             onClick={() => setIsPanelOpen(!isPanelOpen)}
-            className={`flex flex-col items-center justify-center transition-colors ${isPanelOpen ? 'text-orange-500' : 'text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500'}`}
+            className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center transition-colors ${isPanelOpen ? 'text-orange-500' : 'text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500'}`}
           >
-            <div className="p-2"><BarChart2 size={24} /></div>
-            <span className="text-[11px] font-medium mt-0.5">Resumo</span>
+            <div className="p-1.5 sm:p-2"><BarChart2 size={22} /></div>
+            <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Resumo</span>
           </button>
 
           {/* Indicador GPS — visível apenas em in_progress, alinhado ao design system */}
           {trip.status === 'in_progress' && (
             <div
               title={gpsAccuracy != null ? `Precisão: ±${gpsAccuracy}m` : 'Aguardando GPS...'}
-              className={`flex flex-col items-center justify-center shrink-0 select-none ${
+              className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center shrink-0 select-none ${
                 gpsStatus === 'active' ? 'text-emerald-400 [html.light_&]:text-emerald-600' :
                 gpsStatus === 'error' ? 'text-red-400 [html.light_&]:text-red-600' : 'text-zinc-500 [html.light_&]:text-slate-400'
               }`}
             >
-              <div className="relative p-2">
+              <div className="relative p-1.5 sm:p-2">
                 {gpsStatus === 'active' && (
                   <span className="absolute inset-0 rounded-full bg-emerald-400/20 [html.light_&]:bg-emerald-500/20 animate-ping" />
                 )}
-                <LocateFixed size={24} className="relative" />
+                <LocateFixed size={22} className="relative" />
               </div>
-              <span className="text-[10px] font-bold mt-0.5 leading-none">
+              <span className="text-[10px] font-bold mt-0.5 leading-none truncate max-w-full">
                 {gpsStatus === 'active' ? (gpsAccuracy != null ? `±${gpsAccuracy}m` : 'AO VIVO') :
                  gpsStatus === 'error' ? 'Erro' : 'GPS'}
               </span>
             </div>
           )}
 
-          <div id="navbar-compass-slot" className="flex items-center justify-center empty:hidden"></div>
-          <div id="navbar-recenter-slot" className="flex items-center justify-center empty:hidden"></div>
+          <div id="navbar-compass-slot" className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex items-center justify-center empty:hidden"></div>
+          <div id="navbar-recenter-slot" className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex items-center justify-center empty:hidden"></div>
 
           {trip.status === 'open' && (
             <button 
               onClick={() => updateTripStatus('in_progress')}
               disabled={isUpdatingTrip}
-              className={`flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors ${isUpdatingTrip ? 'opacity-50' : ''}`}
+              className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors ${isUpdatingTrip ? 'opacity-50' : ''}`}
             >
-              <div className="p-2"><Play size={24} /></div>
-              <span className="text-[11px] font-medium mt-0.5">{isUpdatingTrip ? 'Iniciando' : 'Iniciar'}</span>
+              <div className="p-1.5 sm:p-2"><Play size={22} /></div>
+              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">{isUpdatingTrip ? 'Iniciando' : 'Iniciar'}</span>
             </button>
           )}
 
@@ -1390,41 +1393,41 @@ export default function DriverDashboard() {
             <button 
               onClick={recalculateGlobalRoute}
               disabled={isUpdatingTrip}
-              className={`flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors ${isUpdatingTrip ? 'opacity-50' : ''}`}
+              className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors ${isUpdatingTrip ? 'opacity-50' : ''}`}
             >
-              <div className="p-2"><RefreshCcw size={24} /></div>
-              <span className="text-[11px] font-medium mt-0.5">{isUpdatingTrip ? 'Atz...' : 'Atualizar'}</span>
+              <div className="p-1.5 sm:p-2"><RefreshCcw size={22} /></div>
+              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">{isUpdatingTrip ? 'Atz...' : 'Atualizar'}</span>
             </button>
           )}
 
           {trip.status === 'in_progress' && (
             <button 
               onClick={handleFinishClick}
-              className="flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-red-500 transition-colors"
+              className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-red-500 transition-colors"
             >
-              <div className="p-2"><StopCircle size={24} /></div>
-              <span className="text-[11px] font-medium mt-0.5">Finalizar</span>
+              <div className="p-1.5 sm:p-2"><StopCircle size={22} /></div>
+              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Finalizar</span>
             </button>
           )}
 
           {trip.status === 'finished' && (
             <button 
               onClick={() => updateTripStatus('open')}
-              className="flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
+              className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
             >
-              <div className="p-2"><Play size={24} /></div>
-              <span className="text-[11px] font-medium mt-0.5">Reabrir</span>
+              <div className="p-1.5 sm:p-2"><Play size={22} /></div>
+              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Reabrir</span>
             </button>
           )}
 
           {Boolean((activeLocalRoute && activeLocalRoute.length > 0) || (trip?.driverRoutePath && trip.driverRoutePath.length > 0) || (trip?.routePath && trip.routePath.length > 0) || (trip?.globalRoute && trip.globalRoute.length > 0)) && trip.status !== 'finished' && (
              <button 
                onClick={clearAllRoutes}
-               className="flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
+               className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
                title="Limpar todas as rotas do mapa"
              >
-               <div className="p-2"><MapPinOff size={24} /></div>
-               <span className="text-[11px] font-medium mt-0.5">Limpar</span>
+               <div className="p-1.5 sm:p-2"><MapPinOff size={22} /></div>
+               <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Limpar</span>
              </button>
           )}
 

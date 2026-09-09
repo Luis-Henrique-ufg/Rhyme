@@ -242,20 +242,20 @@ export default function MapInteractions() {
   const content = (
     <button 
       onClick={toggleCompass}
-      className={`flex flex-col items-center justify-center transition-all cursor-pointer ${
+      className={`w-full min-w-0 flex flex-col items-center justify-center transition-all cursor-pointer ${
         compassMode 
           ? 'text-orange-500 font-bold scale-105' 
           : 'text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500'
       }`}
       title={compassMode ? "Desativar Bússola (Alinhar ao Norte)" : "Ativar Bússola Estabilizada"}
     >
-      <div className="p-2 relative">
-        <Compass size={24} className={compassMode ? "animate-pulse" : ""} />
+      <div className="p-1.5 sm:p-2 relative">
+        <Compass size={22} className={compassMode ? "animate-pulse" : ""} />
         {compassMode && (
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_8px_#f97316]"></span>
+          <span className="absolute top-1 right-1 w-2 h-2 bg-orange-500 rounded-full shadow-[0_0_8px_#f97316]"></span>
         )}
       </div>
-      <span className="text-[11px] font-medium mt-0.5">
+      <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
         {compassMode ? 'Bússola ON' : 'Bússola'}
       </span>
     </button>
