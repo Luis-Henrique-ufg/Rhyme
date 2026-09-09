@@ -517,7 +517,10 @@ export default function DriverDashboard() {
         await updateDoc(doc(db, 'trips', trip.id), {
           busLocation: { lat: latitude, lng: longitude },
           locationProviderName: trip.driverName || 'Motorista',
-          locationProviderId: user.uid
+          locationProviderId: user.uid,
+          locationProviderRole: 'driver',
+          locationProviderStatus: 'active',
+          locationUpdatedAt: Date.now()
         });
         setGpsStatus('active');
         setLastGpsUpdate(new Date());

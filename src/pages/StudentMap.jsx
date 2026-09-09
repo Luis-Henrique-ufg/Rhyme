@@ -38,86 +38,109 @@ const TILE_NIGHT = `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/
 const TILE_ATTR_DAY = '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>';
 const TILE_ATTR_NIGHT = '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>';
 
-// Ícone do motorista (Van / Ônibus) — estilo Uber, adapta ao horário e transmissão ao vivo
-const createBusIcon = (isCrominia, isDark = true, isBroadcasting = false) => {
+// Ícone do motorista (Van / Ônibus) — estilo Uber, adapta ao horário e estado do sinal de GPS
+// gpsState: 'live' | 'stale' | 'expired' | 'paused'  — controla cor, opacidade e radar
+const createBusIcon = (isCrominia, isDark = true, gpsState = 'live', elapsedLabel = '') => {
   const night = isDark;
-  const label = isCrominia ? 'Ônibus' : (isBroadcasting ? 'VAN (AO VIVO)' : 'VAN');
-  const bgColor = isCrominia
-    ? (night ? '#ffffff' : '#18181b')
-    : '#f97316';
-  const borderColor = isCrominia
-    ? (night ? '#111' : '#f4f4f5')
-    : (night ? '#111' : '#fff7ed');
-  const iconColor = isCrominia ? (night ? '#111' : '#f4f4f5') : '#ffffff';
-  const wheelColor = isCrominia ? (night ? '#f4f4f5' : '#111') : '#111';
+  const isLive    = gpsState === 'live';
+  const isStale   = gpsState === 'stale';
+  const isDead    = gpsState === 'expired' || gpsState === 'paused';
 
-  const pulseColor = isCrominia ? (night ? '#818cf8' : '#6366f1') : '#f97316';
-  const pulseBg = isCrominia
-    ? (night ? 'rgba(129, 140, 248, 0.25)' : 'rgba(99, 102, 241, 0.25)')
-    : 'rgba(249, 115, 22, 0.25)';
+  // --- Rótulo da tag acima do ícone ---
+  let label;
+  if (isCrominia) {
+    label = isLive ? 'ÔNIBUS (AO VIVO)' : isDead ? `ÔNIBUS (${elapsedLabel || 'SEM SINAL'})` : 'ÔNIBUS (PARADO)';
+  } else {
+    label = isLive ? 'VAN (AO VIVO)' : isDead ? `VAN (${elapsedLabel || 'SEM SINAL'})` : 'VAN (PARADA)';
+  }
+
+  // --- Cores do corpo do ícone ---
+  let bgColor, borderColor, iconColor, wheelColor, opacity;
+
+  if (isDead) {
+    // Expirado / pausado: cinza translúcido
+    bgColor     = night ? '#3f3f46' : '#a1a1aa';
+    borderColor = night ? '#52525b' : '#d4d4d8';
+    iconColor   = night ? '#a1a1aa' : '#ffffff';
+    wheelColor  = night ? '#71717a' : '#e4e4e7';
+    opacity     = 0.55;
+  } else if (isStale) {
+    // Sinal fraco/parado: âmbar fosco
+    bgColor     = isCrominia ? (night ? '#d4a017' : '#92400e') : '#d97706';
+    borderColor = night ? '#78350f' : '#fef3c7';
+    iconColor   = '#ffffff';
+    wheelColor  = '#fef3c7';
+    opacity     = 0.85;
+  } else {
+    // Ao vivo: laranja vibrante normal
+    bgColor     = isCrominia ? (night ? '#ffffff' : '#18181b') : '#f97316';
+    borderColor = isCrominia ? (night ? '#111' : '#f4f4f5') : (night ? '#111' : '#fff7ed');
+    iconColor   = isCrominia ? (night ? '#111' : '#f4f4f5') : '#ffffff';
+    wheelColor  = isCrominia ? (night ? '#f4f4f5' : '#111') : '#111';
+    opacity     = 1;
+  }
+
+  // --- Cor do radar (apenas live) ---
+  const pulseColor  = isCrominia ? (night ? '#818cf8' : '#6366f1') : '#f97316';
+  const pulseBg     = isCrominia
+    ? (night ? 'rgba(129,140,248,0.25)' : 'rgba(99,102,241,0.25)')
+    : 'rgba(249,115,22,0.25)';
   const pulseShadow = isCrominia
-    ? (night ? 'rgba(129, 140, 248, 0.45)' : 'rgba(99, 102, 241, 0.45)')
-    : 'rgba(249, 115, 22, 0.45)';
+    ? (night ? 'rgba(129,140,248,0.45)' : 'rgba(99,102,241,0.45)')
+    : 'rgba(249,115,22,0.45)';
 
-  const pulseRing = isBroadcasting ? `
+  // --- Tag: cor e borda ---
+  const tagColor  = isLive
+    ? (isCrominia ? (night ? '#f4f4f5' : '#18181b') : '#f97316')
+    : isDead ? (night ? '#a1a1aa' : '#71717a')
+    : '#d97706';
+  const tagBorder = isLive
+    ? (isCrominia ? (night ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)') : 'rgba(249,115,22,0.4)')
+    : isDead ? (night ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)')
+    : 'rgba(217,119,6,0.4)';
+
+  // --- Radar sonar pulsante (apenas live) ---
+  const pulseRing = isLive ? `
     <div style="
-      position: absolute;
-      inset: 0;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      border: 2.5px solid ${pulseColor};
+      position: absolute; inset: 0; width: 48px; height: 48px;
+      border-radius: 50%; border: 2.5px solid ${pulseColor};
       background: radial-gradient(circle, ${pulseBg} 0%, transparent 70%);
       box-shadow: 0 0 16px ${pulseShadow};
       animation: radarPulse 2.4s ease-out infinite;
-      pointer-events: none;
-      z-index: 1;
+      pointer-events: none; z-index: 1;
     "></div>
     <div style="
-      position: absolute;
-      inset: 0;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      border: 2px solid ${pulseColor};
+      position: absolute; inset: 0; width: 48px; height: 48px;
+      border-radius: 50%; border: 2px solid ${pulseColor};
       background: radial-gradient(circle, ${pulseBg} 0%, transparent 70%);
       box-shadow: 0 0 12px ${pulseShadow};
       animation: radarPulse 2.4s ease-out 1.2s infinite;
-      pointer-events: none;
-      z-index: 1;
+      pointer-events: none; z-index: 1;
     "></div>
   ` : '';
 
   return L.divIcon({
     html: `
-      <div style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:none;">
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:none;opacity:${opacity};">
         <div style="
           background: ${night ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.96)'};
-          color: ${isBroadcasting ? '#f97316' : (night ? '#f4f4f5' : '#18181b')};
+          color: ${tagColor};
           font-size: 10px; font-weight: 800;
           font-family: Inter, system-ui, sans-serif;
           padding: 2px 7px; border-radius: 6px; white-space: nowrap;
           box-shadow: 0 2px 6px rgba(0,0,0,${night ? '0.5' : '0.15'});
-          border: 1px solid ${isBroadcasting ? 'rgba(249,115,22,0.4)' : (night ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)')};
+          border: 1px solid ${tagBorder};
           margin-bottom: 4px; letter-spacing: 0.02em; text-transform: uppercase;
           z-index: 3;
         ">${label}</div>
-        <div style="
-          position: relative;
-          width: 48px;
-          height: 48px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        ">
+        <div style="position:relative;width:48px;height:48px;display:flex;align-items:center;justify-content:center;">
           ${pulseRing}
           <div style="
             width:48px; height:48px; background:${bgColor}; border-radius:50%;
             border: 3.5px solid ${borderColor};
             box-shadow: 0 6px 20px rgba(0,0,0,${night ? '0.6' : '0.2'});
             display:flex; align-items:center; justify-content:center; color:${iconColor};
-            position: relative;
-            z-index: 2;
+            position:relative; z-index:2;
           ">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none">
               <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h2"></path>
@@ -451,18 +474,58 @@ export default function StudentMap() {
   const { trip, tripId, loading: tripLoading, error: tripError } = useCurrentTrip(student?.route?.trim());
   const { attendances: publicList, error: attendancesError } = useTripAttendances(tripId);
 
-  // Transmissão ao vivo do veículo (seja pelo próprio aluno ou outro aluno a bordo)
-  const isVehicleLiveBroadcasting = isBroadcasting || Boolean(
-    trip?.locationProviderName &&
-    trip?.locationProviderName !== 'Motorista' &&
-    trip?.locationProviderName !== trip?.driverName
-  );
-  const busIcon = useMemo(() => createBusIcon(false, isDark, isVehicleLiveBroadcasting), [isDark, isVehicleLiveBroadcasting]);
-  const busIconAlt = useMemo(() => createBusIcon(true, isDark, isVehicleLiveBroadcasting), [isDark, isVehicleLiveBroadcasting]);
+  // --- Relógio para reatualizar elapsed label a cada 30 s ---
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // --- Sistema de Frescor do GPS ---
+  // Limiares: live < 45 s | stale 45 s – 3 min | expired > 3 min
+  const GPS_LIVE_MS  = 45_000;
+  const GPS_STALE_MS = 3 * 60_000;
+
+  const gpsState = useMemo(() => {
+    // O aluno está transmitindo manualmente: sempre live
+    if (isBroadcasting) return 'live';
+    // Sinal pausado intencionalmente pelo transmissor anterior
+    if (trip?.locationProviderStatus === 'paused') return 'paused';
+    // Sem localização alguma
+    if (!trip?.busLocation?.lat) return 'expired';
+    // Com timestamp: calcular idade
+    if (trip?.locationUpdatedAt) {
+      const age = now - trip.locationUpdatedAt;
+      if (age < GPS_LIVE_MS)  return 'live';
+      if (age < GPS_STALE_MS) return 'stale';
+      return 'expired';
+    }
+    // Sem timestamp (dados legados): assume live se há posição
+    return 'live';
+  }, [isBroadcasting, trip?.locationProviderStatus, trip?.busLocation, trip?.locationUpdatedAt, now]);
+
+  const elapsedLabel = useMemo(() => {
+    if (gpsState === 'live') return '';
+    if (gpsState === 'paused') return 'PAUSADO';
+    if (!trip?.locationUpdatedAt) return 'SEM SINAL';
+    const seconds = Math.round((now - trip.locationUpdatedAt) / 1000);
+    if (seconds < 60) return `HÁ ${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `HÁ ${minutes}min`;
+    return `HÁ ${Math.floor(minutes / 60)}h`;
+  }, [gpsState, trip?.locationUpdatedAt, now]);
+
+  // --- Prioridade Motorista > Aluno ---
+  // O motorista está ativo (live ou stale): aluno não deve transmitir
+  const isDriverActive = trip?.locationProviderRole === 'driver' && (gpsState === 'live' || gpsState === 'stale');
+
+  const busIcon    = useMemo(() => createBusIcon(false, isDark, gpsState, elapsedLabel), [isDark, gpsState, elapsedLabel]);
+  const busIconAlt = useMemo(() => createBusIcon(true,  isDark, gpsState, elapsedLabel), [isDark, gpsState, elapsedLabel]);
 
   const loading = studentLoading || (Boolean(student?.route) && tripLoading);
 
-  // Posição ativa da Van: se o aluno estiver transmitindo seu GPS, a van aparece na posição dele em tempo real
+  // Posição ativa da Van:
+  // Se o aluno transmite manualmente → posição local; caso contrário → última do Firestore (sempre visível)
   const activeBusLocation = (isBroadcasting && broadcastingLocation)
     ? broadcastingLocation
     : (trip?.busLocation?.lat != null && trip?.busLocation?.lng != null ? trip.busLocation : null);
@@ -648,7 +711,10 @@ export default function StudentMap() {
             await updateDoc(doc(db, 'trips', targetTripId), {
               busLocation: { lat: latitude, lng: longitude },
               locationProviderName: student?.name || 'Aluno',
-              locationProviderId: user.uid
+              locationProviderId: user.uid,
+              locationProviderRole: 'student',
+              locationProviderStatus: 'active',
+              locationUpdatedAt: Date.now()
             });
           } catch (e) {
             console.error("Erro ao enviar GPS como aluno:", e);
@@ -695,7 +761,13 @@ export default function StudentMap() {
     }
   }, [isBroadcasting, trip?.id, tripId, user?.uid, student?.name, attendance?.lat, attendance?.lng]);
 
-  const handleToggleBroadcasting = () => {
+  const handleToggleBroadcasting = async () => {
+    // Bloqueia aluno se motorista já está transmitindo ao vivo
+    if (!isBroadcasting && isDriverActive) {
+      showAlert('🚗 O motorista já está transmitindo a localização da Van em tempo real. Não é necessário usar o GPS pelo app.');
+      return;
+    }
+
     const nextState = !isBroadcasting;
     setIsBroadcasting(nextState);
 
@@ -706,10 +778,21 @@ export default function StudentMap() {
         setBroadcastingLocation({ lat: trip.busLocation.lat, lng: trip.busLocation.lng });
       }
       setFocusTrigger(prev => prev + 1);
-      showAlert("📍 Transmissão da Van ativada! O ícone da Van agora segue sua posição em tempo real.");
+      showAlert('📍 Transmissão da Van ativada! O ícone da Van agora segue sua posição em tempo real.');
     } else {
       setBroadcastingLocation(null);
-      showAlert("Transmissão da Van pausada.");
+      // Marca o sinal como pausado no Firestore para todos os outros usuários
+      const targetTripId = tripId || trip?.id;
+      if (targetTripId && (trip?.locationProviderId === user?.uid || !trip?.locationProviderId)) {
+        try {
+          await updateDoc(doc(db, 'trips', targetTripId), {
+            locationProviderStatus: 'paused'
+          });
+        } catch (e) {
+          console.warn('Falha ao marcar GPS como pausado:', e);
+        }
+      }
+      showAlert('Transmissão da Van pausada.');
     }
   };
 
@@ -981,6 +1064,26 @@ export default function StudentMap() {
           </div>
         )}
 
+        {/* Banner: Sinal GPS desatualizado (stale) */}
+        {!isBroadcasting && gpsState === 'stale' && busLocation && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1001] w-max max-w-[90vw]">
+            <div className="flex items-center gap-2 bg-black/85 [html.light_&]:bg-amber-50/95 backdrop-blur-md border border-amber-500/40 text-amber-400 [html.light_&]:text-amber-700 text-xs font-bold px-4 py-2 rounded-full shadow-xl">
+              <span className="text-amber-400">⚠</span>
+              Última posição recebida {elapsedLabel.toLowerCase()} — sinal instável
+            </div>
+          </div>
+        )}
+
+        {/* Banner: Sinal GPS expirado / pausado */}
+        {!isBroadcasting && (gpsState === 'expired' || gpsState === 'paused') && busLocation && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1001] w-max max-w-[90vw]">
+            <div className="flex items-center gap-2 bg-black/85 [html.light_&]:bg-white/95 backdrop-blur-md border border-zinc-600/50 [html.light_&]:border-slate-300 text-zinc-400 [html.light_&]:text-slate-600 text-xs font-bold px-4 py-2 rounded-full shadow-xl">
+              <span>📡</span>
+              GPS offline — última posição: {elapsedLabel}
+            </div>
+          </div>
+        )}
+
         <MapContainer center={CENTER} zoom={13} className="w-full h-full" zoomControl={false} attributionControl={false} rotate={true} touchRotate={true}>
           <MapInteractions />
           <TileLayer
@@ -1034,10 +1137,17 @@ export default function StudentMap() {
               zIndexOffset={1000}
             >
               <Popup className="dark-popup">
-                <span className="font-bold text-orange-500 flex flex-col gap-1">
+                <span className="font-bold flex flex-col gap-1" style={{color: gpsState === 'live' ? '#f97316' : gpsState === 'stale' ? '#d97706' : '#71717a'}}>
                   <span>{student.route === 'Cromínia' ? 'Ônibus' : 'Van'} ({trip?.route || student.route})</span>
                   <span className="text-[10px] text-zinc-400 [html.light_&]:text-slate-500 uppercase tracking-wider font-semibold">
-                    📍 {isBroadcasting ? 'Transmitido por você (Você está a bordo)' : `Via: ${trip?.locationProviderName || trip?.driverName || 'Motorista'}`}
+                    {isBroadcasting
+                      ? '📍 Transmitido por você (Você está a bordo)'
+                      : gpsState === 'live'
+                        ? `📍 Ao vivo — ${trip?.locationProviderName || trip?.driverName || 'Motorista'}`
+                        : gpsState === 'stale'
+                          ? `⚠ Sinal instável — ${elapsedLabel} — ${trip?.locationProviderName || 'Motorista'}`
+                          : `📡 Offline — ${elapsedLabel} — última posição conhecida`
+                    }
                   </span>
                 </span>
               </Popup>
