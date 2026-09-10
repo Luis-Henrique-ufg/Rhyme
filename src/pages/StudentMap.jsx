@@ -1237,7 +1237,7 @@ export default function StudentMap() {
             const isSoIda = attendance?.tripType === 'ida';
             const icon = createStudentMapIcon('Você', true, false, isSoIda, isDark);
             return (
-              <Marker position={[attendance.lat, attendance.lng]} icon={icon} zIndexOffset={900}>
+              <Marker key={`my_loc_${attendance?.status || 'waiting'}`} position={[attendance.lat, attendance.lng]} icon={icon} zIndexOffset={900}>
                 <Popup className="dark-popup">
                   <span className="font-bold text-white [html.light_&]:text-slate-900">Sua localização {isSoIda ? '(Só Ida)' : ''}</span>
                 </Popup>
@@ -1261,7 +1261,7 @@ export default function StudentMap() {
             const displayName = isMe ? 'Você' : (att.studentName ? att.studentName.split(' ')[0] : 'Aluno');
             const icon = createStudentMapIcon(displayName, isMe, true, isSoIda, isDark);
             return (
-              <Marker key={att.id} position={[att.lat, att.lng]} icon={icon} zIndexOffset={isMe ? 850 : (isSoIda ? 750 : 800)}>
+              <Marker key={`${att.id}_${att.status}`} position={[att.lat, att.lng]} icon={icon} zIndexOffset={isMe ? 850 : (isSoIda ? 750 : 800)}>
                 <Popup className="dark-popup">
                   <span className="font-bold text-white [html.light_&]:text-slate-900">{isMe ? `Você (${att.studentName})` : att.studentName} {isSoIda ? '(Só Ida)' : ''}</span>
                 </Popup>

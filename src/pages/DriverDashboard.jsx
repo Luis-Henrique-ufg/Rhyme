@@ -199,8 +199,8 @@ const createFacultyIcon = (name, isCrominia, isDark = true) => {
   });
 };
 
-// Marcador de Aluno/Passageiro na visão do Motorista — completamente diferenciado da Van (avatar circular de pessoa, cores azul/verde/âmbar/cinza, sem gota)
-const createDriverStudentIcon = (name, isLiberado, isSoIda, response = null, totalInCluster = 1, isDark = true) => {
+// Marcador de Aluno/Passageiro na visão do Motorista — avatar circular com halo/sonar único por status (sem duplicação de anéis)
+const createDriverStudentIcon = (name, isLiberado, isSoIda, response = null, totalInCluster = 1, isDark = true, isNextStop = false) => {
   const night = isDark;
   const isComing = response === 'coming';
 
@@ -218,13 +218,19 @@ const createDriverStudentIcon = (name, isLiberado, isSoIda, response = null, tot
     bg = '#71717a';
   } else if (isComing) {
     bg = '#0ea5e9';
-    haloBg = 'rgba(14, 165, 233, 0.28)';
-    haloBorder = 'rgba(14, 165, 233, 0.65)';
+    haloBg = 'rgba(14, 165, 233, 0.25)';
+    haloBorder = 'rgba(14, 165, 233, 0.7)';
     showHalo = true;
   } else if (isLiberado) {
     bg = '#10b981';
     haloBg = 'rgba(16, 185, 129, 0.25)';
-    haloBorder = 'rgba(16, 185, 129, 0.55)';
+    haloBorder = 'rgba(16, 185, 129, 0.7)';
+    showHalo = true;
+  } else if (isNextStop) {
+    // Aluno aguardando que é a próxima parada com a van a caminho (<= 2.5km) -> sonar âmbar exclusivo
+    bg = '#f59e0b';
+    haloBg = 'rgba(245, 158, 11, 0.22)';
+    haloBorder = 'rgba(245, 158, 11, 0.7)';
     showHalo = true;
   }
 
@@ -232,18 +238,31 @@ const createDriverStudentIcon = (name, isLiberado, isSoIda, response = null, tot
   const labelBg = night ? 'rgba(15,15,15,0.94)' : 'rgba(255,255,255,0.96)';
   const labelText = night ? '#f4f4f5' : '#18181b';
 
-  // Halo suave apenas para status liberado ou a caminho
+  // Halo / Sonar unificado: renderizado SEMPRE no mesmo elemento e na mesma cor do status
   const haloHtml = showHalo ? `
     <div style="
       position: absolute;
       inset: -5px;
       border-radius: 50%;
-      border: 1.5px solid ${haloBorder};
+      border: ${isNextStop ? '2px' : '1.5px'} solid ${haloBorder};
       background: ${haloBg};
-      animation: studentHalo 2.5s ease-out infinite;
+      animation: studentHalo ${isNextStop ? '2.1s' : '2.5s'} ease-out infinite;
+      box-shadow: 0 0 ${isNextStop ? '12px' : '6px'} ${haloBorder};
       pointer-events: none;
       z-index: 1;
     "></div>
+    ${isNextStop ? `
+      <div style="
+        position: absolute;
+        inset: -5px;
+        border-radius: 50%;
+        border: 1.5px solid ${haloBorder};
+        background: transparent;
+        animation: studentHalo 2.1s ease-out 1.05s infinite;
+        pointer-events: none;
+        z-index: 1;
+      "></div>
+    ` : ''}
   ` : '';
 
   // Silhueta de pessoa / estudante (Avatar 👤) ou ícone de check se a caminho
@@ -327,7 +346,7 @@ const createDriverStudentIcon = (name, isLiberado, isSoIda, response = null, tot
 };
 
 const createStudentPinIcon = (name, isCrominia, isDark = true, isSoIda = false) => {
-  return createDriverStudentIcon(name, false, isSoIda, null, 1, isDark);
+  return createDriverStudentIcon(name, false, isSoIda, null, 1, isDark, false);
 };
 
 // Ícone do motorista (Van / Ônibus) — estilo Uber sobre fundo dia/noite
@@ -398,19 +417,22 @@ const createBusIcon = (isCrominia, isDark = true) => {
   });
 };
 
-// Ícone do Halo de Proximidade (Radar animado)
-const createHaloIcon = (isCrominia) => L.divIcon({
-  html: `
-    <div class="proximity-halo-container" style="--halo-color: ${isCrominia ? '#6366f1' : '#f97316'}; --halo-bg: ${isCrominia ? 'rgba(99,102,241,0.2)' : 'rgba(249,115,22,0.2)'}; --halo-shadow: ${isCrominia ? 'rgba(99,102,241,0.35)' : 'rgba(249,115,22,0.35)'}">
-      <div class="proximity-halo-ring"></div>
-      <div class="proximity-halo-ring delay-1"></div>
-      <div class="proximity-halo-ring delay-2"></div>
-    </div>
-  `,
-  className: 'bg-transparent border-none',
-  iconSize: [90, 90],
-  iconAnchor: [45, 45]
-});
+// Ícone do Halo de Proximidade (Radar animado para faculdades sem cluster de aluno)
+const createHaloIcon = (isCrominia, customColor = null) => {
+  const baseColor = customColor || (isCrominia ? '#6366f1' : '#f97316');
+  return L.divIcon({
+    html: `
+      <div class="proximity-halo-container" style="--halo-color: ${baseColor}; --halo-bg: ${baseColor}33; --halo-shadow: ${baseColor}55">
+        <div class="proximity-halo-ring"></div>
+        <div class="proximity-halo-ring delay-1"></div>
+        <div class="proximity-halo-ring delay-2"></div>
+      </div>
+    `,
+    className: 'bg-transparent border-none',
+    iconSize: [90, 90],
+    iconAnchor: [45, 45]
+  });
+};
 
 export default function DriverDashboard() {
   const { user } = useAuth();
@@ -1420,22 +1442,25 @@ export default function DriverDashboard() {
                 );
             })}
 
-            {/* Halo de Proximidade Dinâmico no Ponto Mais Próximo (quando <= 2.5km) */}
-            {nextStop && nextStop.distKm <= 2.5 && trip?.status === 'in_progress' && (
+            {/* Halo de Proximidade Dinâmico no Ponto Mais Próximo:
+                Apenas para faculdades (fac_) sem cluster individual de alunos.
+                Para alunos individuais, o próprio marcador já renderiza seu sonar exclusivo na cor correta de status, eliminando qualquer duplicação de sonares âmbar + esmeralda. */}
+            {nextStop && nextStop.distKm <= 2.5 && trip?.status === 'in_progress' && nextStop.id.startsWith('fac_') && (
               <Marker 
-                key={`halo_${nextStop.id}`}
+                key={`halo_${nextStop.id}_${nextStop.liberadosCount}`}
                 position={[nextStop.lat, nextStop.lng]} 
-                icon={driver?.route === 'Cromínia' ? HaloIconAlt : HaloIcon} 
+                icon={createHaloIcon(driver?.route === 'Cromínia', nextStop.liberadosCount > 0 && nextStop.liberadosCount === nextStop.totalCount ? '#10b981' : null)} 
                 zIndexOffset={100}
               />
             )}
 
-            {/* Marcadores de Alunos e Grupos (Avatar de Aluno sem gota) */}
+            {/* Marcadores de Alunos e Grupos (Avatar de Aluno sem gota e sem duplicação de halo) */}
             {trip?.status !== 'finished' && customClusters.map(cluster => {
               const isCrominia = driver?.route === 'Cromínia';
               const totalStudents = cluster.students.length;
               // Se há apenas 1 aluno OU o zoom está próximo (>= 15), mostra o avatar do aluno
               const showIndividual = mapZoom >= 15 || totalStudents === 1;
+              const isNextStop = Boolean(nextStop && nextStop.distKm <= 2.5 && nextStop.id === cluster.id);
 
               if (showIndividual) {
                 const isSoIda = cluster.students.every(s => s.tripType === 'ida');
@@ -1458,15 +1483,16 @@ export default function DriverDashboard() {
                   isSoIda,
                   hasComing ? 'coming' : null,
                   totalStudents,
-                  isDark
+                  isDark,
+                  isNextStop
                 );
 
                 return (
                   <Marker 
-                    key={cluster.id} 
+                    key={`${cluster.id}_${hasLiberado ? 'lib' : 'wait'}_${hasComing ? 'com' : ''}_${isNextStop ? 'next' : ''}`} 
                     position={[cluster.lat, cluster.lng]} 
                     icon={icon} 
-                    zIndexOffset={600}
+                    zIndexOffset={isNextStop ? 700 : 600}
                     eventHandlers={{
                       mousedown: () => handleMarkerPressStart(cluster.lat, cluster.lng),
                       mouseup: handleMarkerPressEnd,
