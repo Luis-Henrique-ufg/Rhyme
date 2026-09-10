@@ -199,41 +199,135 @@ const createFacultyIcon = (name, isCrominia, isDark = true) => {
   });
 };
 
-// Ícone de aluno — teardrop/pin nativo do Mapbox, mas com foto ou inicial
-const createStudentPinIcon = (name, isCrominia, isDark = true, isSoIda = false) => {
+// Marcador de Aluno/Passageiro na visão do Motorista — completamente diferenciado da Van (avatar circular de pessoa, cores azul/verde/âmbar/cinza, sem gota)
+const createDriverStudentIcon = (name, isLiberado, isSoIda, response = null, totalInCluster = 1, isDark = true) => {
   const night = isDark;
-  const accent = isSoIda ? '#71717a' : (isCrominia ? (isDark ? '#71717a' : '#475569') : '#f97316');
-  const textColor = night ? '#f4f4f5' : '#18181b';
-  const labelBg = night ? 'rgba(10,10,10,0.95)' : 'rgba(255,255,255,0.97)';
-  const shadow = night ? '0 4px 14px rgba(0,0,0,0.65)' : '0 3px 10px rgba(0,0,0,0.32)';
-  const borderCol = night ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
-  // Teardrop SVG pin
-  const pinSvg = `<svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M16 0C7.163 0 0 7.163 0 16c0 10 16 24 16 24s16-14 16-24C32 7.163 24.837 0 16 0z" fill="${accent}"/>
-    <circle cx="16" cy="15" r="8" fill="${night ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.35)'}"/>
-    <path d="M16 11c1.8 0 2.7-.9 2.7-2.7s-.9-2.7-2.7-2.7-2.7.9-2.7 2.7.9 2.7 2.7 2.7zm0 1.35c-1.8 0-5.4.9-5.4 2.7v1.35h10.8v-1.35c0-1.8-3.6-2.7-5.4-2.7z" fill="white"/>
-  </svg>`;
+  const isComing = response === 'coming';
+
+  // Paleta do passageiro:
+  // - A Caminho (respondeu chamado): Azul Céu (#0ea5e9) com halo vibrante
+  // - Liberado: Verde Esmeralda (#10b981) indicando "pronto para embarque"
+  // - Aguardando: Âmbar (#f59e0b) indicando "ainda em aula/esperando"
+  // - Só Ida: Cinza Neutro (#71717a)
+  let bg = '#f59e0b';
+  let haloBg = 'transparent';
+  let haloBorder = 'transparent';
+  let showHalo = false;
+
+  if (isSoIda) {
+    bg = '#71717a';
+  } else if (isComing) {
+    bg = '#0ea5e9';
+    haloBg = 'rgba(14, 165, 233, 0.28)';
+    haloBorder = 'rgba(14, 165, 233, 0.65)';
+    showHalo = true;
+  } else if (isLiberado) {
+    bg = '#10b981';
+    haloBg = 'rgba(16, 185, 129, 0.25)';
+    haloBorder = 'rgba(16, 185, 129, 0.55)';
+    showHalo = true;
+  }
+
+  const borderCol = night ? '#18181b' : '#ffffff';
+  const labelBg = night ? 'rgba(15,15,15,0.94)' : 'rgba(255,255,255,0.96)';
+  const labelText = night ? '#f4f4f5' : '#18181b';
+
+  // Halo suave apenas para status liberado ou a caminho
+  const haloHtml = showHalo ? `
+    <div style="
+      position: absolute;
+      inset: -5px;
+      border-radius: 50%;
+      border: 1.5px solid ${haloBorder};
+      background: ${haloBg};
+      animation: studentHalo 2.5s ease-out infinite;
+      pointer-events: none;
+      z-index: 1;
+    "></div>
+  ` : '';
+
+  // Silhueta de pessoa / estudante (Avatar 👤) ou ícone de check se a caminho
+  const userSvg = isComing ? `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+  ` : `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="white" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
+      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+    </svg>
+  `;
+
+  // Badge indicador de múltiplos alunos no cluster (+1, +2...)
+  const countBadge = totalInCluster > 1 ? `
+    <span style="
+      position: absolute;
+      top: -4px;
+      right: -6px;
+      background: ${night ? '#27272a' : '#18181b'};
+      color: #ffffff;
+      font-size: 8.5px;
+      font-weight: 800;
+      padding: 0 4px;
+      border-radius: 9999px;
+      border: 1.5px solid ${borderCol};
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      z-index: 4;
+    ">+${totalInCluster - 1}</span>
+  ` : '';
+
+  const labelHtml = name ? `
+    <div style="
+      background: ${labelBg};
+      color: ${labelText};
+      font-size: 9.5px;
+      font-weight: 700;
+      font-family: Inter, system-ui, sans-serif;
+      padding: 1px 6px;
+      border-radius: 5px;
+      white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(0,0,0,${night ? '0.6' : '0.15'});
+      border: 1px solid ${night ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'};
+      margin-bottom: 3px;
+      max-width: 110px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      z-index: 3;
+    ">${name}</div>
+  ` : '';
+
   return L.divIcon({
     html: `
       <div style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:none;">
-        ${name ? `<div style="
-          background:${labelBg};
-          color:${textColor};
-          font-size:10px;font-weight:700;
-          font-family:Inter,system-ui,sans-serif;
-          padding:2px 7px;border-radius:6px;white-space:nowrap;
-          box-shadow:${shadow};
-          border:1px solid ${borderCol};
-          margin-bottom:3px;max-width:110px;
-          overflow:hidden;text-overflow:ellipsis;
-        ">${name}</div>` : ''}
-        ${pinSvg}
+        ${labelHtml}
+        <div style="position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;">
+          ${haloHtml}
+          ${countBadge}
+          <div style="
+            width: 28px;
+            height: 28px;
+            background: ${bg};
+            border-radius: 50%;
+            border: 2px solid ${borderCol};
+            box-shadow: 0 3px 10px rgba(0,0,0,${night ? '0.6' : '0.25'}), 0 0 0 1px ${bg}44;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+          ">
+            ${userSvg}
+          </div>
+        </div>
       </div>
     `,
     className: 'bg-transparent border-none',
-    iconSize: [32, name ? 72 : 40],
-    iconAnchor: [16, name ? 72 : 40]
+    iconSize: [28, name ? 50 : 28],
+    iconAnchor: [14, name ? 36 : 14]
   });
+};
+
+const createStudentPinIcon = (name, isCrominia, isDark = true, isSoIda = false) => {
+  return createDriverStudentIcon(name, false, isSoIda, null, 1, isDark);
 };
 
 // Ícone do motorista (Van / Ônibus) — estilo Uber sobre fundo dia/noite
@@ -623,8 +717,16 @@ export default function DriverDashboard() {
     
     Object.entries(attendanceMap).forEach(([studentId, att]) => {
       if ((att.status === 'liberado' || att.status === 'aguardando' || att.tripType === 'ida') && att.status !== 'cancelado' && att.status !== 'embarcado' && att.lat && att.lng) {
-        // Usa os dados do próprio attendance, incluindo tripType
-        const student = { name: att.studentName || 'Aluno', faculty: att.faculty, status: att.status, tripType: att.tripType };
+        // Usa os dados do próprio attendance, incluindo tripType e resposta de chamada
+        const student = { 
+          id: studentId,
+          name: att.studentName || 'Aluno', 
+          faculty: att.faculty, 
+          status: att.status, 
+          tripType: att.tripType,
+          response: att.response || null,
+          responseAt: att.responseAt || null
+        };
 
         // Tentar adicionar a um cluster custom existente
         let addedToCluster = false;
@@ -1328,18 +1430,37 @@ export default function DriverDashboard() {
               />
             )}
 
-            {/* Pinos Customizados ou Grupos — zoom >= 15 mostra teardrops individuais */}
+            {/* Marcadores de Alunos e Grupos (Avatar de Aluno sem gota) */}
             {trip?.status !== 'finished' && customClusters.map(cluster => {
               const isCrominia = driver?.route === 'Cromínia';
               const totalStudents = cluster.students.length;
-              const showTeardrops = mapZoom >= 15;
+              // Se há apenas 1 aluno OU o zoom está próximo (>= 15), mostra o avatar do aluno
+              const showIndividual = mapZoom >= 15 || totalStudents === 1;
 
-              if (showTeardrops) {
-                // Zoom in: mostra cada aluno como teardrop individual (cinza se for só ida)
+              if (showIndividual) {
                 const isSoIda = cluster.students.every(s => s.tripType === 'ida');
-                const primaryName = cluster.students[0]?.name || '';
-                const displayName = isSoIda ? `${primaryName} (Só Ida)` : primaryName;
-                const icon = createStudentPinIcon(displayName, isCrominia, isDark, isSoIda);
+                const hasLiberado = cluster.students.some(s => s.status === 'liberado');
+                const hasComing = cluster.students.some(s => s.response === 'coming');
+                const primaryStudent = cluster.students[0];
+                const rawName = primaryStudent?.name || 'Aluno';
+                const firstName = rawName.split(' ')[0];
+
+                let displayName = firstName;
+                if (isSoIda) {
+                  displayName = `${firstName} (Só Ida)`;
+                } else if (totalStudents > 1) {
+                  displayName = `${firstName} +${totalStudents - 1}`;
+                }
+
+                const icon = createDriverStudentIcon(
+                  displayName,
+                  hasLiberado,
+                  isSoIda,
+                  hasComing ? 'coming' : null,
+                  totalStudents,
+                  isDark
+                );
+
                 return (
                   <Marker 
                     key={cluster.id} 
@@ -1358,10 +1479,52 @@ export default function DriverDashboard() {
                         openNavigationTo(cluster.lat, cluster.lng);
                       }
                     }}
-                  />
+                  >
+                    <Popup className="dark-popup">
+                      <div className="p-1 min-w-[140px] text-xs">
+                        <div className="font-bold text-sm mb-1 text-white [html.light_&]:text-slate-900 border-b border-white/10 pb-1 flex items-center justify-between">
+                          <span>{totalStudents === 1 ? 'Aluno' : `${totalStudents} Alunos`}</span>
+                          {cluster.students[0]?.faculty && (
+                            <span className="text-[10px] font-normal text-orange-400">{cluster.students[0].faculty}</span>
+                          )}
+                        </div>
+                        <div className="space-y-1 my-1.5 max-h-36 overflow-y-auto">
+                          {cluster.students.map((s, idx) => (
+                            <div key={idx} className="flex items-center justify-between gap-2 py-0.5">
+                              <div className="flex items-center gap-1.5 truncate">
+                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.status === 'liberado' ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : s.tripType === 'ida' ? 'bg-zinc-400' : 'bg-amber-500'}`}></span>
+                                <span className="text-zinc-200 [html.light_&]:text-slate-800 font-medium truncate">{s.name}</span>
+                              </div>
+                              <div className="flex-shrink-0 text-[10px]">
+                                {s.response === 'coming' ? (
+                                  <span className="text-sky-400 font-bold bg-sky-500/10 px-1 py-0.5 rounded">A caminho</span>
+                                ) : s.status === 'liberado' ? (
+                                  <span className="text-emerald-400 font-semibold">Liberado</span>
+                                ) : s.tripType === 'ida' ? (
+                                  <span className="text-zinc-400">Só ida</span>
+                                ) : (
+                                  <span className="text-amber-400">Aguardando</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openNavigationTo(cluster.lat, cluster.lng);
+                          }}
+                          className="mt-2 w-full py-1 px-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-[11px] font-bold transition-all shadow flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          <Navigation size={12} />
+                          Navegar até aqui
+                        </button>
+                      </div>
+                    </Popup>
+                  </Marker>
                 );
               } else {
-                // Zoom out: agrupa tudo num ícone com contador
+                // Zoom out com múltiplos alunos: agrupa num ícone com contador
                 const primaryFaculty = cluster.students[0]?.faculty || '';
                 const liberados = cluster.students.filter(s => s.status === 'liberado').length;
                 const total = totalStudents;
@@ -1384,7 +1547,45 @@ export default function DriverDashboard() {
                         openNavigationTo(cluster.lat, cluster.lng);
                       }
                     }}
-                  />
+                  >
+                    <Popup className="dark-popup">
+                      <div className="p-1 min-w-[140px] text-xs">
+                        <div className="font-bold text-sm mb-1 text-white [html.light_&]:text-slate-900 border-b border-white/10 pb-1 flex items-center justify-between">
+                          <span>{primaryFaculty || 'Grupo de Alunos'}</span>
+                          <span className="text-[10px] text-emerald-400 font-bold">{liberados}/{total}</span>
+                        </div>
+                        <div className="space-y-1 my-1.5 max-h-36 overflow-y-auto">
+                          {cluster.students.map((s, idx) => (
+                            <div key={idx} className="flex items-center justify-between gap-2 py-0.5">
+                              <div className="flex items-center gap-1.5 truncate">
+                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.status === 'liberado' ? 'bg-emerald-500' : s.tripType === 'ida' ? 'bg-zinc-400' : 'bg-amber-500'}`}></span>
+                                <span className="text-zinc-200 [html.light_&]:text-slate-800 font-medium truncate">{s.name}</span>
+                              </div>
+                              <div className="flex-shrink-0 text-[10px]">
+                                {s.response === 'coming' ? (
+                                  <span className="text-sky-400 font-bold">A caminho</span>
+                                ) : s.status === 'liberado' ? (
+                                  <span className="text-emerald-400">Liberado</span>
+                                ) : (
+                                  <span className="text-amber-400">Aguardando</span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openNavigationTo(cluster.lat, cluster.lng);
+                          }}
+                          className="mt-2 w-full py-1 px-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-[11px] font-bold transition-all shadow flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          <Navigation size={12} />
+                          Navegar até aqui
+                        </button>
+                      </div>
+                    </Popup>
+                  </Marker>
                 );
               }
             })}
