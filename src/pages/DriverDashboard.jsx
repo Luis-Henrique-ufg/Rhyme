@@ -1141,6 +1141,37 @@ export default function DriverDashboard() {
   return (
     <div className="flex flex-col h-screen bg-background">
       <Header userProfile={driver} />
+
+      {driver?.role === 'admin' && (
+        <div className="bg-card-elevated border-b border-subtle px-4 py-2 flex items-center justify-between z-30 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 tracking-wider">
+              ADMIN
+            </span>
+            <span className="text-xs font-semibold text-heading hidden sm:inline">Monitorando Rota:</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {['Professor Jamil', 'Hidrolândia', 'Cromínia'].map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={async () => {
+                  if (driver.route !== r) {
+                    await updateDoc(doc(db, 'students', user.uid), { route: r });
+                  }
+                }}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
+                  driver.route === r
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'bg-subtle text-caption hover:text-heading hover-bg-subtle'
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       
 
 

@@ -1,7 +1,7 @@
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { Settings, User, History, LogOut, Camera, X, Check, Download, MapPin, Sparkles } from 'lucide-react';
+import { Settings, User, History, LogOut, Camera, X, Check, Download, MapPin, Sparkles, Bus, Shield } from 'lucide-react';
 import { doc, updateDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useCustomAlert } from '../contexts/AlertContext';
@@ -49,6 +49,7 @@ const DropdownSelect = ({ value, onChange, options }) => {
 export default function Header({ userProfile }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isIOSAndNotInstalled, setIsIOSAndNotInstalled] = useState(false);
   const { showAlert } = useCustomAlert();
@@ -280,9 +281,16 @@ export default function Header({ userProfile }) {
                 </div>
               )}
               <div className="flex flex-col">
-                <span className="text-sm font-bold text-heading tracking-wide">{userProfile.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-heading tracking-wide">{userProfile.name}</span>
+                  {userProfile.role === 'admin' && (
+                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 tracking-wider">
+                      ADMIN
+                    </span>
+                  )}
+                </div>
                 <span className="text-[10px] font-bold text-primary uppercase tracking-wider">
-                  {userProfile.role === 'driver' ? `Rota: ${userProfile.route}` : userProfile.faculty}
+                  {userProfile.role === 'driver' || userProfile.role === 'admin' ? `Rota: ${userProfile.route}` : userProfile.faculty}
                 </span>
               </div>
             </div>
@@ -298,6 +306,32 @@ export default function Header({ userProfile }) {
         )}
       </div>
       <div className="flex items-center gap-2 sm:gap-3">
+        {userProfile?.role === 'admin' && (
+          <button
+            onClick={() => {
+              if (location.pathname.startsWith('/motorista')) {
+                navigate('/aluno/mapa');
+              } else {
+                navigate('/motorista/dashboard');
+              }
+            }}
+            title={location.pathname.startsWith('/motorista') ? "Mudar para Visão do Aluno" : "Mudar para Painel do Motorista"}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-primary/10 text-primary hover:bg-primary/20 transition-all border border-primary/30 group shadow-sm active:scale-95"
+          >
+            {location.pathname.startsWith('/motorista') ? (
+              <>
+                <User className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Visão Aluno</span>
+              </>
+            ) : (
+              <>
+                <Bus className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Painel Motorista</span>
+              </>
+            )}
+          </button>
+        )}
+
         {(deferredPrompt || isIOSAndNotInstalled) && (
           <button
             onClick={handleInstallClick}
@@ -512,6 +546,37 @@ export default function Header({ userProfile }) {
                 )}
               </div>
             </div>
+
+            {/* Painel Administrativo */}
+            {userProfile?.role === 'admin' && (
+              <div className="space-y-3 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-500 flex items-center gap-1.5">
+                    <Shield size={14} /> Modo Administrador
+                  </span>
+                  <span className="text-[10px] text-caption font-semibold uppercase tracking-wider">Acesso Total</span>
+                </div>
+                <p className="text-xs text-body leading-relaxed">
+                  Você possui permissões de administrador. Pode inspecionar e operar qualquer rota, além de alternar livremente entre as telas.
+                </p>
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => { setIsSettingsOpen(false); navigate('/aluno/mapa'); }}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${location.pathname.startsWith('/aluno') ? 'bg-primary text-white shadow-sm' : 'bg-subtle text-body hover:text-heading border border-subtle'}`}
+                  >
+                    <User size={13} /> Visão Aluno
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setIsSettingsOpen(false); navigate('/motorista/dashboard'); }}
+                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${location.pathname.startsWith('/motorista') ? 'bg-primary text-white shadow-sm' : 'bg-subtle text-body hover:text-heading border border-subtle'}`}
+                  >
+                    <Bus size={13} /> Painel Motorista
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Zona de Perigo / Logout */}
             <div className="pt-4 border-t border-subtle">

@@ -162,11 +162,7 @@ export default function Register() {
 
       await setDoc(doc(db, 'students', currentUserUid), studentData);
 
-      if (formData.role === 'driver') {
-        navigate('/motorista/dashboard', { replace: true });
-      } else {
-        navigate('/aluno/mapa', { replace: true });
-      }
+      navigate('/aluno/mapa', { replace: true });
 
     } catch (err) {
       console.error('Erro ao salvar cadastro:', err);
@@ -199,12 +195,12 @@ export default function Register() {
       hasError = true;
     }
 
-    if (formData.role === 'student' && !formData.faculty) {
+    if (!formData.faculty) {
       errors.faculty = 'Selecione uma faculdade.';
       hasError = true;
     }
 
-    if (formData.role === 'student' && formData.faculty === 'Outra' && !formData.customFaculty.trim()) {
+    if (formData.faculty === 'Outra' && !formData.customFaculty.trim()) {
       errors.customFaculty = 'Digite o nome da sua faculdade/instituição.';
       hasError = true;
     }
@@ -214,14 +210,8 @@ export default function Register() {
       return;
     }
 
-    // Se for aluno, abre o mapa de seleção de localização da faculdade antes de salvar
-    if (formData.role === 'student') {
-      setShowLocationPicker(true);
-      return;
-    }
-
-    // Motorista: salva direto
-    await doRegister(null);
+    // Abre o mapa de seleção de localização da faculdade antes de salvar
+    setShowLocationPicker(true);
   };
 
   return (
@@ -292,18 +282,7 @@ export default function Register() {
             {validationErrors.name && <p className="text-danger text-xs mt-1">{validationErrors.name}</p>}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-body mb-1">Você é?</label>
-            <CustomSelect
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              options={[
-                { value: 'student', label: 'Aluno' },
-                { value: 'driver', label: 'Motorista' }
-              ]}
-            />
-          </div>
+
 
           <div>
             <label className="block text-sm font-medium text-body mb-1">Rota <span className="text-danger">*</span></label>
@@ -319,34 +298,32 @@ export default function Register() {
             />
           </div>
 
-          {formData.role === 'student' && (
-            <div>
-              <label className="block text-sm font-medium text-body mb-1">Faculdade <span className="text-danger">*</span></label>
-              <CustomSelect
-                name="faculty"
-                value={formData.faculty}
-                onChange={handleChange}
-                className={validationErrors.faculty ? 'border-danger focus:ring-danger' : ''}
-                placeholder="Selecione sua faculdade"
-                options={FACULTIES.map(fac => ({ value: fac, label: fac }))}
-              />
-              {validationErrors.faculty && <p className="text-danger text-xs mt-1">{validationErrors.faculty}</p>}
-              
-              {formData.faculty === 'Outra' && (
-                <div className="mt-3 animate-[fadeIn_0.3s_ease-out]">
-                  <input
-                    type="text"
-                    name="customFaculty"
-                    value={formData.customFaculty}
-                    onChange={handleChange}
-                    placeholder="Digite o nome da instituição"
-                    className={`w-full bg-subtle border ${validationErrors.customFaculty ? 'border-danger focus:ring-danger' : 'border-subtle focus:border-primary focus:ring-primary'} rounded-xl px-4 py-2.5 text-heading placeholder:text-caption focus:outline-none focus:ring-1 transition-colors`}
-                  />
-                  {validationErrors.customFaculty && <p className="text-danger text-xs mt-1">{validationErrors.customFaculty}</p>}
-                </div>
-              )}
-            </div>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-body mb-1">Faculdade <span className="text-danger">*</span></label>
+            <CustomSelect
+              name="faculty"
+              value={formData.faculty}
+              onChange={handleChange}
+              className={validationErrors.faculty ? 'border-danger focus:ring-danger' : ''}
+              placeholder="Selecione sua faculdade"
+              options={FACULTIES.map(fac => ({ value: fac, label: fac }))}
+            />
+            {validationErrors.faculty && <p className="text-danger text-xs mt-1">{validationErrors.faculty}</p>}
+            
+            {formData.faculty === 'Outra' && (
+              <div className="mt-3 animate-[fadeIn_0.3s_ease-out]">
+                <input
+                  type="text"
+                  name="customFaculty"
+                  value={formData.customFaculty}
+                  onChange={handleChange}
+                  placeholder="Digite o nome da instituição"
+                  className={`w-full bg-subtle border ${validationErrors.customFaculty ? 'border-danger focus:ring-danger' : 'border-subtle focus:border-primary focus:ring-primary'} rounded-xl px-4 py-2.5 text-heading placeholder:text-caption focus:outline-none focus:ring-1 transition-colors`}
+                />
+                {validationErrors.customFaculty && <p className="text-danger text-xs mt-1">{validationErrors.customFaculty}</p>}
+              </div>
+            )}
+          </div>
 
           <div className="flex flex-col gap-3 pt-4">
             <button
@@ -354,7 +331,7 @@ export default function Register() {
               disabled={isSubmitting}
               className="w-full btn-primary disabled:opacity-50"
             >
-              {isSubmitting ? 'Salvando...' : formData.role === 'student' ? 'Avançar para localização →' : 'Finalizar cadastro'}
+              {isSubmitting ? 'Salvando...' : 'Avançar para localização →'}
             </button>
 
             <button
