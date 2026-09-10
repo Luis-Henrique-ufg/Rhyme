@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline } from 'react-leaflet';
-import { Users, Check, RefreshCcw, Navigation, Play, StopCircle, MapPinOff, BarChart2, LocateFixed, ChevronUp, ChevronDown, X, BellRing, Clock, UserCheck, UserX, Timer } from 'lucide-react';
+import { Users, Check, RefreshCcw, Navigation, Play, StopCircle, MapPin, MapPinOff, BarChart2, LocateFixed, ChevronUp, ChevronDown, X, BellRing, Clock, UserCheck, UserX, Timer } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-rotate';
@@ -12,6 +12,7 @@ import { db } from '../config/firebase';
 import { ensureDailyTripExists, normalizeRoute } from '../utils/tripManager';
 import { useCurrentTrip, useDriverAttendanceMap } from '../utils/useTripData';
 import Header from '../components/Header';
+import PublicListModal from '../components/PublicListModal';
 import Loader from '../components/Loader';
 import ErrorState from '../components/ErrorState';
 import MapInteractions from '../components/MapInteractions';
@@ -64,7 +65,7 @@ const RecenterButton = ({ lat, lng }) => {
         e.stopPropagation();
         if (lat && lng) map.flyTo([lat, lng], 15, { duration: 1.5 });
       }}
-      className="flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
+      className="flex flex-col items-center justify-center text-body hover:text-primary transition-colors"
       title="Centralizar"
     >
       <div className="p-2"><LocateFixed size={24} strokeWidth={2.5} /></div>
@@ -1151,12 +1152,12 @@ export default function DriverDashboard() {
           {/* Legenda de Rotas (Ocultável) */}
           <div className="absolute top-4 right-4 z-[1000]">
             {isLegendOpen ? (
-              <div className="bg-black/90 [html.light_&]:bg-white/95 backdrop-blur-md border border-white/10 [html.light_&]:border-slate-200 rounded-xl p-3 flex flex-col gap-2 shadow-2xl [html.light_&]:shadow-lg animate-[fadeIn_0.2s_ease-out]">
-                <div className="flex items-center justify-between gap-3 border-b border-white/10 [html.light_&]:border-slate-200 pb-1">
-                  <h4 className="text-white [html.light_&]:text-slate-900 text-[10px] font-bold uppercase tracking-wider opacity-80">Legenda de Rotas</h4>
+              <div className="bg-card/95 backdrop-blur-md border border-subtle rounded-xl p-3 flex flex-col gap-2 shadow-2xl animate-[fadeIn_0.2s_ease-out]">
+                <div className="flex items-center justify-between gap-3 border-b border-subtle pb-1">
+                  <h4 className="text-heading text-[10px] font-bold uppercase tracking-wider opacity-80">Legenda de Rotas</h4>
                   <button 
                     onClick={() => setIsLegendOpen(false)} 
-                    className="text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900 p-0.5 rounded hover:bg-white/10 [html.light_&]:hover:bg-slate-100 transition-colors"
+                    className="text-caption hover:text-heading p-0.5 rounded hover-bg-subtle transition-colors"
                     title="Ocultar legenda"
                   >
                     <X size={13} />
@@ -1164,17 +1165,17 @@ export default function DriverDashboard() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]"></div>
-                  <span className="text-zinc-300 [html.light_&]:text-slate-700 text-xs font-medium">Professor Jamil</span>
+                  <span className="text-body text-xs font-medium">Professor Jamil</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-white [html.light_&]:bg-slate-800 [html.light_&]:border [html.light_&]:border-slate-400 shadow-[0_0_8px_rgba(255,255,255,0.6)]"></div>
-                  <span className="text-zinc-300 [html.light_&]:text-slate-700 text-xs font-medium">Cromínia</span>
+                  <div className="w-3 h-3 rounded-full bg-heading shadow-[0_0_8px_rgba(255,255,255,0.4)]"></div>
+                  <span className="text-body text-xs font-medium">Cromínia</span>
                 </div>
               </div>
             ) : (
               <button
                 onClick={() => setIsLegendOpen(true)}
-                className="bg-black/80 [html.light_&]:bg-white/95 hover:bg-black/95 [html.light_&]:hover:bg-slate-100 backdrop-blur-md border border-white/10 [html.light_&]:border-slate-200 text-zinc-300 [html.light_&]:text-slate-700 hover:text-white [html.light_&]:hover:text-slate-900 rounded-xl px-2.5 py-1.5 shadow-xl [html.light_&]:shadow-md transition-all flex items-center gap-1.5 active:scale-95 text-xs font-medium"
+                className="bg-card/90 hover:bg-card backdrop-blur-md border border-subtle text-body hover:text-heading rounded-xl px-2.5 py-1.5 shadow-xl transition-all flex items-center gap-1.5 active:scale-95 text-xs font-medium"
                 title="Mostrar legenda de rotas"
               >
                 <span className="w-2 h-2 rounded-full bg-orange-500"></span>
@@ -1186,17 +1187,17 @@ export default function DriverDashboard() {
           {/* Toast de Chegada ao Aluno */}
           {arrivedAtStudent && (
             <div
-              className="absolute top-4 left-1/2 -translate-x-1/2 z-[1005] flex items-center gap-3 bg-green-900/95 [html.light_&]:bg-emerald-50 [html.light_&]:border-emerald-300 backdrop-blur-xl border border-green-500/50 rounded-2xl px-4 py-3 shadow-2xl animate-[fadeIn_0.3s_ease-out] pointer-events-auto"
+              className="absolute top-4 left-1/2 -translate-x-1/2 z-[1005] flex items-center gap-3 bg-card backdrop-blur-xl border border-success/50 rounded-2xl px-4 py-3 shadow-2xl animate-[fadeIn_0.3s_ease-out] pointer-events-auto"
               style={{ maxWidth: 'calc(100vw - 2rem)' }}
             >
-              <span className="text-green-400 [html.light_&]:text-emerald-600 text-xl">📍</span>
+              <MapPin size={20} className="text-success shrink-0" />
               <div className="flex flex-col">
-                <span className="text-green-200 [html.light_&]:text-emerald-900 text-sm font-bold">Ponto de embarque alcançado</span>
-                <span className="text-green-400 [html.light_&]:text-emerald-700 text-xs opacity-80">Confirme o embarque na lista de alunos</span>
+                <span className="text-heading text-sm font-bold">Ponto de embarque alcançado</span>
+                <span className="text-success text-xs opacity-90">Confirme o embarque na lista de alunos</span>
               </div>
               <button
                 onClick={() => setArrivedAtStudent(false)}
-                className="ml-2 text-green-400 [html.light_&]:text-emerald-700 hover:text-white [html.light_&]:hover:text-emerald-950 p-1 rounded-lg hover:bg-white/10 transition-colors"
+                className="ml-2 text-caption hover:text-heading p-1 rounded-lg hover-bg-subtle transition-colors"
               >
                 ✕
               </button>
@@ -1209,26 +1210,26 @@ export default function DriverDashboard() {
               {isHudCollapsed ? (
                 <button 
                   onClick={() => setIsHudCollapsed(false)}
-                  className="flex items-center gap-2.5 bg-[#0A0A0A]/90 [html.light_&]:bg-white/95 [html.light_&]:border-slate-200 [html.light_&]:shadow-lg backdrop-blur-xl border border-orange-500/40 hover:border-orange-500 text-white [html.light_&]:text-slate-900 rounded-full px-3.5 py-2 shadow-2xl transition-all group active:scale-95"
+                  className="flex items-center gap-2.5 bg-card/90 backdrop-blur-xl border border-primary/40 hover:border-primary text-heading rounded-full px-3.5 py-2 shadow-2xl transition-all group active:scale-95"
                   title="Expandir detalhes da próxima parada"
                 >
                   <span className="relative flex h-2.5 w-2.5 shrink-0">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500"></span>
                   </span>
-                  <span className="text-xs font-bold text-zinc-100 [html.light_&]:text-slate-900 truncate max-w-[120px] sm:max-w-[180px]">
+                  <span className="text-xs font-bold text-heading truncate max-w-[120px] sm:max-w-[180px]">
                     {nextStop.title}
                   </span>
                   <span className="text-[10px] text-orange-400 font-semibold bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20 shrink-0">
                     {nextStop.totalCount} {nextStop.totalCount === 1 ? 'aluno' : 'alunos'}
                   </span>
-                  <span className="text-xs font-mono text-zinc-400 [html.light_&]:text-slate-500 shrink-0 ml-0.5">
+                  <span className="text-xs font-mono text-caption shrink-0 ml-0.5">
                     {nextStop.distKm < 1 ? `${Math.round(nextStop.distKm * 1000)}m` : `${nextStop.distKm.toFixed(1)}km`}
                   </span>
-                  <ChevronDown size={14} className="text-zinc-400 [html.light_&]:text-slate-500 group-hover:text-white [html.light_&]:group-hover:text-slate-900 shrink-0" />
+                  <ChevronDown size={14} className="text-caption group-hover:text-heading shrink-0" />
                 </button>
               ) : (
-                <div className="bg-[#0A0A0A]/95 [html.light_&]:bg-white/95 backdrop-blur-2xl border border-orange-500/30 [html.light_&]:border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-[0_10px_35px_rgba(0,0,0,0.7)] [html.light_&]:shadow-[0_10px_35px_rgba(0,0,0,0.08)] flex flex-col gap-2.5 transition-all animate-[fadeIn_0.2s_ease-out]">
+                <div className="bg-card/95 backdrop-blur-2xl border border-primary/30 rounded-2xl p-3.5 sm:p-4 shadow-2xl flex flex-col gap-2.5 transition-all animate-[fadeIn_0.2s_ease-out]">
                   {/* Top Row: Tag + Minimize Button */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -1242,7 +1243,7 @@ export default function DriverDashboard() {
                     </div>
                     <button 
                       onClick={() => setIsHudCollapsed(true)}
-                      className="text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900 p-1 rounded-lg hover:bg-white/5 [html.light_&]:hover:bg-slate-100 transition-colors"
+                      className="text-caption hover:text-heading p-1 rounded-lg hover-bg-subtle transition-colors"
                       title="Minimizar painel"
                     >
                       <ChevronUp size={16} />
@@ -1252,28 +1253,28 @@ export default function DriverDashboard() {
                   {/* Content: Title, students & real-time distance */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-sm sm:text-base font-bold text-white [html.light_&]:text-slate-900 truncate leading-tight">
+                      <h3 className="text-sm sm:text-base font-bold text-heading truncate leading-tight">
                         {nextStop.title}
                       </h3>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="text-xs text-zinc-400 [html.light_&]:text-slate-500">
+                        <span className="text-xs text-caption">
                           {nextStop.totalCount} {nextStop.totalCount === 1 ? 'passageiro' : 'passageiros'}
                         </span>
                         {nextStop.liberadosCount > 0 && (
-                          <span className="text-emerald-400 [html.light_&]:text-emerald-600 font-semibold bg-emerald-500/10 [html.light_&]:bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] border border-emerald-500/20 [html.light_&]:border-emerald-300">
+                          <span className="text-success font-semibold bg-success-bg px-1.5 py-0.5 rounded text-[10px] border border-success-border">
                             {nextStop.liberadosCount} liberado{nextStop.liberadosCount > 1 ? 's' : ''}
                           </span>
                         )}
                       </div>
                     </div>
-                    <div className="text-right shrink-0 bg-white/5 [html.light_&]:bg-slate-100 border border-white/10 [html.light_&]:border-slate-200 rounded-xl px-2.5 py-1.5">
-                      <div className="text-base sm:text-lg font-black text-white [html.light_&]:text-slate-900 font-mono tracking-tight leading-none">
+                    <div className="text-right shrink-0 bg-subtle border border-subtle rounded-xl px-2.5 py-1.5">
+                      <div className="text-base sm:text-lg font-black text-heading font-mono tracking-tight leading-none">
                         {nextStop.distKm < 1 ? `${Math.round(nextStop.distKm * 1000)}` : nextStop.distKm.toFixed(1)}
-                        <span className="text-[10px] text-zinc-400 [html.light_&]:text-slate-500 font-normal ml-0.5">
+                        <span className="text-[10px] text-caption font-normal ml-0.5">
                           {nextStop.distKm < 1 ? 'm' : 'km'}
                         </span>
                       </div>
-                      <span className="text-[9px] text-zinc-500 [html.light_&]:text-slate-400 font-medium block mt-0.5 uppercase tracking-wider">distância</span>
+                      <span className="text-[9px] text-caption font-medium block mt-0.5 uppercase tracking-wider">distância</span>
                     </div>
                   </div>
 
@@ -1292,15 +1293,15 @@ export default function DriverDashboard() {
                       <div className="relative">
                         <button
                           onClick={() => setShowDurationPicker(v => !v)}
-                          className="w-full flex items-center justify-center gap-2 bg-white/5 [html.light_&]:bg-emerald-50 [html.light_&]:border-emerald-200 border border-white/10 hover:border-emerald-500/60 hover:bg-emerald-500/10 text-zinc-200 [html.light_&]:text-emerald-700 hover:text-emerald-400 font-bold text-xs py-2 px-3 rounded-xl transition-all active:scale-[0.98]"
+                          className="w-full flex items-center justify-center gap-2 bg-subtle hover:bg-success-bg border border-subtle hover:border-success/60 text-heading hover:text-success font-bold text-xs py-2 px-3 rounded-xl transition-all active:scale-[0.98]"
                         >
                           <BellRing size={13} className="shrink-0" />
                           Chamar Alunos
                         </button>
                         {/* Seletor de Duração */}
                         {showDurationPicker && (
-                          <div className="absolute bottom-[110%] left-0 right-0 z-10 bg-[#0d0d0d]/98 [html.light_&]:bg-white/98 border border-white/10 [html.light_&]:border-slate-200 rounded-xl p-3 shadow-2xl flex flex-col gap-2 animate-[fadeIn_0.15s_ease-out]">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 [html.light_&]:text-slate-500 flex items-center gap-1.5">
+                          <div className="absolute bottom-[110%] left-0 right-0 z-10 bg-card border border-subtle rounded-xl p-3 shadow-2xl flex flex-col gap-2 animate-[fadeIn_0.15s_ease-out]">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-caption flex items-center gap-1.5">
                               <Timer size={11} /> Tolerância de espera
                             </span>
                             <div className="flex gap-2">
@@ -1308,7 +1309,7 @@ export default function DriverDashboard() {
                                 <button
                                   key={min}
                                   onClick={() => handleStartBoardingCall(min)}
-                                  className="flex-1 py-2 rounded-xl bg-emerald-500/10 [html.light_&]:bg-emerald-50 border border-emerald-500/30 [html.light_&]:border-emerald-300 text-emerald-400 [html.light_&]:text-emerald-700 font-black text-sm hover:bg-emerald-500/20 transition-all active:scale-95"
+                                  className="flex-1 py-2 rounded-xl badge-success font-black text-sm hover:brightness-110 transition-all active:scale-95"
                                 >
                                   {min} min
                                 </button>
@@ -1319,7 +1320,7 @@ export default function DriverDashboard() {
                       </div>
                     ) : (
                       /* Chamada Ativa — Cronômetro + Respostas */
-                      <div className="rounded-xl border border-emerald-500/30 [html.light_&]:border-emerald-300 bg-emerald-500/5 [html.light_&]:bg-emerald-50 p-3 flex flex-col gap-2">
+                      <div className="rounded-xl border border-success/30 bg-success-bg p-3 flex flex-col gap-2">
                         {/* Header: countdown + encerrar */}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -1327,17 +1328,17 @@ export default function DriverDashboard() {
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                             </span>
-                            <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-400 [html.light_&]:text-emerald-700">Chamada Ativa</span>
+                            <span className="text-[10px] font-extrabold uppercase tracking-widest text-success">Chamada Ativa</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => handleExtendBoardingCall(1)}
-                              className="text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded border border-white/10 [html.light_&]:border-slate-300 hover:border-white/30 transition-all"
+                              className="text-caption hover:text-heading text-[10px] font-bold px-1.5 py-0.5 rounded border border-subtle transition-all"
                               title="Adicionar 1 minuto"
                             >+1 min</button>
                             <button
                               onClick={handleCloseBoardingCall}
-                              className="text-zinc-500 hover:text-red-400 [html.light_&]:text-slate-500 [html.light_&]:hover:text-red-600 p-0.5 rounded transition-colors"
+                              className="text-caption hover:text-danger p-0.5 rounded transition-colors"
                               title="Encerrar chamada"
                             >
                               <X size={13} />
@@ -1348,14 +1349,14 @@ export default function DriverDashboard() {
                         {/* Cronômetro */}
                         <div className="flex flex-col items-center gap-0.5">
                           <span className={`font-black font-mono text-2xl leading-none ${
-                            boardingCallSecondsLeft <= 30 ? 'text-red-400 [html.light_&]:text-red-600 animate-pulse' :
-                            boardingCallSecondsLeft <= 60 ? 'text-amber-400 [html.light_&]:text-amber-600' :
-                            'text-emerald-400 [html.light_&]:text-emerald-700'
+                            boardingCallSecondsLeft <= 30 ? 'text-danger animate-pulse' :
+                            boardingCallSecondsLeft <= 60 ? 'text-warning' :
+                            'text-success'
                           }`}>
                             {String(Math.floor(boardingCallSecondsLeft / 60)).padStart(2,'0')}:{String(boardingCallSecondsLeft % 60).padStart(2,'0')}
                           </span>
                           {/* Barra de progresso */}
-                          <div className="w-full h-1 bg-white/10 [html.light_&]:bg-slate-200 rounded-full overflow-hidden">
+                          <div className="w-full h-1 bg-subtle rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full transition-all duration-1000"
                               style={{
@@ -1372,17 +1373,17 @@ export default function DriverDashboard() {
                             const resp = boardingResponseMap[uid];
                             return (
                               <div key={uid} className="flex items-center justify-between py-0.5">
-                                <span className="text-xs text-zinc-300 [html.light_&]:text-slate-700 font-medium truncate max-w-[120px]">{name}</span>
+                                <span className="text-xs text-body font-medium truncate max-w-[120px]">{name}</span>
                                 {!resp ? (
-                                  <span className="flex items-center gap-1 text-[10px] text-zinc-500 [html.light_&]:text-slate-400">
+                                  <span className="flex items-center gap-1 text-[10px] text-caption">
                                     <Clock size={10} /> Aguardando
                                   </span>
                                 ) : resp.response === 'coming' ? (
-                                  <span className="flex items-center gap-1 text-[10px] text-emerald-400 [html.light_&]:text-emerald-700 font-semibold">
+                                  <span className="flex items-center gap-1 text-[10px] text-success font-semibold">
                                     <UserCheck size={10} /> A caminho
                                   </span>
                                 ) : (
-                                  <span className="flex items-center gap-1 text-[10px] text-zinc-400 [html.light_&]:text-slate-500 line-through">
+                                  <span className="flex items-center gap-1 text-[10px] text-caption line-through">
                                     <UserX size={10} /> Dispensado
                                   </span>
                                 )}
@@ -1393,9 +1394,9 @@ export default function DriverDashboard() {
 
                         <button
                           onClick={handleCloseBoardingCall}
-                          className="w-full flex items-center justify-center gap-2 bg-zinc-800 [html.light_&]:bg-slate-200 hover:bg-zinc-700 [html.light_&]:hover:bg-slate-300 text-zinc-200 [html.light_&]:text-slate-700 font-bold text-xs py-2 px-3 rounded-xl transition-all active:scale-[0.98]"
+                          className="w-full flex items-center justify-center gap-2 bg-subtle hover-bg-subtle text-body font-bold text-xs py-2 px-3 rounded-xl transition-all active:scale-[0.98]"
                         >
-                          <Check size={13} /> Partir / Encerrar Chamada
+                          <Check size={13} /> Partir / Encerrar chamada
                         </button>
                       </div>
                     )}
@@ -1436,7 +1437,7 @@ export default function DriverDashboard() {
                 return (
                   <Marker key={facName} position={coords} icon={createFacultyIcon(facName, isCrominia, isDark)}>
                     <Popup className="dark-popup">
-                      <span className="font-bold text-white [html.light_&]:text-slate-900">{facName}</span>
+                      <span className="font-bold text-heading">{facName}</span>
                     </Popup>
                   </Marker>
                 );
@@ -1508,7 +1509,7 @@ export default function DriverDashboard() {
                   >
                     <Popup className="dark-popup">
                       <div className="p-1 min-w-[140px] text-xs">
-                        <div className="font-bold text-sm mb-1 text-white [html.light_&]:text-slate-900 border-b border-white/10 pb-1 flex items-center justify-between">
+                        <div className="font-bold text-sm mb-1 text-heading border-b border-subtle pb-1 flex items-center justify-between">
                           <span>{totalStudents === 1 ? 'Aluno' : `${totalStudents} Alunos`}</span>
                           {cluster.students[0]?.faculty && (
                             <span className="text-[10px] font-normal text-orange-400">{cluster.students[0].faculty}</span>
@@ -1519,7 +1520,7 @@ export default function DriverDashboard() {
                             <div key={idx} className="flex items-center justify-between gap-2 py-0.5">
                               <div className="flex items-center gap-1.5 truncate">
                                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.status === 'liberado' ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : s.tripType === 'ida' ? 'bg-zinc-400' : 'bg-amber-500'}`}></span>
-                                <span className="text-zinc-200 [html.light_&]:text-slate-800 font-medium truncate">{s.name}</span>
+                                <span className="text-heading font-medium truncate">{s.name}</span>
                               </div>
                               <div className="flex-shrink-0 text-[10px]">
                                 {s.response === 'coming' ? (
@@ -1576,7 +1577,7 @@ export default function DriverDashboard() {
                   >
                     <Popup className="dark-popup">
                       <div className="p-1 min-w-[140px] text-xs">
-                        <div className="font-bold text-sm mb-1 text-white [html.light_&]:text-slate-900 border-b border-white/10 pb-1 flex items-center justify-between">
+                        <div className="font-bold text-sm mb-1 text-heading border-b border-subtle pb-1 flex items-center justify-between">
                           <span>{primaryFaculty || 'Grupo de Alunos'}</span>
                           <span className="text-[10px] text-emerald-400 font-bold">{liberados}/{total}</span>
                         </div>
@@ -1585,7 +1586,7 @@ export default function DriverDashboard() {
                             <div key={idx} className="flex items-center justify-between gap-2 py-0.5">
                               <div className="flex items-center gap-1.5 truncate">
                                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.status === 'liberado' ? 'bg-emerald-500' : s.tripType === 'ida' ? 'bg-zinc-400' : 'bg-amber-500'}`}></span>
-                                <span className="text-zinc-200 [html.light_&]:text-slate-800 font-medium truncate">{s.name}</span>
+                                <span className="text-heading font-medium truncate">{s.name}</span>
                               </div>
                               <div className="flex-shrink-0 text-[10px]">
                                 {s.response === 'coming' ? (
@@ -1631,12 +1632,12 @@ export default function DriverDashboard() {
         </div>
 
         {/* Tabela Consolidada (Painel Flutuante) */}
-        <div className={`absolute md:relative z-10 w-full md:w-[400px] electric-card bg-[#0A0A0A] [html.light_&]:bg-white p-5 overflow-y-auto border-t md:border-t-0 md:border-r border-orange-500/20 [html.light_&]:border-slate-200 shadow-[10px_0_40px_rgba(249,115,22,0.1)] [html.light_&]:shadow-[10px_0_40px_rgba(0,0,0,0.08)] flex flex-col mt-auto md:mt-0 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isPanelOpen ? 'translate-y-0 md:translate-x-0 max-h-[55vh] md:max-h-full bottom-0' : 'translate-y-full md:translate-y-0 md:-translate-x-full max-h-[55vh] md:max-h-full bottom-0 md:left-0'} `}>
+        <div className={`absolute md:relative z-10 w-full md:w-[400px] electric-card bg-card p-5 overflow-y-auto border-t md:border-t-0 md:border-r border-subtle shadow-2xl flex flex-col mt-auto md:mt-0 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isPanelOpen ? 'translate-y-0 md:translate-x-0 max-h-[55vh] md:max-h-full bottom-0' : 'translate-y-full md:translate-y-0 md:-translate-x-full max-h-[55vh] md:max-h-full bottom-0 md:left-0'} `}>
           <div className="flex justify-between items-center mb-5">
-            <h2 className="text-2xl font-bricolage font-light text-white [html.light_&]:text-slate-900 tracking-tight">Resumo da Rota</h2>
+            <h2 className="text-2xl font-bricolage font-light text-heading tracking-tight">Resumo da Rota</h2>
             <button 
               onClick={() => setIsPanelOpen(false)} 
-              className="w-8 h-8 flex items-center justify-center bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 text-neutral-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900 rounded-full transition-colors border border-white/10 [html.light_&]:border-slate-200"
+              className="w-8 h-8 flex items-center justify-center bg-subtle hover-bg-subtle text-caption hover:text-heading rounded-full transition-colors border border-subtle"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
@@ -1650,126 +1651,39 @@ export default function DriverDashboard() {
           
           <div className="flex-1 space-y-4 pr-2 custom-scrollbar">
             {facultySummary.map(fac => (
-              <div key={fac.name} className="bg-white/5 [html.light_&]:bg-slate-50 border border-white/5 [html.light_&]:border-slate-200 p-4 rounded-2xl flex items-center justify-between">
+              <div key={fac.name} className="bg-subtle border border-subtle p-4 rounded-2xl flex items-center justify-between">
                 <div>
-                  <h3 className="font-bold text-white [html.light_&]:text-slate-900 text-lg">{fac.name}</h3>
-                  <p className="text-zinc-500 [html.light_&]:text-slate-500 text-sm font-medium">Na lista de hoje</p>
+                  <h3 className="font-bold text-heading text-lg">{fac.name}</h3>
+                  <p className="text-caption text-sm font-medium">Na lista de hoje</p>
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-black tracking-tight text-orange-500">
-                    {fac.count} <span className="text-sm font-medium text-zinc-600 [html.light_&]:text-slate-400">passageiros</span>
+                    {fac.count} <span className="text-sm font-medium text-caption">passageiros</span>
                   </div>
                 </div>
               </div>
             ))}
             {facultySummary.length === 0 && (
-              <p className="text-center text-zinc-500 [html.light_&]:text-slate-400 py-6">Nenhum aluno aguardando na rota hoje.</p>
+              <p className="text-center text-caption py-6">Nenhum aluno aguardando na rota hoje.</p>
             )}
           </div>
         </div>
       </div>
 
       {/* Modal da Lista Pública (Checklist de Embarque) */}
-      {isPublicListOpen && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsPublicListOpen(false)}></div>
-          <div className="relative w-full max-w-md bg-[#0A0A0A]/95 [html.light_&]:bg-white/95 border border-white/10 [html.light_&]:border-slate-200 rounded-3xl shadow-2xl overflow-hidden electric-card flex flex-col max-h-[85vh]">
-            <div className="p-6 border-b border-white/10 [html.light_&]:border-slate-200 bg-gradient-to-b from-orange-500/10 to-transparent">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-display font-bold text-white [html.light_&]:text-slate-900 flex items-center gap-2">
-                  <Users size={20} className="text-orange-500" />
-                  Checklist de Embarque
-                </h3>
-                <button onClick={() => setIsPublicListOpen(false)} className="text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900 p-2 rounded-full hover:bg-white/5 [html.light_&]:hover:bg-slate-100 transition-colors">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
-              </div>
-            </div>
-            <div className="p-4 flex-1 overflow-y-auto custom-scrollbar space-y-3">
-              {Object.values(attendanceMap).length === 0 ? (
-                <div className="text-center py-8 text-zinc-500 [html.light_&]:text-slate-400">
-                  <p>Nenhum aluno na lista de hoje.</p>
-                </div>
-              ) : (
-                Object.values(attendanceMap)
-                  .sort((a, b) => {
-                    const statusOrder = { 'aguardando': 0, 'liberado': 0, 'embarcado': 1, 'cancelado': 2 };
-                    const orderA = statusOrder[a.status] ?? 0;
-                    const orderB = statusOrder[b.status] ?? 0;
-                    if (orderA !== orderB) return orderA - orderB;
-                    return (a.studentName || '').localeCompare(b.studentName || '');
-                  })
-                  .map(att => {
-                    const isEmbarcado = att.status === 'embarcado';
-                    const isCancelado = att.status === 'cancelado';
-                    
-                    let bgColor = 'bg-white/5 [html.light_&]:bg-slate-50 border-white/5 [html.light_&]:border-slate-200 hover:bg-white/10 [html.light_&]:hover:bg-slate-100';
-                    let avatarBg = 'bg-gradient-to-br from-orange-500 to-yellow-500';
-                    let nameColor = 'text-white [html.light_&]:text-slate-900';
-                    
-                    if (isEmbarcado) {
-                      bgColor = 'bg-orange-500/10 border-orange-500/30';
-                      avatarBg = 'bg-orange-500 text-black';
-                      nameColor = 'text-orange-500 line-through opacity-70';
-                    } else if (isCancelado) {
-                      bgColor = 'bg-zinc-800/50 [html.light_&]:bg-slate-100 border-zinc-700/50 [html.light_&]:border-slate-200';
-                      avatarBg = 'bg-zinc-700 [html.light_&]:bg-slate-300 text-zinc-400 [html.light_&]:text-slate-600';
-                      nameColor = 'text-zinc-500 [html.light_&]:text-slate-400 line-through opacity-70';
-                    }
-
-                    let tripTypeLabel = '';
-                    if (att.tripType === 'ida_volta') tripTypeLabel = 'Ida e Volta';
-                    else if (att.tripType === 'ida') tripTypeLabel = 'Só Ida';
-                    else if (att.tripType === 'volta') tripTypeLabel = 'Só Volta';
-                    
-                    return (
-                      <div key={att.studentId} className={`flex items-center justify-between border p-4 rounded-2xl transition-colors ${bgColor}`}>
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-black font-bold text-lg ${avatarBg}`}>
-                            {(att.studentName || 'A').charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className={`font-bold leading-tight flex items-center gap-2 flex-wrap ${nameColor}`}>
-                              {att.studentName || 'Aluno'}
-                              {tripTypeLabel && (
-                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 [html.light_&]:bg-slate-200 border border-white/20 [html.light_&]:border-slate-300 uppercase tracking-wider font-bold">
-                                  {tripTypeLabel}
-                                </span>
-                              )}
-                            </p>
-                            <p className="text-xs text-zinc-400 [html.light_&]:text-slate-500 mt-1">{att.faculty} • {att.status}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => handleStudentStatus(att.studentId, att.status, 'cancelado')}
-                            className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all shadow-sm ${isCancelado ? 'bg-zinc-800 [html.light_&]:bg-slate-200 text-zinc-400 [html.light_&]:text-slate-700 border-zinc-700 [html.light_&]:border-slate-300 hover:bg-zinc-700' : 'bg-white/10 [html.light_&]:bg-slate-100 text-zinc-400 [html.light_&]:text-slate-600 border-white/10 [html.light_&]:border-slate-200 hover:bg-zinc-800 hover:text-zinc-300'}`}
-                            title={isCancelado ? "Desfazer ausência" : "Marcar como não vai"}
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
-                          </button>
-                          <button 
-                            onClick={() => handleStudentStatus(att.studentId, att.status, 'embarcado')}
-                            className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all shadow-sm ${isEmbarcado ? 'bg-orange-500 text-black border-orange-500 hover:bg-orange-600' : 'bg-white/10 [html.light_&]:bg-slate-100 text-zinc-400 [html.light_&]:text-slate-600 border-white/10 [html.light_&]:border-slate-200 hover:bg-orange-500 hover:text-black hover:border-orange-500'}`}
-                            title={isEmbarcado ? "Desfazer embarque" : "Marcar como embarcado"}
-                          >
-                            <Check size={20} strokeWidth={3} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })
-              )}
-            </div>
-
-          </div>
-        </div>
-      )}
+      <PublicListModal
+        isOpen={isPublicListOpen}
+        onClose={() => setIsPublicListOpen(false)}
+        list={Object.values(attendanceMap)}
+        title="Checklist de Embarque"
+        emptyMessage="Nenhum aluno na lista de hoje."
+        onStudentStatus={handleStudentStatus}
+      />
 
       {/* Bottom Navigation Bar (WhatsApp style) */}
       {trip && (
         <div 
-          className="bg-[#050505] [html.light_&]:bg-white/95 border-t border-white/5 [html.light_&]:border-slate-200 flex items-center justify-around gap-1 py-2 px-2 md:justify-center md:gap-8 md:px-6 z-50 shrink-0 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.5)] [html.light_&]:shadow-[0_-4px_20px_rgba(0,0,0,0.06)] w-full overflow-hidden select-none touch-none overscroll-none"
+          className="bottom-nav bg-surface border-t border-subtle flex items-center justify-around gap-1 py-2 px-2 md:justify-center md:gap-8 md:px-6 z-50 shrink-0 pb-safe shadow-lg w-full overflow-hidden select-none touch-none overscroll-none"
           onWheel={(e) => e.preventDefault()}
         >
           
@@ -1779,7 +1693,7 @@ export default function DriverDashboard() {
               setIsPublicListOpen(newState);
               if (newState) setIsPanelOpen(false);
             }}
-            className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors relative"
+            className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors relative"
           >
             <div className="relative p-1.5 sm:p-2">
               <Users size={22} />
@@ -1792,7 +1706,7 @@ export default function DriverDashboard() {
 
           <button 
             onClick={() => setIsPanelOpen(!isPanelOpen)}
-            className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center transition-colors ${isPanelOpen ? 'text-orange-500' : 'text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500'}`}
+            className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center transition-colors ${isPanelOpen ? 'text-primary' : 'text-body hover:text-primary'}`}
           >
             <div className="p-1.5 sm:p-2"><BarChart2 size={22} /></div>
             <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Resumo</span>
@@ -1803,13 +1717,13 @@ export default function DriverDashboard() {
             <div
               title={gpsAccuracy != null ? `Precisão: ±${gpsAccuracy}m` : 'Aguardando GPS...'}
               className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center shrink-0 select-none ${
-                gpsStatus === 'active' ? 'text-emerald-400 [html.light_&]:text-emerald-600' :
-                gpsStatus === 'error' ? 'text-red-400 [html.light_&]:text-red-600' : 'text-zinc-500 [html.light_&]:text-slate-400'
+                gpsStatus === 'active' ? 'text-success' :
+                gpsStatus === 'error' ? 'text-danger' : 'text-caption'
               }`}
             >
               <div className="relative p-1.5 sm:p-2">
                 {gpsStatus === 'active' && (
-                  <span className="absolute inset-0 rounded-full bg-emerald-400/20 [html.light_&]:bg-emerald-500/20 animate-ping" />
+                  <span className="absolute inset-0 rounded-full bg-success/20 animate-ping" />
                 )}
                 <LocateFixed size={22} className="relative" />
               </div>
@@ -1827,7 +1741,7 @@ export default function DriverDashboard() {
             <button 
               onClick={() => updateTripStatus('in_progress')}
               disabled={isUpdatingTrip}
-              className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors ${isUpdatingTrip ? 'opacity-50' : ''}`}
+              className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors ${isUpdatingTrip ? 'opacity-50' : ''}`}
             >
               <div className="p-1.5 sm:p-2"><Play size={22} /></div>
               <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">{isUpdatingTrip ? 'Iniciando' : 'Iniciar'}</span>
@@ -1838,7 +1752,7 @@ export default function DriverDashboard() {
             <button 
               onClick={recalculateGlobalRoute}
               disabled={isUpdatingTrip}
-              className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors ${isUpdatingTrip ? 'opacity-50' : ''}`}
+              className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors ${isUpdatingTrip ? 'opacity-50' : ''}`}
             >
               <div className="p-1.5 sm:p-2"><RefreshCcw size={22} /></div>
               <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">{isUpdatingTrip ? 'Atz...' : 'Atualizar'}</span>
@@ -1848,7 +1762,7 @@ export default function DriverDashboard() {
           {trip.status === 'in_progress' && (
             <button 
               onClick={handleFinishClick}
-              className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-red-500 transition-colors"
+              className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-danger transition-colors"
             >
               <div className="p-1.5 sm:p-2"><StopCircle size={22} /></div>
               <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Finalizar</span>
@@ -1858,7 +1772,7 @@ export default function DriverDashboard() {
           {trip.status === 'finished' && (
             <button 
               onClick={() => updateTripStatus('open')}
-              className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
+              className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors"
             >
               <div className="p-1.5 sm:p-2"><Play size={22} /></div>
               <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Reabrir</span>
@@ -1868,7 +1782,7 @@ export default function DriverDashboard() {
           {Boolean((activeLocalRoute && activeLocalRoute.length > 0) || (trip?.driverRoutePath && trip.driverRoutePath.length > 0) || (trip?.routePath && trip.routePath.length > 0) || (trip?.globalRoute && trip.globalRoute.length > 0)) && trip.status !== 'finished' && (
              <button 
                onClick={clearAllRoutes}
-               className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
+               className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors"
                title="Limpar todas as rotas do mapa"
              >
                <div className="p-1.5 sm:p-2"><MapPinOff size={22} /></div>
@@ -1882,11 +1796,11 @@ export default function DriverDashboard() {
       {/* Modal de Alunos Deixados para Trás */}
       {pendingStudentsConfirm && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-[#0A0A0A] [html.light_&]:bg-white border border-white/10 [html.light_&]:border-slate-200 rounded-3xl p-6 max-w-sm w-full shadow-2xl relative overflow-hidden">
+          <div className="bg-card border border-subtle rounded-3xl p-6 max-w-sm w-full shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 blur-[50px] rounded-full pointer-events-none"></div>
-            <h3 className="text-lg font-bold text-white [html.light_&]:text-slate-900 mb-2 relative z-10">Finalizar Viagem?</h3>
-            <p className="text-zinc-400 [html.light_&]:text-slate-600 text-sm mb-4 relative z-10">
-              Ainda há <strong className="text-white [html.light_&]:text-slate-900">{pendingStudentsConfirm.length}</strong> aluno(s) aguardando na lista:
+            <h3 className="text-lg font-bold text-heading mb-2 relative z-10">Finalizar viagem?</h3>
+            <p className="text-body text-sm mb-4 relative z-10">
+              Ainda há <strong className="text-heading">{pendingStudentsConfirm.length}</strong> aluno(s) aguardando na lista:
               <br/>
               <span className="text-orange-400 font-medium italic mt-1 block">
                 {pendingStudentsConfirm.map(s => s.studentName).join(', ')}
@@ -1912,7 +1826,7 @@ export default function DriverDashboard() {
                 }}
                 className="w-full bg-orange-500 hover:bg-orange-600 text-black font-bold py-3 px-4 rounded-xl transition-colors"
               >
-                Eles Embarcaram (Marcar e Finalizar)
+                Eles embarcaram (marcar e finalizar)
               </button>
               <button 
                 onClick={() => {
@@ -1921,11 +1835,11 @@ export default function DriverDashboard() {
                 }}
                 className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-xl transition-colors mt-2"
               >
-                Ficaram Para Trás (Apenas Finalizar)
+                Ficaram para trás (apenas finalizar)
               </button>
               <button 
                 onClick={() => setPendingStudentsConfirm(null)}
-                className="w-full bg-white/10 [html.light_&]:bg-slate-100 hover:bg-white/20 [html.light_&]:hover:bg-slate-200 text-white [html.light_&]:text-slate-700 font-bold py-3 px-4 rounded-xl transition-colors mt-2"
+                className="w-full bg-subtle hover-bg-subtle text-heading font-bold py-3 px-4 rounded-xl transition-colors mt-2 border border-subtle"
               >
                 Cancelar
               </button>

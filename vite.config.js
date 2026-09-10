@@ -19,7 +19,7 @@ export default defineConfig({
 
       // === OFFLINE PAGE ===
       // The offline fallback page is included in the precache manifest.
-      includeAssets: ['offline.html', 'favicon-32x32.png', 'android-chrome-192x192.png', 'Logo.png'],
+      includeAssets: ['offline.html', 'favicon-32x32.png', 'android-chrome-192x192.png', 'Logo.webp', 'Logo.png'],
 
       manifest: {
         name: 'Rhyme',

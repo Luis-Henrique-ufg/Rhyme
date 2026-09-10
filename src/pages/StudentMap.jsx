@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline } from 'react-leaflet';
-import { Users, Check, RefreshCcw, MapPin, Navigation, LocateFixed, X, Radio, BellRing, Bus, UserX, UserCheck } from 'lucide-react';
+import { Users, Check, RefreshCcw, MapPin, Navigation, LocateFixed, X, Radio, BellRing, Bus } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -9,6 +9,9 @@ import { db } from '../config/firebase';
 import { joinTrip, normalizeRoute } from '../utils/tripManager';
 import { useCurrentTrip, useTripAttendances, useOsrmEta } from '../utils/useTripData';
 import Header from '../components/Header';
+import GpsStatusBanner from '../components/GpsStatusBanner';
+import BoardingCallModal from '../components/BoardingCallModal';
+import PublicListModal from '../components/PublicListModal';
 import Loader from '../components/Loader';
 import ErrorState from '../components/ErrorState';
 import MapInteractions from '../components/MapInteractions';
@@ -288,7 +291,7 @@ const createStudentMapIcon = (name, isMe, isLiberado, isSoIda, isDark = true) =>
     "></div>
   ` : '';
 
-  // Silhueta de pessoa / estudante (Avatar 👤)
+  // Silhueta de pessoa / estudante (Avatar)
   const userSvg = `
     <svg width="13" height="13" viewBox="0 0 24 24" fill="white" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
       <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
@@ -403,7 +406,7 @@ const RecenterButton = ({ lat, lng }) => {
         e.stopPropagation();
         if (lat && lng) map.flyTo([lat, lng], 15, { duration: 1.5 });
       }}
-      className="w-full min-w-0 flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
+      className="w-full min-w-0 flex flex-col items-center justify-center text-body hover:text-primary transition-colors"
       title="Centralizar"
     >
       <div className="p-1.5 sm:p-2"><LocateFixed size={22} strokeWidth={2.5} /></div>
@@ -469,7 +472,6 @@ export default function StudentMap() {
   const [hasSeenCheckInModal, setHasSeenCheckInModal] = useState(false);
   const [tempLocation, setTempLocation] = useState(null);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);
-  const [isRouteBadgeOpen, setIsRouteBadgeOpen] = useState(false);
   const [routePath, setRoutePath] = useState([]);
   const [isPublicListOpen, setIsPublicListOpen] = useState(false);
   const watchIdRef = useRef(null);
@@ -837,7 +839,7 @@ export default function StudentMap() {
   const handleToggleBroadcasting = async () => {
     // Bloqueia aluno se motorista já está transmitindo ao vivo
     if (!isBroadcasting && isDriverActive) {
-      showAlert('🚗 O motorista já está transmitindo a localização da Van em tempo real. Não é necessário usar o GPS pelo app.');
+      showAlert('O motorista já está compartilhando a localização. Você não precisa ativar o GPS.');
       return;
     }
 
@@ -851,7 +853,7 @@ export default function StudentMap() {
         setBroadcastingLocation({ lat: trip.busLocation.lat, lng: trip.busLocation.lng });
       }
       setFocusTrigger(prev => prev + 1);
-      showAlert('📍 Transmissão da Van ativada! O ícone da Van agora segue sua posição em tempo real.');
+      showAlert('Transmissão da Van ativada! O ícone da Van agora segue sua posição em tempo real.');
     } else {
       setBroadcastingLocation(null);
       // Marca o sinal como pausado no Firestore para todos os outros usuários
@@ -868,7 +870,6 @@ export default function StudentMap() {
       showAlert('Transmissão da Van pausada.');
     }
   };
-
 
   const handleTripTypeChange = async (type) => {
     setSelectedTripType(type);
@@ -1080,149 +1081,25 @@ export default function StudentMap() {
 
       {/* Mapa */}
       <div className="flex-1 relative z-0">
-        {/* Badge de Rota (Ocultável) */}
-        <div className="absolute top-4 right-4 z-[1000]">
-          {isRouteBadgeOpen ? (
-            <div className="bg-black/90 [html.light_&]:bg-white/95 backdrop-blur-md border border-white/10 [html.light_&]:border-slate-200 rounded-xl p-3 flex flex-col gap-2 shadow-2xl [html.light_&]:shadow-md animate-[fadeIn_0.2s_ease-out]">
-              <div className="flex items-center justify-between gap-3 border-b border-white/10 [html.light_&]:border-slate-200 pb-1">
-                <h4 className="text-white [html.light_&]:text-slate-900 text-[10px] font-bold uppercase tracking-wider opacity-80">Sua Rota</h4>
-                <button 
-                  onClick={() => setIsRouteBadgeOpen(false)}
-                  className="text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900 p-0.5 rounded hover:bg-white/10 [html.light_&]:hover:bg-slate-100 transition-colors"
-                  title="Ocultar"
-                >
-                  <X size={13} />
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full shadow-[0_0_8px_currentColor] ${student.route === 'Cromínia' ? 'bg-white [html.light_&]:bg-slate-800 text-white' : 'bg-orange-500 text-orange-500'}`}></div>
-                <span className="text-zinc-300 [html.light_&]:text-slate-700 text-xs font-medium">{student.route}</span>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={() => setIsRouteBadgeOpen(true)}
-              className="bg-black/80 [html.light_&]:bg-white/95 hover:bg-black/95 [html.light_&]:hover:bg-slate-100 backdrop-blur-md border border-white/10 [html.light_&]:border-slate-200 text-zinc-300 [html.light_&]:text-slate-700 hover:text-white [html.light_&]:hover:text-slate-900 rounded-xl px-2.5 py-1.5 shadow-xl [html.light_&]:shadow-md transition-all flex items-center gap-1.5 active:scale-95 text-xs font-medium"
-              title="Ver sua rota"
-            >
-              <div className={`w-2 h-2 rounded-full ${student.route === 'Cromínia' ? 'bg-white [html.light_&]:bg-slate-800' : 'bg-orange-500'}`}></div>
-              <span className="text-[10px] uppercase font-bold tracking-wider">{student.route}</span>
-            </button>
-          )}
-        </div>
 
-        {/* Banner: Transmitindo GPS como aluno embarcado */}
-        {isBroadcasting && (
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1001] w-max max-w-[90vw]">
-            <div className="flex items-center gap-2 bg-black/85 [html.light_&]:bg-white/95 backdrop-blur-md border border-orange-500/40 text-orange-400 [html.light_&]:text-orange-600 text-xs font-bold px-4 py-2 rounded-full shadow-2xl">
-              <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-ping"></span>
-              Transmitindo localização da Van em tempo real
-            </div>
-          </div>
-        )}
+        {/* Indicadores flutuantes de GPS */}
+        <GpsStatusBanner
+          isBroadcasting={isBroadcasting}
+          isTripInProgress={trip?.status === 'in_progress'}
+          hasBusLocation={!!busLocation}
+          gpsState={gpsState}
+          elapsedLabel={elapsedLabel}
+        />
 
-        {/* Banner: aguardando GPS do motorista */}
-        {!isBroadcasting && trip?.status === 'in_progress' && !busLocation && (
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1001] w-max max-w-[90vw]">
-            <div className="flex items-center gap-2 bg-black/80 [html.light_&]:bg-white/95 backdrop-blur-md border border-white/10 [html.light_&]:border-slate-200 text-zinc-300 [html.light_&]:text-slate-700 text-xs font-medium px-4 py-2 rounded-full shadow-xl animate-pulse">
-              <svg className="w-3.5 h-3.5 text-orange-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="3" />
-                <path d="M3.5 8a9.5 9.5 0 0 1 17 0" />
-                <path d="M6.5 11a6 6 0 0 1 11 0" />
-                <path d="M10.5 14a2 2 0 0 1 3 0" />
-                <line x1="12" y1="22" x2="12" y2="17" />
-              </svg>
-              Aguardando posição GPS do motorista...
-            </div>
-          </div>
-        )}
-
-        {/* Banner: Sinal GPS desatualizado (stale) */}
-        {!isBroadcasting && gpsState === 'stale' && busLocation && (
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1001] w-max max-w-[90vw]">
-            <div className="flex items-center gap-2 bg-black/85 [html.light_&]:bg-amber-50/95 backdrop-blur-md border border-amber-500/40 text-amber-400 [html.light_&]:text-amber-700 text-xs font-bold px-4 py-2 rounded-full shadow-xl">
-              <span className="text-amber-400">⚠</span>
-              Última posição recebida {elapsedLabel.toLowerCase()} — sinal instável
-            </div>
-          </div>
-        )}
-
-        {/* Banner: Sinal GPS expirado / pausado */}
-        {!isBroadcasting && (gpsState === 'expired' || gpsState === 'paused') && busLocation && (
-          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1001] w-max max-w-[90vw]">
-            <div className="flex items-center gap-2 bg-black/85 [html.light_&]:bg-white/95 backdrop-blur-md border border-zinc-600/50 [html.light_&]:border-slate-300 text-zinc-400 [html.light_&]:text-slate-600 text-xs font-bold px-4 py-2 rounded-full shadow-xl">
-              <span>📡</span>
-              GPS offline — última posição: {elapsedLabel}
-            </div>
-          </div>
-        )}
-
-        {/* === Modal de Chamada de Embarque (Alta Prioridade) === */}
-        {isTargetedByBoardingCall && !boardingAlertDismissed && (
-          <div className="absolute inset-0 z-[2000] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="w-full max-w-sm bg-[#0a0a0a]/98 [html.light_&]:bg-white/98 border border-emerald-500/40 [html.light_&]:border-emerald-300 rounded-3xl p-5 shadow-[0_20px_60px_rgba(0,0,0,0.8)] [html.light_&]:shadow-[0_20px_60px_rgba(0,0,0,0.12)] animate-[fadeIn_0.3s_ease-out] flex flex-col gap-4">
-
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
-                    <Bus size={18} className="text-emerald-400 [html.light_&]:text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-extrabold uppercase tracking-widest text-emerald-400 [html.light_&]:text-emerald-600">Van na portaria!</p>
-                    <p className="text-[11px] text-zinc-400 [html.light_&]:text-slate-500">{trip?.boardingCall?.faculty || 'Sua faculdade'}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setBoardingAlertDismissed(true)}
-                  className="text-zinc-600 hover:text-zinc-300 [html.light_&]:text-slate-400 [html.light_&]:hover:text-slate-700 p-1.5 rounded-xl hover:bg-white/5 [html.light_&]:hover:bg-slate-100 transition-colors"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-
-              {/* Cronômetro Regressivo */}
-              <div className="flex flex-col items-center gap-2">
-                <span className={`font-black font-mono text-6xl leading-none tracking-tight ${
-                  boardingSecondsLeft <= 30 ? 'text-red-400 [html.light_&]:text-red-600 animate-pulse' :
-                  boardingSecondsLeft <= 60 ? 'text-amber-400 [html.light_&]:text-amber-600' :
-                  'text-emerald-400 [html.light_&]:text-emerald-500'
-                }`}>
-                  {String(Math.floor(boardingSecondsLeft / 60)).padStart(2,'0')}:{String(boardingSecondsLeft % 60).padStart(2,'0')}
-                </span>
-                <p className="text-xs text-zinc-500 [html.light_&]:text-slate-500">de tolerância para embarque</p>
-                {/* Barra de progresso */}
-                <div className="w-full h-1.5 bg-white/8 [html.light_&]:bg-slate-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-1000"
-                    style={{
-                      width: `${(boardingSecondsLeft / ((trip?.boardingCall?.durationMinutes || 3) * 60)) * 100}%`,
-                      background: boardingSecondsLeft <= 30 ? '#f87171' : boardingSecondsLeft <= 60 ? '#fbbf24' : '#34d399'
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Ações */}
-              <div className="flex flex-col gap-2.5">
-                <button
-                  onClick={() => handleBoardingResponse('coming')}
-                  className="w-full flex items-center justify-center gap-3 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-white font-black text-sm py-3.5 px-4 rounded-2xl shadow-lg shadow-emerald-900/30 transition-all"
-                >
-                  <UserCheck size={18} />
-                  Estou a Caminho / Descendo
-                </button>
-                <button
-                  onClick={() => handleBoardingResponse('skip')}
-                  className="w-full flex items-center justify-center gap-3 bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 border border-white/10 [html.light_&]:border-slate-300 active:scale-[0.98] text-zinc-400 [html.light_&]:text-slate-600 font-bold text-sm py-3 px-4 rounded-2xl transition-all"
-                >
-                  <UserX size={16} />
-                  Pode Seguir, Não Vou
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Modal de Chamada de Embarque na Portaria */}
+        <BoardingCallModal
+          isOpen={isTargetedByBoardingCall && !boardingAlertDismissed}
+          faculty={trip?.boardingCall?.faculty}
+          secondsLeft={boardingSecondsLeft}
+          durationMinutes={trip?.boardingCall?.durationMinutes}
+          onClose={() => setBoardingAlertDismissed(true)}
+          onResponse={handleBoardingResponse}
+        />
 
         {/* Mapa */}
         <MapContainer center={CENTER} zoom={13} className="w-full h-full" zoomControl={false} attributionControl={false} rotate={true} touchRotate={true}>
@@ -1239,7 +1116,7 @@ export default function StudentMap() {
             return (
               <Marker key={`my_loc_${attendance?.status || 'waiting'}`} position={[attendance.lat, attendance.lng]} icon={icon} zIndexOffset={900}>
                 <Popup className="dark-popup">
-                  <span className="font-bold text-white [html.light_&]:text-slate-900">Sua localização {isSoIda ? '(Só Ida)' : ''}</span>
+                  <span className="font-bold text-heading">Sua localização {isSoIda ? '(Só Ida)' : ''}</span>
                 </Popup>
               </Marker>
             );
@@ -1263,7 +1140,7 @@ export default function StudentMap() {
             return (
               <Marker key={`${att.id}_${att.status}`} position={[att.lat, att.lng]} icon={icon} zIndexOffset={isMe ? 850 : (isSoIda ? 750 : 800)}>
                 <Popup className="dark-popup">
-                  <span className="font-bold text-white [html.light_&]:text-slate-900">{isMe ? `Você (${att.studentName})` : att.studentName} {isSoIda ? '(Só Ida)' : ''}</span>
+                  <span className="font-bold text-heading">{isMe ? `Você (${att.studentName})` : att.studentName} {isSoIda ? '(Só Ida)' : ''}</span>
                 </Popup>
               </Marker>
             );
@@ -1280,14 +1157,14 @@ export default function StudentMap() {
               <Popup className="dark-popup">
                 <span className="font-bold flex flex-col gap-1" style={{color: gpsState === 'live' ? '#f97316' : gpsState === 'stale' ? '#d97706' : '#71717a'}}>
                   <span>{student.route === 'Cromínia' ? 'Ônibus' : 'Van'} ({trip?.route || student.route})</span>
-                  <span className="text-[10px] text-zinc-400 [html.light_&]:text-slate-500 uppercase tracking-wider font-semibold">
+                  <span className="text-[10px] text-caption uppercase tracking-wider font-semibold">
                     {isBroadcasting
-                      ? '📍 Transmitido por você (Você está a bordo)'
+                      ? 'Transmitido por você (Você está a bordo)'
                       : gpsState === 'live'
-                        ? `📍 Ao vivo — ${trip?.locationProviderName || trip?.driverName || 'Motorista'}`
+                        ? `Ao vivo · ${trip?.locationProviderName || trip?.driverName || 'Motorista'}`
                         : gpsState === 'stale'
-                          ? `⚠ Sinal instável — ${elapsedLabel} — ${trip?.locationProviderName || 'Motorista'}`
-                          : `📡 Offline — ${elapsedLabel} — última posição conhecida`
+                          ? `Sinal instável · ${elapsedLabel} · ${trip?.locationProviderName || 'Motorista'}`
+                          : `Offline · ${elapsedLabel} · última posição conhecida`
                     }
                   </span>
                 </span>
@@ -1329,14 +1206,14 @@ export default function StudentMap() {
         {/* UI do Modo de Edição de Local */}
         {isEditingLocation && (
           <>
-            <div className="absolute top-4 left-4 right-4 z-[2000] bg-surface/90 [html.light_&]:bg-white/90 backdrop-blur-md border border-primary p-3 rounded-xl shadow-2xl animate-in slide-in-from-top-4">
-              <p className="text-center text-primary font-bold text-sm">📍 Toque no mapa para mover seu pino</p>
+            <div className="absolute top-4 left-4 right-4 z-[2000] bg-card/90 backdrop-blur-md border border-primary p-3 rounded-xl shadow-2xl animate-in slide-in-from-top-4">
+              <p className="text-center text-primary font-bold text-sm">Toque no mapa para mover seu pino</p>
             </div>
             
             <div className="absolute bottom-6 left-4 right-4 z-[2000] flex gap-3 animate-in slide-in-from-bottom-6">
               <button 
                 onClick={() => { setIsEditingLocation(false); setTempLocation(null); }}
-                className="flex-1 btn-secondary text-sm !px-4 !py-3 border border-white/10 [html.light_&]:border-slate-300"
+                className="flex-1 btn-secondary text-sm !px-4 !py-3 border border-subtle"
               >
                 Cancelar
               </button>
@@ -1354,14 +1231,14 @@ export default function StudentMap() {
 
       {/* Container Flutuante Inferior (Ações do Aluno) */}
       {!isEditingLocation && (
-        <div className={`absolute bottom-[72px] w-full electric-card bg-[#0A0A0A] [html.light_&]:bg-white border-t border-orange-500/20 [html.light_&]:border-slate-200 rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(249,115,22,0.1)] [html.light_&]:shadow-[0_-10px_40px_rgba(0,0,0,0.08)] z-[2000] backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isPanelCollapsed ? 'translate-y-[calc(100%+72px)] opacity-0 pointer-events-none' : 'translate-y-0 opacity-100 pointer-events-auto'}`}>
+        <div className={`absolute bottom-[72px] w-full electric-card bg-card border-t border-subtle rounded-t-[2.5rem] shadow-2xl z-[2000] backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isPanelCollapsed ? 'translate-y-[calc(100%+72px)] opacity-0 pointer-events-none' : 'translate-y-0 opacity-100 pointer-events-auto'}`}>
         {/* Espaçamento superior que substitui o drag handle */}
         <div className="w-full flex justify-center pt-6 pb-2"></div>
 
         <div className="px-6 pb-8">
           {!trip ? (
             <div className="text-center py-6">
-              <p className="text-zinc-400 [html.light_&]:text-slate-500 font-medium">Nenhuma viagem ativa no radar 📡</p>
+              <p className="text-caption font-medium">Nenhuma viagem ativa no momento</p>
             </div>
           ) : trip.status === 'finished' ? (
             isLiberado ? (
@@ -1370,7 +1247,7 @@ export default function StudentMap() {
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                 </div>
                 <h2 className="text-2xl font-bold text-red-500 mb-2 tracking-tight">Viagem Encerrada</h2>
-                <p className="text-zinc-400 [html.light_&]:text-slate-600 font-medium leading-relaxed mb-4 text-sm">O motorista finalizou a rota, mas você ainda estava aguardando. Você ficou para trás?</p>
+                <p className="text-body font-medium leading-relaxed mb-4 text-sm">O motorista finalizou a rota, mas você ainda estava aguardando. Você ficou para trás?</p>
                 <button 
                   onClick={handleEmergencia}
                   disabled={isSubmitting}
@@ -1385,15 +1262,15 @@ export default function StudentMap() {
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
                 <h2 className="text-2xl font-bold text-orange-500 mb-2 tracking-tight">Alerta Ativo</h2>
-                <p className="text-zinc-400 [html.light_&]:text-slate-600 font-medium leading-relaxed">Sua ocorrência foi registrada e a coordenação foi avisada do incidente.</p>
+                <p className="text-body font-medium leading-relaxed">Sua ocorrência foi registrada e a coordenação foi avisada do incidente.</p>
               </div>
             ) : (
               <div className="text-center py-6 animate-[fadeIn_0.5s_ease-out]">
                 <div className="w-16 h-16 bg-green-500/10 text-accent rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
                   <Check size={32} />
                 </div>
-                <h2 className="text-2xl font-bold text-white [html.light_&]:text-slate-900 mb-2 tracking-tight">Viagem Finalizada</h2>
-                <p className="text-zinc-400 [html.light_&]:text-slate-600 font-medium leading-relaxed">Todos os alunos foram entregues aos seus destinos.</p>
+                <h2 className="text-2xl font-bold text-heading mb-2 tracking-tight">Viagem Finalizada</h2>
+                <p className="text-body font-medium leading-relaxed">Todos os alunos foram entregues aos seus destinos.</p>
               </div>
             )
           ) : (
@@ -1405,7 +1282,7 @@ export default function StudentMap() {
                   <span className="text-[11px] font-bold text-orange-500 uppercase tracking-widest block mb-1">
                     {student?.faculty || 'DESTINO'}
                   </span>
-                  <h2 className="text-xl font-bold text-white [html.light_&]:text-slate-900 truncate">
+                  <h2 className="text-xl font-bold text-heading truncate">
                     {isEmbarcado ? (
                       'Embarcado no ônibus'
                     ) : isLiberado ? (
@@ -1420,9 +1297,9 @@ export default function StudentMap() {
 
                 {/* Previsão OSRM / Distância Dinâmica */}
                 {isLiberado && trip?.status === 'in_progress' && (
-                  <div className="text-right shrink-0 bg-white/5 [html.light_&]:bg-slate-100 border border-white/10 [html.light_&]:border-slate-200 rounded-2xl px-4 py-2">
-                    <span className="text-[10px] text-zinc-400 [html.light_&]:text-slate-500 uppercase tracking-wider block font-bold">Chegada Estimada</span>
-                    <span className="text-2xl font-black text-white [html.light_&]:text-slate-900 font-mono tracking-tight">
+                  <div className="text-right shrink-0 bg-subtle border border-subtle rounded-2xl px-4 py-2">
+                    <span className="text-[10px] text-caption uppercase tracking-wider block font-bold">Chegada Estimada</span>
+                    <span className="text-2xl font-black text-heading font-mono tracking-tight">
                       {etaMinutes !== null ? (
                         etaMinutes <= 1 ? '<1 min' : `~${etaMinutes} min`
                       ) : (
@@ -1451,10 +1328,10 @@ export default function StudentMap() {
                     <button
                       onClick={() => handleCancelarEmbarque()}
                       disabled={isSubmitting}
-                      className="w-full py-2.5 rounded-full font-display font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 text-zinc-400 hover:text-red-400 hover:bg-red-500/10 border border-white/10 [html.light_&]:border-slate-200 cursor-pointer"
+                      className="w-full py-2.5 rounded-full font-display font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 text-caption hover:text-danger hover:bg-danger-bg border border-subtle cursor-pointer"
                     >
                       <X size={15} />
-                      Cancelar Embarque
+                      Cancelar embarque
                     </button>
                   </>
                 )}
@@ -1497,7 +1374,7 @@ export default function StudentMap() {
       {/* Bottom Navigation Bar (WhatsApp style) */}
       {!isEditingLocation && (
         <div 
-          className="bg-[#050505] [html.light_&]:bg-white border-t border-white/5 [html.light_&]:border-slate-200 flex items-center justify-around gap-1 py-2 px-2 md:justify-center md:gap-8 md:px-6 z-[3000] shrink-0 pb-safe shadow-[0_-5px_20px_rgba(0,0,0,0.5)] [html.light_&]:shadow-[0_-5px_20px_rgba(0,0,0,0.06)] w-full overflow-hidden select-none touch-none overscroll-none"
+          className="bottom-nav bg-surface border-t border-subtle flex items-center justify-around gap-1 py-2 px-2 md:justify-center md:gap-8 md:px-6 z-[3000] shrink-0 pb-safe shadow-lg w-full overflow-hidden select-none touch-none overscroll-none"
           onWheel={(e) => e.preventDefault()}
         >
           
@@ -1507,7 +1384,7 @@ export default function StudentMap() {
               setIsPublicListOpen(newState);
               if (newState) setIsPanelCollapsed(true);
             }}
-            className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors relative"
+            className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors relative"
           >
             <div className="relative p-1.5 sm:p-2">
               <Users size={22} />
@@ -1528,7 +1405,7 @@ export default function StudentMap() {
                 ? 'text-orange-500'
                 : isLiberado
                 ? 'text-emerald-400'
-                : 'text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500'
+                : 'text-body hover:text-primary'
             }`}
           >
             <div className="p-1.5 sm:p-2 relative">
@@ -1551,7 +1428,7 @@ export default function StudentMap() {
                    setIsPanelCollapsed(true);
                    setIsPublicListOpen(false);
                  }}
-                 className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
+                 className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors"
                >
                  <div className="p-1.5 sm:p-2"><MapPin size={22} /></div>
                  <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Ajustar</span>
@@ -1559,7 +1436,7 @@ export default function StudentMap() {
 
                <button 
                  onClick={() => setShowCheckInModal(true)}
-                 className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500 transition-colors"
+                 className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors"
                >
                  <div className="p-1.5 sm:p-2"><Navigation size={22} /></div>
                  <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Trajeto</span>
@@ -1573,7 +1450,7 @@ export default function StudentMap() {
               className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center transition-all cursor-pointer ${
                 isBroadcasting 
                   ? 'text-red-500 hover:text-red-400 font-bold scale-105' 
-                  : 'text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500'
+                  : 'text-body hover:text-primary'
               }`}
               title={isBroadcasting ? "Pausar transmissão de GPS da van" : "Transmitir GPS da van para os outros alunos"}
             >
@@ -1594,12 +1471,12 @@ export default function StudentMap() {
         {showCheckInModal && (
           <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowCheckInModal(false)}></div>
-            <div className="relative electric-card bg-[#0A0A0A] [html.light_&]:bg-white w-full max-w-sm rounded-3xl border border-white/10 [html.light_&]:border-slate-200 shadow-2xl overflow-hidden p-6 text-center animate-in zoom-in-95 duration-300">
+            <div className="relative electric-card bg-card w-full max-w-sm rounded-3xl border border-subtle shadow-2xl overflow-hidden p-6 text-center animate-in zoom-in-95 duration-300">
               <div className="w-16 h-16 bg-orange-500/10 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(249,115,22,0.2)]">
                 <Navigation size={32} />
               </div>
-              <h2 className="text-2xl font-bold text-white [html.light_&]:text-slate-900 mb-2">Vai embarcar hoje?</h2>
-              <p className="text-sm text-zinc-400 [html.light_&]:text-slate-500 mb-6">Selecione seu trajeto para confirmar sua presença na lista do motorista.</p>
+              <h2 className="text-2xl font-bold text-heading mb-2">Vai embarcar hoje?</h2>
+              <p className="text-sm text-caption mb-6">Selecione seu trajeto para confirmar sua presença na lista do motorista.</p>
               
               <div className="space-y-3">
                 {[
@@ -1621,7 +1498,7 @@ export default function StudentMap() {
                       className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-between px-5 cursor-pointer active:scale-[0.98] ${
                         isSelected
                           ? 'bg-orange-500 hover:bg-orange-600 text-black shadow-lg shadow-orange-500/20'
-                          : 'bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 text-white [html.light_&]:text-slate-900 border border-white/10 [html.light_&]:border-slate-300'
+                          : 'bg-subtle hover-bg-subtle text-heading border border-subtle'
                       }`}
                     >
                       <span className="flex-1 text-center font-black tracking-wide">{option.label}</span>
@@ -1644,101 +1521,14 @@ export default function StudentMap() {
         )}
 
         {/* Modal da Lista Pública */}
-        {isPublicListOpen && (
-          <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsPublicListOpen(false)}></div>
-            <div className="relative electric-card bg-[#0A0A0A]/95 [html.light_&]:bg-white/95 w-full max-w-md rounded-3xl border border-white/10 [html.light_&]:border-slate-200 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/20 blur-[50px] rounded-full pointer-events-none"></div>
-              
-              <div className="p-6 border-b border-white/10 [html.light_&]:border-slate-200 bg-gradient-to-b from-orange-500/10 to-transparent z-10 flex justify-between items-center">
-                <h2 className="text-xl font-display font-bold text-white [html.light_&]:text-slate-900 flex items-center gap-2">
-                  <Users size={20} className="text-orange-500" />
-                  Lista de Passageiros
-                </h2>
-                <button onClick={() => setIsPublicListOpen(false)} className="text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900 p-2 rounded-full hover:bg-white/5 [html.light_&]:hover:bg-slate-100 transition-colors">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-              </div>
-              
-              <div className="p-4 overflow-y-auto flex-1 z-10 space-y-3 custom-scrollbar">
-                {publicList.length === 0 ? (
-                  <p className="text-zinc-500 [html.light_&]:text-slate-400 text-center py-8">Ninguém na lista ainda.</p>
-                ) : (
-                  publicList
-                    .sort((a, b) => {
-                      const statusOrder = { 'aguardando': 0, 'liberado': 0, 'embarcado': 1, 'cancelado': 2 };
-                      const orderA = statusOrder[a.status] ?? 0;
-                      const orderB = statusOrder[b.status] ?? 0;
-                      if (orderA !== orderB) return orderA - orderB;
-                      return (a.studentName || '').localeCompare(b.studentName || '');
-                    })
-                    .map(att => {
-                      const isEmbarcado = att.status === 'embarcado';
-                      const isCancelado = att.status === 'cancelado';
-                      
-                      let bgColor = 'bg-white/5 [html.light_&]:bg-slate-50 border-white/5 [html.light_&]:border-slate-200 hover:bg-white/10 [html.light_&]:hover:bg-slate-100';
-                      let avatarBg = 'bg-gradient-to-br from-orange-500 to-yellow-500 text-black';
-                      let nameColor = 'text-white [html.light_&]:text-slate-900';
-                      
-                      if (isEmbarcado) {
-                        bgColor = 'bg-orange-500/10 border-orange-500/30';
-                        avatarBg = 'bg-orange-500 text-black';
-                        nameColor = 'text-orange-500 line-through opacity-70';
-                      } else if (isCancelado) {
-                        bgColor = 'bg-zinc-800/50 [html.light_&]:bg-slate-100 border-zinc-700/50 [html.light_&]:border-slate-200';
-                        avatarBg = 'bg-zinc-700 [html.light_&]:bg-slate-300 text-zinc-400 [html.light_&]:text-slate-600';
-                        nameColor = 'text-zinc-500 [html.light_&]:text-slate-400 line-through opacity-70';
-                      }
-                      
-                      let tripTypeLabel = '';
-                      if (att.tripType === 'ida_volta') tripTypeLabel = 'Ida e Volta';
-                      else if (att.tripType === 'ida') tripTypeLabel = 'Só Ida';
-                      else if (att.tripType === 'volta') tripTypeLabel = 'Só Volta';
-                      
-                      return (
-                        <div key={att.id} className={`flex items-center justify-between border p-4 rounded-2xl transition-colors ${bgColor}`}>
-                          <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${avatarBg}`}>
-                              {(att.studentName || 'A').charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <p className={`font-bold leading-tight flex items-center gap-2 flex-wrap ${nameColor}`}>
-                                {att.studentName || 'Aluno'}
-                                {tripTypeLabel && (
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 [html.light_&]:bg-slate-200 border border-white/20 [html.light_&]:border-slate-300 uppercase tracking-wider font-bold">
-                                    {tripTypeLabel}
-                                  </span>
-                                )}
-                              </p>
-                              <p className="text-xs text-zinc-400 [html.light_&]:text-slate-500 mt-1">{att.faculty || 'Outra'} • {att.status}</p>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <button 
-                              onClick={() => handleStudentStatus(att.studentId, att.status, 'cancelado')}
-                              className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all shadow-sm ${isCancelado ? 'bg-zinc-800 [html.light_&]:bg-slate-200 text-zinc-400 [html.light_&]:text-slate-700 border-zinc-700 [html.light_&]:border-slate-300 hover:bg-zinc-700' : 'bg-white/10 [html.light_&]:bg-slate-100 text-zinc-400 [html.light_&]:text-slate-600 border-white/10 [html.light_&]:border-slate-200 hover:bg-zinc-800 hover:text-zinc-300'}`}
-                              title={isCancelado ? "Desfazer ausência" : "Marcar como não vai"}
-                            >
-                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
-                            <button 
-                              onClick={() => handleStudentStatus(att.studentId, att.status, 'embarcado')}
-                              className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all shadow-sm ${isEmbarcado ? 'bg-orange-500 text-black border-orange-500 hover:bg-orange-600' : 'bg-white/10 [html.light_&]:bg-slate-100 text-zinc-400 [html.light_&]:text-slate-600 border-white/10 [html.light_&]:border-slate-200 hover:bg-orange-500 hover:text-black hover:border-orange-500'}`}
-                              title={isEmbarcado ? "Desfazer embarque" : "Marcar como embarcado"}
-                            >
-                              <Check size={20} strokeWidth={3} />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
+        {/* Modal Lista de Passageiros */}
+        <PublicListModal
+          isOpen={isPublicListOpen}
+          onClose={() => setIsPublicListOpen(false)}
+          list={publicList}
+          title="Lista de Passageiros"
+          onStudentStatus={handleStudentStatus}
+        />
             </div>
   );
 }

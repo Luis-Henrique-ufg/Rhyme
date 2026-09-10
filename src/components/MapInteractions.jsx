@@ -245,7 +245,7 @@ export default function MapInteractions() {
       className={`w-full min-w-0 flex flex-col items-center justify-center transition-all cursor-pointer ${
         compassMode 
           ? 'text-orange-500 font-bold scale-105' 
-          : 'text-zinc-300 [html.light_&]:text-slate-600 hover:text-orange-500'
+          : 'text-body hover:text-primary'
       }`}
       title={compassMode ? "Desativar Bússola (Alinhar ao Norte)" : "Ativar Bússola Estabilizada"}
     >

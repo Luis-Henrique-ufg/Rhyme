@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../config/firebase';
@@ -28,12 +28,12 @@ const CustomSelect = ({ value, onChange, options, name, className, placeholder }
     <div className="relative group text-left">
       <div
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full bg-surface-hover [html.light_&]:bg-slate-100 border ${className || 'border-zinc-700 [html.light_&]:border-slate-200 focus:border-primary'} rounded-lg pl-4 pr-10 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary transition-colors cursor-pointer flex items-center justify-between group-hover:border-zinc-500`}
+        className={`w-full bg-subtle border ${className || 'border-subtle focus:border-primary'} rounded-xl pl-4 pr-10 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary transition-colors cursor-pointer flex items-center justify-between group-hover:border-primary/50`}
       >
-        <span className={!selectedOption && placeholder ? 'text-zinc-500 [html.light_&]:text-slate-400' : 'text-zinc-100 [html.light_&]:text-slate-900 truncate'}>
+        <span className={!selectedOption && placeholder ? 'text-caption' : 'text-heading truncate'}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        <div className={`absolute right-3 text-zinc-400 [html.light_&]:text-slate-500 group-hover:text-zinc-200 transition-transform ${isOpen ? 'rotate-180' : ''}`}>
+        <div className={`absolute right-3 text-caption group-hover:text-heading transition-transform ${isOpen ? 'rotate-180' : ''}`}>
            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
       </div>
@@ -41,7 +41,7 @@ const CustomSelect = ({ value, onChange, options, name, className, placeholder }
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
-          <ul className="absolute z-50 w-full mt-2 bg-zinc-900 [html.light_&]:bg-white border border-zinc-700/80 [html.light_&]:border-slate-200 rounded-xl shadow-2xl [html.light_&]:shadow-xl max-h-60 overflow-y-auto custom-scrollbar">
+          <ul className="absolute z-50 w-full mt-2 bg-card-elevated border border-subtle rounded-xl shadow-2xl max-h-60 overflow-y-auto custom-scrollbar">
             {options.map((opt) => (
               <li
                 key={opt.value}
@@ -49,7 +49,7 @@ const CustomSelect = ({ value, onChange, options, name, className, placeholder }
                   onChange({ target: { name, value: opt.value } });
                   setIsOpen(false);
                 }}
-                className={`px-4 py-3 cursor-pointer transition-colors text-sm ${value === opt.value ? 'bg-primary/20 [html.light_&]:bg-orange-50 text-primary font-bold border-l-2 border-primary pl-3' : 'text-zinc-300 [html.light_&]:text-slate-700 hover:bg-zinc-800 [html.light_&]:hover:bg-slate-100 hover:text-white [html.light_&]:hover:text-slate-900 border-l-2 border-transparent'}`}
+                className={`px-4 py-3 cursor-pointer transition-colors text-sm ${value === opt.value ? 'bg-primary/15 text-primary font-bold border-l-2 border-primary pl-3' : 'text-body hover-bg-subtle hover:text-heading border-l-2 border-transparent'}`}
               >
                 {opt.label}
               </li>
@@ -77,8 +77,8 @@ export default function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState({});
-  const [step, setStep] = useState(1); // 1 = dados, 2 = localização da faculdade
-  const [facultyLocation, setFacultyLocation] = useState(null); // { lat, lng }
+  const [, setStep] = useState(1);
+  const [facultyLocation] = useState(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
 
   // Mapa de coordenadas padrão por faculdade (para centralizar o mapa no picker)
@@ -127,7 +127,6 @@ export default function Register() {
   if (loading || checkingProfile) {
     return <Loader message="Carregando..." />;
   }
-
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -229,19 +228,19 @@ export default function Register() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
       {/* Background Gradients & Stars */}
       <div className="stars absolute inset-0 pointer-events-none"></div>
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-orange-900/10 [html.light_&]:bg-orange-400/10 blur-[120px] rounded-full pointer-events-none"></div>
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-orange-950/20 [html.light_&]:bg-amber-400/10 blur-[100px] rounded-full pointer-events-none"></div>
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-primary/10 blur-[120px] rounded-full pointer-events-none"></div>
+      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-accent/10 blur-[100px] rounded-full pointer-events-none"></div>
 
-      <div className="electric-card bg-[#0A0A0A] [html.light_&]:bg-white/95 w-full max-w-md p-8 text-left rounded-[30px] z-10 relative border border-white/5 [html.light_&]:border-slate-200 shadow-2xl [html.light_&]:shadow-[0_20px_50px_rgba(0,0,0,0.06)]">
+      <div className="electric-card bg-card w-full max-w-md p-8 text-left rounded-3xl z-10 relative border border-subtle shadow-2xl">
         <div className="flex justify-center items-center gap-3 mb-6">
-          <img src="/Logo.png" alt="Rhyme Logo" className="h-10 object-contain" />
-          <h1 className="text-3xl font-bricolage font-bold text-white [html.light_&]:text-slate-900 tracking-tight">Rhyme.</h1>
+          <img src="/Logo.webp" alt="Rhyme Logo" className="h-10 object-contain" />
+          <h1 className="text-3xl font-bricolage font-bold text-heading tracking-tight">Rhyme.</h1>
         </div>
-        <h2 className="text-2xl font-bricolage font-light tracking-tight text-white [html.light_&]:text-slate-900 mb-2 text-center">Complete seu Cadastro</h2>
-        <p className="text-zinc-400 [html.light_&]:text-slate-500 mb-6 text-center text-sm">Precisamos de mais algumas informações.</p>
+        <h2 className="text-2xl font-bricolage font-light tracking-tight text-heading mb-2 text-center">Complete seu cadastro</h2>
+        <p className="text-body mb-6 text-center text-sm">Precisamos de mais algumas informações.</p>
         
         {error && (
-          <div className="bg-red-500/10 border border-red-500/50 text-red-500 [html.light_&]:bg-red-50 [html.light_&]:border-red-200 [html.light_&]:text-red-700 p-3 rounded-lg mb-4 text-sm">
+          <div className="badge-danger p-3 rounded-xl mb-4 text-sm">
             {error}
           </div>
         )}
@@ -250,51 +249,51 @@ export default function Register() {
           {!user && (
             <>
               <div>
-                <label className="block text-sm font-medium text-zinc-300 [html.light_&]:text-slate-700 mb-1">Nome de Usuário <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-body mb-1">Nome de usuário <span className="text-danger">*</span></label>
                 <input
                   type="text"
                   name="username"
                   value={formData.username}
                   onChange={handleChange}
                   placeholder="ex: joaozinho"
-                  className={`w-full bg-surface-hover [html.light_&]:bg-slate-100 border ${validationErrors.username ? 'border-red-500 focus:ring-red-500' : 'border-zinc-700 [html.light_&]:border-slate-200 focus:border-primary focus:ring-primary'} rounded-lg px-4 py-2.5 text-zinc-100 [html.light_&]:text-slate-900 placeholder:text-zinc-500 [html.light_&]:placeholder:text-slate-400 focus:outline-none focus:ring-1 transition-colors`}
+                  className={`w-full bg-subtle border ${validationErrors.username ? 'border-danger focus:ring-danger' : 'border-subtle focus:border-primary focus:ring-primary'} rounded-xl px-4 py-2.5 text-heading placeholder:text-caption focus:outline-none focus:ring-1 transition-colors`}
                   required
                 />
-                {validationErrors.username && <p className="text-red-500 text-xs mt-1">{validationErrors.username}</p>}
+                {validationErrors.username && <p className="text-danger text-xs mt-1">{validationErrors.username}</p>}
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-zinc-300 [html.light_&]:text-slate-700 mb-1">Senha <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-body mb-1">Senha <span className="text-danger">*</span></label>
                 <input
                   type="password"
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="Mínimo 6 caracteres"
-                  className={`w-full bg-surface-hover [html.light_&]:bg-slate-100 border ${validationErrors.password ? 'border-red-500 focus:ring-red-500' : 'border-zinc-700 [html.light_&]:border-slate-200 focus:border-primary focus:ring-primary'} rounded-lg px-4 py-2.5 text-zinc-100 [html.light_&]:text-slate-900 placeholder:text-zinc-500 [html.light_&]:placeholder:text-slate-400 focus:outline-none focus:ring-1 transition-colors`}
+                  className={`w-full bg-subtle border ${validationErrors.password ? 'border-danger focus:ring-danger' : 'border-subtle focus:border-primary focus:ring-primary'} rounded-xl px-4 py-2.5 text-heading placeholder:text-caption focus:outline-none focus:ring-1 transition-colors`}
                   required
                 />
-                {validationErrors.password && <p className="text-red-500 text-xs mt-1">{validationErrors.password}</p>}
+                {validationErrors.password && <p className="text-danger text-xs mt-1">{validationErrors.password}</p>}
               </div>
             </>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300 [html.light_&]:text-slate-700 mb-1">Nome Completo <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-body mb-1">Nome completo <span className="text-danger">*</span></label>
             <input
               type="text"
               name="name"
               value={formData.name}
               onChange={handleChange}
               placeholder="Digite seu nome"
-              className={`w-full bg-surface-hover [html.light_&]:bg-slate-100 border ${validationErrors.name ? 'border-red-500 focus:ring-red-500' : 'border-zinc-700 [html.light_&]:border-slate-200 focus:border-primary focus:ring-primary'} rounded-lg px-4 py-2.5 text-zinc-100 [html.light_&]:text-slate-900 placeholder:text-zinc-500 [html.light_&]:placeholder:text-slate-400 focus:outline-none focus:ring-1 transition-colors`}
+              className={`w-full bg-subtle border ${validationErrors.name ? 'border-danger focus:ring-danger' : 'border-subtle focus:border-primary focus:ring-primary'} rounded-xl px-4 py-2.5 text-heading placeholder:text-caption focus:outline-none focus:ring-1 transition-colors`}
               required
             />
-            {validationErrors.name && <p className="text-red-500 text-xs mt-1">{validationErrors.name}</p>}
+            {validationErrors.name && <p className="text-danger text-xs mt-1">{validationErrors.name}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300 [html.light_&]:text-slate-700 mb-1">Você é?</label>
+            <label className="block text-sm font-medium text-body mb-1">Você é?</label>
             <CustomSelect
               name="role"
               value={formData.role}
@@ -307,7 +306,7 @@ export default function Register() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-300 [html.light_&]:text-slate-700 mb-1">Rota <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-body mb-1">Rota <span className="text-danger">*</span></label>
             <CustomSelect
               name="route"
               value={formData.route}
@@ -322,16 +321,16 @@ export default function Register() {
 
           {formData.role === 'student' && (
             <div>
-              <label className="block text-sm font-medium text-zinc-300 [html.light_&]:text-slate-700 mb-1">Faculdade <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-body mb-1">Faculdade <span className="text-danger">*</span></label>
               <CustomSelect
                 name="faculty"
                 value={formData.faculty}
                 onChange={handleChange}
-                className={validationErrors.faculty ? 'border-red-500 focus:ring-red-500' : ''}
+                className={validationErrors.faculty ? 'border-danger focus:ring-danger' : ''}
                 placeholder="Selecione sua faculdade"
                 options={FACULTIES.map(fac => ({ value: fac, label: fac }))}
               />
-              {validationErrors.faculty && <p className="text-red-500 text-xs mt-1">{validationErrors.faculty}</p>}
+              {validationErrors.faculty && <p className="text-danger text-xs mt-1">{validationErrors.faculty}</p>}
               
               {formData.faculty === 'Outra' && (
                 <div className="mt-3 animate-[fadeIn_0.3s_ease-out]">
@@ -341,9 +340,9 @@ export default function Register() {
                     value={formData.customFaculty}
                     onChange={handleChange}
                     placeholder="Digite o nome da instituição"
-                    className={`w-full bg-surface-hover [html.light_&]:bg-slate-100 border ${validationErrors.customFaculty ? 'border-red-500 focus:ring-red-500' : 'border-zinc-700 [html.light_&]:border-slate-200 focus:border-primary focus:ring-primary'} rounded-lg px-4 py-2.5 text-zinc-100 [html.light_&]:text-slate-900 placeholder:text-zinc-500 [html.light_&]:placeholder:text-slate-400 focus:outline-none focus:ring-1 transition-colors`}
+                    className={`w-full bg-subtle border ${validationErrors.customFaculty ? 'border-danger focus:ring-danger' : 'border-subtle focus:border-primary focus:ring-primary'} rounded-xl px-4 py-2.5 text-heading placeholder:text-caption focus:outline-none focus:ring-1 transition-colors`}
                   />
-                  {validationErrors.customFaculty && <p className="text-red-500 text-xs mt-1">{validationErrors.customFaculty}</p>}
+                  {validationErrors.customFaculty && <p className="text-danger text-xs mt-1">{validationErrors.customFaculty}</p>}
                 </div>
               )}
             </div>
@@ -355,7 +354,7 @@ export default function Register() {
               disabled={isSubmitting}
               className="w-full btn-primary disabled:opacity-50"
             >
-              {isSubmitting ? 'Salvando...' : formData.role === 'student' ? 'Próximo →' : 'Finalizar Cadastro'}
+              {isSubmitting ? 'Salvando...' : formData.role === 'student' ? 'Avançar para localização →' : 'Finalizar cadastro'}
             </button>
 
             <button
@@ -366,9 +365,9 @@ export default function Register() {
                 navigate('/login');
               }}
               disabled={isSubmitting}
-              className="w-full bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 text-white [html.light_&]:text-slate-700 py-3 rounded-full transition-colors font-medium border border-white/10 [html.light_&]:border-slate-200 text-center"
+              className="w-full bg-subtle hover-bg-subtle text-heading py-3 rounded-full transition-colors font-medium border border-subtle text-center"
             >
-              Sair / Alterar Conta
+              Sair ou trocar de conta
             </button>
           </div>
         </form>
