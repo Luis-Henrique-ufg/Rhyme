@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline } from 'react-leaflet';
-import { Users, Check, RefreshCcw, Navigation, Play, StopCircle, MapPinOff, BarChart2, LocateFixed, ChevronUp, ChevronDown, X } from 'lucide-react';
+import { Users, Check, RefreshCcw, Navigation, Play, StopCircle, MapPinOff, BarChart2, LocateFixed, ChevronUp, ChevronDown, X, BellRing, Clock, UserCheck, UserX, Timer } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-rotate';
@@ -16,7 +16,7 @@ import Loader from '../components/Loader';
 import ErrorState from '../components/ErrorState';
 import MapInteractions from '../components/MapInteractions';
 import ReactDOM from 'react-dom';
-import { playSuccessSound } from '../utils/audioEffects';
+import { playSuccessSound, playBoardingAlarmSound } from '../utils/audioEffects';
 import { useCustomAlert } from '../contexts/AlertContext';
 
 const MOCK_FACULTIES = {
@@ -349,6 +349,12 @@ export default function DriverDashboard() {
   const [gpsAccuracy, setGpsAccuracy] = useState(null); // metres
   const [arrivedAtStudent, setArrivedAtStudent] = useState(false); // toast de chegada ao aluno
 
+  // --- Chamada de Embarque ---
+  const [boardingCall, setBoardingCall] = useState(null);          // objeto da chamada ativa
+  const [boardingCallSecondsLeft, setBoardingCallSecondsLeft] = useState(0);
+  const [showDurationPicker, setShowDurationPicker] = useState(false);
+  const boardingCallIntervalRef = useRef(null);
+
   // --- Data Adapter hooks (deep modules) ---
   const { trip, tripId, error: tripError } = useCurrentTrip(driver?.route?.trim());
   const { attendanceMap, error: attendanceError } = useDriverAttendanceMap(tripId);
@@ -401,6 +407,38 @@ export default function DriverDashboard() {
     return () => unsubStudents();
   }, [driver?.route]);
 
+  // Countdown do timer da Chamada de Embarque (motorista)
+  useEffect(() => {
+    if (!boardingCall || boardingCall.status !== 'active') {
+      clearInterval(boardingCallIntervalRef.current);
+      return;
+    }
+    const tick = () => {
+      const left = Math.max(0, Math.round((boardingCall.expiresAt - Date.now()) / 1000));
+      setBoardingCallSecondsLeft(left);
+      if (left <= 0) {
+        clearInterval(boardingCallIntervalRef.current);
+        // Auto-encerra quando o tempo esgota
+        setBoardingCall(prev => prev ? { ...prev, status: 'expired' } : null);
+      }
+    };
+    tick();
+    boardingCallIntervalRef.current = setInterval(tick, 1000);
+    return () => clearInterval(boardingCallIntervalRef.current);
+  }, [boardingCall?.expiresAt, boardingCall?.status]);
+
+  // Lê respostas dos alunos a partir do attendanceMap em tempo real
+  const boardingResponseMap = useMemo(() => {
+    if (!boardingCall?.targetStudentIds) return {};
+    const map = {};
+    boardingCall.targetStudentIds.forEach(uid => {
+      const att = attendanceMap[uid];
+      if (att?.boardingResponse) {
+        map[uid] = { response: att.boardingResponse, name: att.studentName || 'Aluno', respondedAt: att.boardingResponseAt };
+      }
+    });
+    return map;
+  }, [boardingCall?.targetStudentIds, attendanceMap]);
 
 
   // Wake Lock: Mantém a tela ligada enquanto a rota está ativa
@@ -734,6 +772,71 @@ export default function DriverDashboard() {
     }
   };
 
+  // --- Handlers da Chamada de Embarque ---
+  const handleStartBoardingCall = async (durationMinutes) => {
+    if (!nextStop || !trip?.id) return;
+    setShowDurationPicker(false);
+
+    // Extrai UIDs dos alunos pendentes nesta parada a partir do attendanceMap
+    const targetStudents = Object.entries(attendanceMap)
+      .filter(([_, att]) =>
+        att.status !== 'embarcado' && att.status !== 'cancelado' &&
+        att.faculty === nextStop.faculty
+      )
+      .map(([uid, att]) => ({ uid, name: att.studentName || 'Aluno' }));
+
+    if (targetStudents.length === 0) {
+      showAlert('Nenhum aluno pendente neste ponto.');
+      return;
+    }
+
+    const now = Date.now();
+    const callData = {
+      faculty: nextStop.faculty,
+      stopId: nextStop.id,
+      targetStudentIds: targetStudents.map(s => s.uid),
+      targetStudentNames: targetStudents,
+      startedAt: now,
+      durationMinutes,
+      expiresAt: now + durationMinutes * 60_000,
+      status: 'active'
+    };
+
+    try {
+      await updateDoc(doc(db, 'trips', trip.id), { boardingCall: callData });
+      setBoardingCall(callData);
+      setBoardingCallSecondsLeft(durationMinutes * 60);
+      try { playSuccessSound(); } catch (e) {}
+    } catch (e) {
+      console.error('Erro ao iniciar chamada de embarque:', e);
+      showAlert('Erro ao iniciar chamada de embarque.');
+    }
+  };
+
+  const handleExtendBoardingCall = async (extraMinutes) => {
+    if (!boardingCall || !trip?.id) return;
+    const newExpiresAt = boardingCall.expiresAt + extraMinutes * 60_000;
+    const updated = { ...boardingCall, expiresAt: newExpiresAt };
+    try {
+      await updateDoc(doc(db, 'trips', trip.id), { boardingCall: updated });
+      setBoardingCall(updated);
+    } catch (e) {
+      console.error('Erro ao estender chamada:', e);
+    }
+  };
+
+  const handleCloseBoardingCall = async () => {
+    if (!trip?.id) return;
+    const closed = boardingCall ? { ...boardingCall, status: 'closed' } : null;
+    try {
+      if (trip?.id) await updateDoc(doc(db, 'trips', trip.id), { boardingCall: closed });
+    } catch (e) {
+      console.error('Erro ao encerrar chamada:', e);
+    }
+    setBoardingCall(null);
+    clearInterval(boardingCallIntervalRef.current);
+  };
+
   const handleMarkerPressStart = (lat, lng) => {
     if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
     
@@ -1050,14 +1153,129 @@ export default function DriverDashboard() {
                     </div>
                   </div>
 
-                  {/* Quick Action Button */}
-                  <button
-                    onClick={() => openNavigationTo(nextStop.lat, nextStop.lng)}
-                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-amber-500 hover:brightness-110 text-white font-bold text-xs py-2 px-3 rounded-xl shadow-lg transition-all active:scale-[0.98] mt-0.5"
-                  >
-                    <Navigation size={13} className="shrink-0 fill-current" />
-                    Traçar rota até este ponto
-                  </button>
+                  {/* Quick Action Buttons */}
+                  <div className="flex flex-col gap-2 mt-0.5">
+                    <button
+                      onClick={() => openNavigationTo(nextStop.lat, nextStop.lng)}
+                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-amber-500 hover:brightness-110 text-white font-bold text-xs py-2 px-3 rounded-xl shadow-lg transition-all active:scale-[0.98]"
+                    >
+                      <Navigation size={13} className="shrink-0 fill-current" />
+                      Traçar rota até este ponto
+                    </button>
+
+                    {/* Chamada de Embarque */}
+                    {!boardingCall || boardingCall.status !== 'active' ? (
+                      <div className="relative">
+                        <button
+                          onClick={() => setShowDurationPicker(v => !v)}
+                          className="w-full flex items-center justify-center gap-2 bg-white/5 [html.light_&]:bg-emerald-50 [html.light_&]:border-emerald-200 border border-white/10 hover:border-emerald-500/60 hover:bg-emerald-500/10 text-zinc-200 [html.light_&]:text-emerald-700 hover:text-emerald-400 font-bold text-xs py-2 px-3 rounded-xl transition-all active:scale-[0.98]"
+                        >
+                          <BellRing size={13} className="shrink-0" />
+                          Chamar Alunos
+                        </button>
+                        {/* Seletor de Duração */}
+                        {showDurationPicker && (
+                          <div className="absolute bottom-[110%] left-0 right-0 z-10 bg-[#0d0d0d]/98 [html.light_&]:bg-white/98 border border-white/10 [html.light_&]:border-slate-200 rounded-xl p-3 shadow-2xl flex flex-col gap-2 animate-[fadeIn_0.15s_ease-out]">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 [html.light_&]:text-slate-500 flex items-center gap-1.5">
+                              <Timer size={11} /> Tolerância de espera
+                            </span>
+                            <div className="flex gap-2">
+                              {[2, 3, 5].map(min => (
+                                <button
+                                  key={min}
+                                  onClick={() => handleStartBoardingCall(min)}
+                                  className="flex-1 py-2 rounded-xl bg-emerald-500/10 [html.light_&]:bg-emerald-50 border border-emerald-500/30 [html.light_&]:border-emerald-300 text-emerald-400 [html.light_&]:text-emerald-700 font-black text-sm hover:bg-emerald-500/20 transition-all active:scale-95"
+                                >
+                                  {min} min
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      /* Chamada Ativa — Cronômetro + Respostas */
+                      <div className="rounded-xl border border-emerald-500/30 [html.light_&]:border-emerald-300 bg-emerald-500/5 [html.light_&]:bg-emerald-50 p-3 flex flex-col gap-2">
+                        {/* Header: countdown + encerrar */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                            </span>
+                            <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-400 [html.light_&]:text-emerald-700">Chamada Ativa</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleExtendBoardingCall(1)}
+                              className="text-zinc-400 [html.light_&]:text-slate-500 hover:text-white [html.light_&]:hover:text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded border border-white/10 [html.light_&]:border-slate-300 hover:border-white/30 transition-all"
+                              title="Adicionar 1 minuto"
+                            >+1 min</button>
+                            <button
+                              onClick={handleCloseBoardingCall}
+                              className="text-zinc-500 hover:text-red-400 [html.light_&]:text-slate-500 [html.light_&]:hover:text-red-600 p-0.5 rounded transition-colors"
+                              title="Encerrar chamada"
+                            >
+                              <X size={13} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Cronômetro */}
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className={`font-black font-mono text-2xl leading-none ${
+                            boardingCallSecondsLeft <= 30 ? 'text-red-400 [html.light_&]:text-red-600 animate-pulse' :
+                            boardingCallSecondsLeft <= 60 ? 'text-amber-400 [html.light_&]:text-amber-600' :
+                            'text-emerald-400 [html.light_&]:text-emerald-700'
+                          }`}>
+                            {String(Math.floor(boardingCallSecondsLeft / 60)).padStart(2,'0')}:{String(boardingCallSecondsLeft % 60).padStart(2,'0')}
+                          </span>
+                          {/* Barra de progresso */}
+                          <div className="w-full h-1 bg-white/10 [html.light_&]:bg-slate-200 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-1000"
+                              style={{
+                                width: `${(boardingCallSecondsLeft / (boardingCall.durationMinutes * 60)) * 100}%`,
+                                background: boardingCallSecondsLeft <= 30 ? '#f87171' : boardingCallSecondsLeft <= 60 ? '#fbbf24' : '#34d399'
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Lista de respostas dos alunos */}
+                        <div className="flex flex-col gap-1">
+                          {boardingCall.targetStudentNames?.map(({ uid, name }) => {
+                            const resp = boardingResponseMap[uid];
+                            return (
+                              <div key={uid} className="flex items-center justify-between py-0.5">
+                                <span className="text-xs text-zinc-300 [html.light_&]:text-slate-700 font-medium truncate max-w-[120px]">{name}</span>
+                                {!resp ? (
+                                  <span className="flex items-center gap-1 text-[10px] text-zinc-500 [html.light_&]:text-slate-400">
+                                    <Clock size={10} /> Aguardando
+                                  </span>
+                                ) : resp.response === 'coming' ? (
+                                  <span className="flex items-center gap-1 text-[10px] text-emerald-400 [html.light_&]:text-emerald-700 font-semibold">
+                                    <UserCheck size={10} /> A caminho
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center gap-1 text-[10px] text-zinc-400 [html.light_&]:text-slate-500 line-through">
+                                    <UserX size={10} /> Dispensado
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <button
+                          onClick={handleCloseBoardingCall}
+                          className="w-full flex items-center justify-center gap-2 bg-zinc-800 [html.light_&]:bg-slate-200 hover:bg-zinc-700 [html.light_&]:hover:bg-slate-300 text-zinc-200 [html.light_&]:text-slate-700 font-bold text-xs py-2 px-3 rounded-xl transition-all active:scale-[0.98]"
+                        >
+                          <Check size={13} /> Partir / Encerrar Chamada
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

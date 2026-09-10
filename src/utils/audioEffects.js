@@ -37,3 +37,16 @@ export const playNotificationSound = () => {
   setTimeout(() => playTone(659.25, 'triangle', 0.4, 0.5), 200); // E5
   setTimeout(() => playTone(783.99, 'triangle', 0.6, 0.5), 400); // G5
 };
+
+export const playBoardingAlarmSound = () => {
+  // Alarme de Chamada de Embarque — 4 pulsos de atenção urgentes
+  // Mais intenso e insistente que playNotificationSound para não ser ignorado
+  playTone(880,  'square', 0.12, 0.45);  // A5 — início
+  setTimeout(() => playTone(784,  'square', 0.12, 0.3), 180);   // G5
+  setTimeout(() => playTone(880,  'square', 0.12, 0.45), 360);  // A5 — repetição
+  setTimeout(() => playTone(1047, 'square', 0.12, 0.55), 560);  // C6 — pico
+  // Segunda sequência após pausa
+  setTimeout(() => playTone(880,  'square', 0.08, 0.35), 900);
+  setTimeout(() => playTone(1047, 'square', 0.08, 0.55), 1080);
+};
+

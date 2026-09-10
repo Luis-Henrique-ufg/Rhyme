@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline } from 'react-leaflet';
-import { Users, Check, RefreshCcw, MapPin, Navigation, LocateFixed, X, Radio } from 'lucide-react';
+import { Users, Check, RefreshCcw, MapPin, Navigation, LocateFixed, X, Radio, BellRing, Bus, UserX, UserCheck } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -14,7 +14,7 @@ import ErrorState from '../components/ErrorState';
 import MapInteractions from '../components/MapInteractions';
 import ReactDOM from 'react-dom';
 import { useCustomAlert } from '../contexts/AlertContext';
-import { playNotificationSound } from '../utils/audioEffects';
+import { playNotificationSound, playBoardingAlarmSound } from '../utils/audioEffects';
 import { useFCM } from '../hooks/useFCM';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-rotate';
@@ -452,6 +452,12 @@ export default function StudentMap() {
   const [broadcastingLocation, setBroadcastingLocation] = useState(null);
   const [focusTrigger, setFocusTrigger] = useState(0);
 
+  // --- Chamada de Embarque (visão do aluno) ---
+  const [boardingAlertDismissed, setBoardingAlertDismissed] = useState(false);
+  const [boardingAlertKey, setBoardingAlertKey] = useState(null); // startedAt da chamada atual
+  const [boardingSecondsLeft, setBoardingSecondsLeft] = useState(0);
+  const boardingTimerRef = useRef(null);
+
   const [student, setStudent] = useState(null);
   const [attendance, setAttendance] = useState(null);
   const [studentLoading, setStudentLoading] = useState(true);
@@ -541,6 +547,73 @@ export default function StudentMap() {
 
   // Hook to handle FCM permissions and tokens
   useFCM(user);
+
+  // --- Chamada de Embarque: detectar se este aluno é alvo ---
+  const isTargetedByBoardingCall = useMemo(() => {
+    const bc = trip?.boardingCall;
+    if (!bc || bc.status !== 'active') return false;
+    if (!bc.targetStudentIds?.includes(user?.uid)) return false;
+    if (Date.now() > bc.expiresAt) return false;
+    return true;
+  }, [trip?.boardingCall, user?.uid]);
+
+  // Dispara som e notificação do sistema ao ser alvo de uma nova chamada de embarque
+  useEffect(() => {
+    if (!isTargetedByBoardingCall) {
+      // Reseta dismissed quando a chamada encerrar (próxima chamada começa limpa)
+      if (!trip?.boardingCall || trip.boardingCall.status !== 'active') {
+        setBoardingAlertDismissed(false);
+        setBoardingAlertKey(null);
+      }
+      return;
+    }
+    const callKey = trip.boardingCall.startedAt;
+    if (boardingAlertKey === callKey) return; // já processamos esta chamada
+    setBoardingAlertKey(callKey);
+    setBoardingAlertDismissed(false);
+    // Alarme sonoro
+    try { playBoardingAlarmSound(); } catch (e) {}
+    // Notificação do sistema (toca mesmo com celular bloqueado se a permissão foi concedida)
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      try {
+        new Notification('Van na portaria!', {
+          body: `A Van chegou em ${trip.boardingCall.faculty || 'sua faculdade'}. Você tem ${trip.boardingCall.durationMinutes} min para embarcar.`,
+          icon: '/android-chrome-192x192.png',
+          tag: 'boarding-call',
+          requireInteraction: true
+        });
+      } catch (e) { console.warn('Notificação de embarque bloqueada:', e); }
+    }
+  }, [isTargetedByBoardingCall, trip?.boardingCall?.startedAt]);
+
+  // Countdown sincronizado com expiresAt da chamada
+  useEffect(() => {
+    if (!isTargetedByBoardingCall || boardingAlertDismissed) {
+      clearInterval(boardingTimerRef.current);
+      return;
+    }
+    const tick = () => {
+      const left = Math.max(0, Math.round((trip.boardingCall.expiresAt - Date.now()) / 1000));
+      setBoardingSecondsLeft(left);
+    };
+    tick();
+    boardingTimerRef.current = setInterval(tick, 1000);
+    return () => clearInterval(boardingTimerRef.current);
+  }, [isTargetedByBoardingCall, boardingAlertDismissed, trip?.boardingCall?.expiresAt]);
+
+  // Resposta do aluno à chamada de embarque
+  const handleBoardingResponse = async (response) => {
+    if (!trip?.id || !user?.uid) return;
+    const attendanceId = `${trip.id}_${user.uid}`;
+    try {
+      const updates = { boardingResponse: response, boardingResponseAt: Date.now() };
+      if (response === 'skip') updates.status = 'cancelado';
+      await updateDoc(doc(db, 'attendance', attendanceId), updates);
+    } catch (e) {
+      console.error('Erro ao responder chamada de embarque:', e);
+    }
+    setBoardingAlertDismissed(true);
+  };
 
   // Listener do perfil do aluno (redireciona se motorista ou não cadastrado)
   useEffect(() => {
@@ -1084,6 +1157,74 @@ export default function StudentMap() {
           </div>
         )}
 
+        {/* === Modal de Chamada de Embarque (Alta Prioridade) === */}
+        {isTargetedByBoardingCall && !boardingAlertDismissed && (
+          <div className="absolute inset-0 z-[2000] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="w-full max-w-sm bg-[#0a0a0a]/98 [html.light_&]:bg-white/98 border border-emerald-500/40 [html.light_&]:border-emerald-300 rounded-3xl p-5 shadow-[0_20px_60px_rgba(0,0,0,0.8)] [html.light_&]:shadow-[0_20px_60px_rgba(0,0,0,0.12)] animate-[fadeIn_0.3s_ease-out] flex flex-col gap-4">
+
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+                    <Bus size={18} className="text-emerald-400 [html.light_&]:text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-extrabold uppercase tracking-widest text-emerald-400 [html.light_&]:text-emerald-600">Van na portaria!</p>
+                    <p className="text-[11px] text-zinc-400 [html.light_&]:text-slate-500">{trip?.boardingCall?.faculty || 'Sua faculdade'}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setBoardingAlertDismissed(true)}
+                  className="text-zinc-600 hover:text-zinc-300 [html.light_&]:text-slate-400 [html.light_&]:hover:text-slate-700 p-1.5 rounded-xl hover:bg-white/5 [html.light_&]:hover:bg-slate-100 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Cronômetro Regressivo */}
+              <div className="flex flex-col items-center gap-2">
+                <span className={`font-black font-mono text-6xl leading-none tracking-tight ${
+                  boardingSecondsLeft <= 30 ? 'text-red-400 [html.light_&]:text-red-600 animate-pulse' :
+                  boardingSecondsLeft <= 60 ? 'text-amber-400 [html.light_&]:text-amber-600' :
+                  'text-emerald-400 [html.light_&]:text-emerald-500'
+                }`}>
+                  {String(Math.floor(boardingSecondsLeft / 60)).padStart(2,'0')}:{String(boardingSecondsLeft % 60).padStart(2,'0')}
+                </span>
+                <p className="text-xs text-zinc-500 [html.light_&]:text-slate-500">de tolerância para embarque</p>
+                {/* Barra de progresso */}
+                <div className="w-full h-1.5 bg-white/8 [html.light_&]:bg-slate-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-1000"
+                    style={{
+                      width: `${(boardingSecondsLeft / ((trip?.boardingCall?.durationMinutes || 3) * 60)) * 100}%`,
+                      background: boardingSecondsLeft <= 30 ? '#f87171' : boardingSecondsLeft <= 60 ? '#fbbf24' : '#34d399'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Ações */}
+              <div className="flex flex-col gap-2.5">
+                <button
+                  onClick={() => handleBoardingResponse('coming')}
+                  className="w-full flex items-center justify-center gap-3 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-white font-black text-sm py-3.5 px-4 rounded-2xl shadow-lg shadow-emerald-900/30 transition-all"
+                >
+                  <UserCheck size={18} />
+                  Estou a Caminho / Descendo
+                </button>
+                <button
+                  onClick={() => handleBoardingResponse('skip')}
+                  className="w-full flex items-center justify-center gap-3 bg-white/5 [html.light_&]:bg-slate-100 hover:bg-white/10 [html.light_&]:hover:bg-slate-200 border border-white/10 [html.light_&]:border-slate-300 active:scale-[0.98] text-zinc-400 [html.light_&]:text-slate-600 font-bold text-sm py-3 px-4 rounded-2xl transition-all"
+                >
+                  <UserX size={16} />
+                  Pode Seguir, Não Vou
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mapa */}
         <MapContainer center={CENTER} zoom={13} className="w-full h-full" zoomControl={false} attributionControl={false} rotate={true} touchRotate={true}>
           <MapInteractions />
           <TileLayer
