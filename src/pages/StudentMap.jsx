@@ -744,12 +744,29 @@ export default function StudentMap() {
   const isEmbarcado = attendance?.status === 'embarcado';
   const isAguardando = attendance?.status === 'aguardando';
 
+  // Solicita a opção de embarque apenas uma única vez por usuário
   useEffect(() => {
-    if (isAguardando && !hasSeenCheckInModal) {
+    if (!user?.uid || !trip?.id || studentLoading) return;
+
+    const alreadyPrompted = localStorage.getItem(`rhyme_checkin_prompted_${user.uid}`) === 'true';
+    const hasTripType = !!attendance?.tripType || !!student?.defaultTripType;
+
+    // Apenas solicita se o aluno estiver aguardando, ainda não tiver opção de embarque e nunca tiver sido solicitado
+    if (isAguardando && !hasTripType && !alreadyPrompted && !hasSeenCheckInModal) {
       setShowCheckInModal(true);
       setHasSeenCheckInModal(true);
+      localStorage.setItem(`rhyme_checkin_prompted_${user.uid}`, 'true');
     }
-  }, [isAguardando, hasSeenCheckInModal]);
+  }, [isAguardando, attendance?.tripType, student?.defaultTripType, user?.uid, trip?.id, studentLoading, hasSeenCheckInModal]);
+
+  // Se o aluno já possui uma preferência de trajeto no perfil, sincroniza automaticamente com o attendance diário sem reabrir modal
+  useEffect(() => {
+    if (!attendance?.tripType && student?.defaultTripType && trip?.id && user?.uid && isAguardando) {
+      updateDoc(doc(db, 'attendance', `${trip.id}_${user.uid}`), {
+        tripType: student.defaultTripType
+      }).catch((e) => console.warn('Erro ao sincronizar defaultTripType com attendance:', e));
+    }
+  }, [attendance?.tripType, student?.defaultTripType, trip?.id, user?.uid, isAguardando]);
 
   useEffect(() => {
     if (attendance?.tripType) {
@@ -912,6 +929,18 @@ export default function StudentMap() {
         lng: initialLng,
         updatedAt: serverTimestamp()
       }, { merge: true });
+
+      // Salva preferência para não solicitar novamente nas próximas visitas/viagens
+      if (user?.uid) {
+        localStorage.setItem(
+hyme_checkin_prompted_, 'true');
+        localStorage.setItem('rhyme_default_trip_type', type);
+        try {
+          await updateDoc(doc(db, 'users', user.uid), { defaultTripType: type });
+        } catch (profileErr) {
+          console.warn('Erro ao salvar defaultTripType no perfil do aluno:', profileErr);
+        }
+      }
 
       if (type === 'ida') {
         clearRoute();
@@ -1470,7 +1499,15 @@ export default function StudentMap() {
 {/* Modal de Check-in (Trajeto) */}
         {showCheckInModal && (
           <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowCheckInModal(false)}></div>
+            <div
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              onClick={() => {
+                setShowCheckInModal(false);
+                if (user?.uid) {
+                  localStorage.setItem(`rhyme_checkin_prompted_${user.uid}`, 'true');
+                }
+              }}
+            ></div>
             <div className="relative electric-card bg-card w-full max-w-sm rounded-3xl border border-subtle shadow-2xl overflow-hidden p-6 text-center animate-in zoom-in-95 duration-300">
               <div className="w-16 h-16 bg-orange-500/10 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(249,115,22,0.2)]">
                 <Navigation size={32} />
@@ -1511,8 +1548,13 @@ export default function StudentMap() {
               </div>
 
               <button 
-                onClick={() => setShowCheckInModal(false)}
-                className="mt-6 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+                onClick={() => {
+                  setShowCheckInModal(false);
+                  if (user?.uid) {
+                    localStorage.setItem(`rhyme_checkin_prompted_${user.uid}`, 'true');
+                  }
+                }}
+                className="mt-6 text-sm text-caption hover:text-heading transition-colors"
               >
                 Decidir mais tarde
               </button>

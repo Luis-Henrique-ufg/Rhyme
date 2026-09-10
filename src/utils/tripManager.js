@@ -76,7 +76,8 @@ export async function joinTrip(tripId, student, coords) {
   try {
     const snap = await getDoc(attendanceRef);
     if (!snap.exists()) {
-      await setDoc(attendanceRef, {
+      const defaultTripType = student.defaultTripType || student.tripType || null;
+      const initialData = {
         tripId,
         studentId: student.uid,
         studentName: student.name || 'Aluno',
@@ -86,7 +87,11 @@ export async function joinTrip(tripId, student, coords) {
         lat: coords?.lat ?? -16.675707046574686,
         lng: coords?.lng ?? -49.24547515495722,
         updatedAt: serverTimestamp()
-      });
+      };
+      if (defaultTripType) {
+        initialData.tripType = defaultTripType;
+      }
+      await setDoc(attendanceRef, initialData);
     }
   } catch (error) {
     console.error('joinTrip: erro ao criar presença:', error);
