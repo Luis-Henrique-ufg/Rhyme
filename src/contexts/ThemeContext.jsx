@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
 const ThemeContext = createContext({
-  theme: 'dark',
-  isDark: true,
+  theme: 'light',
+  isDark: false,
   toggleTheme: () => {},
   setTheme: () => {},
 });
@@ -19,7 +19,7 @@ export function ThemeProvider({ children }) {
     } catch (e) {
       console.warn('Could not read theme from localStorage:', e);
     }
-    return 'dark'; // Padrão escuro
+    return 'light'; // Padrão claro na primeira visita
   });
 
   const isDark = theme === 'dark';
