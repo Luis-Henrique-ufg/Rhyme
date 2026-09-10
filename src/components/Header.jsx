@@ -1,12 +1,13 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { Settings, User, History, LogOut, Camera, X, Check, Download, MapPin, Sparkles, Bus, Shield } from 'lucide-react';
-import { doc, updateDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import { Settings, User, History, LogOut, Camera, X, Check, Download, MapPin, Sparkles, Bus, Shield, Bell } from 'lucide-react';
+import { doc, updateDoc, setDoc, serverTimestamp, collection, query, where, getDocs, onSnapshot, limit } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useCustomAlert } from '../contexts/AlertContext';
 import { migrateStudentAttendance, normalizeRoute } from '../utils/tripManager';
 import TripCalendarModal from './TripCalendarModal';
+import AnnouncementsModal from './AnnouncementsModal';
 import LocationPickerMap from './LocationPickerMap';
 import ThemeToggle from './ThemeToggle';
 
@@ -73,6 +74,42 @@ export default function Header({ userProfile }) {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [showFacultyPicker, setShowFacultyPicker] = useState(false);
+  const [isAnnouncementsOpen, setIsAnnouncementsOpen] = useState(false);
+  const [unreadAnnouncementsCount, setUnreadAnnouncementsCount] = useState(0);
+
+  // Listener de comunicados não lidos para o badge do sino
+  useEffect(() => {
+    const q = query(collection(db, 'announcements'), limit(25));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const lastRead = parseInt(localStorage.getItem('rhyme_last_read_announcement_time') || '0', 10);
+      let count = 0;
+      snapshot.docs.forEach((docSnap) => {
+        const data = docSnap.data();
+        const isRelevant = userProfile?.role === 'admin' 
+          || data.route === 'Todas' 
+          || !data.route 
+          || data.route === userProfile?.route;
+
+        if (isRelevant) {
+          const ts = data.createdAt?.toMillis ? data.createdAt.toMillis() : (data.createdAt?.seconds ? data.createdAt.seconds * 1000 : 0);
+          if (ts > lastRead) {
+            count += 1;
+          }
+        }
+      });
+      setUnreadAnnouncementsCount(count);
+    }, (err) => {
+      console.warn('Erro ao escutar comunicados:', err);
+    });
+
+    return () => unsubscribe();
+  }, [userProfile?.role, userProfile?.route]);
+
+  const handleOpenAnnouncements = () => {
+    setIsAnnouncementsOpen(true);
+    setUnreadAnnouncementsCount(0);
+    localStorage.setItem('rhyme_last_read_announcement_time', Date.now().toString());
+  };
 
   const FACULTY_COORDS = {
     'UFG': [-16.603568359752572, -49.26557447462434],
@@ -342,6 +379,18 @@ export default function Header({ userProfile }) {
           </button>
         )}
         
+        {/* Mural de Avisos / Comunicados */}
+        <button
+          onClick={handleOpenAnnouncements}
+          title="Mural de Avisos"
+          className="relative w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-subtle text-body hover:bg-primary/10 hover:text-primary transition-all border border-subtle hover:border-primary/30 group active:scale-95"
+        >
+          <Bell className="w-4 h-4 sm:w-5 sm:h-5 group-hover:rotate-12 transition-transform duration-300" />
+          {unreadAnnouncementsCount > 0 && (
+            <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-orange-500 rounded-full ring-2 ring-card animate-pulse" />
+          )}
+        </button>
+
         <button
           onClick={() => setIsSettingsOpen(true)}
           title="Configurações"
@@ -626,6 +675,12 @@ export default function Header({ userProfile }) {
         onClose={() => setShowFacultyPicker(false)}
       />
     )}
+      <AnnouncementsModal
+        isOpen={isAnnouncementsOpen}
+        onClose={() => setIsAnnouncementsOpen(false)}
+        userProfile={userProfile}
+        currentUserId={user?.uid}
+      />
     </>
   );
 }

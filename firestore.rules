@@ -64,5 +64,22 @@ service cloud.firestore {
     match /attendance/{attendanceId} {
       allow read, create, update, delete: if request.auth != null;
     }
+
+    // Coleção: announcements (Mural de Avisos e Comunicados)
+    match /announcements/{announcementId} {
+      // Qualquer usuário autenticado pode ler comunicados
+      allow read: if request.auth != null;
+      // Apenas Admin ou Motoristas podem criar comunicados
+      allow create: if request.auth != null && (
+        isAdmin() ||
+        (exists(/databases/$(database)/documents/students/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/students/$(request.auth.uid)).data.role == 'driver')
+      );
+      // Apenas Admin ou o próprio autor podem atualizar ou deletar
+      allow update, delete: if request.auth != null && (
+        isAdmin() ||
+        request.auth.uid == resource.data.authorId
+      );
+    }
   }
 }
