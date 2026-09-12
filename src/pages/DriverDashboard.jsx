@@ -436,7 +436,7 @@ const createHaloIcon = (isCrominia, customColor = null) => {
 };
 
 export default function DriverDashboard() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { theme, isDark } = useTheme();
   const navigate = useNavigate();
   const { showAlert } = useCustomAlert();
@@ -447,6 +447,7 @@ export default function DriverDashboard() {
   const [driver, setDriver] = useState(null);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [driverError, setDriverError] = useState(null);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [mapZoom, setMapZoom] = useState(12);
   const [isPublicListOpen, setIsPublicListOpen] = useState(false);
@@ -480,6 +481,9 @@ export default function DriverDashboard() {
   useEffect(() => {
     if (!user) return;
 
+    setLoading(true);
+    setDriverError(null);
+
     let unsubDriver = () => {};
 
     unsubDriver = onSnapshot(doc(db, 'students', user.uid), (driverSnap) => {
@@ -499,6 +503,7 @@ export default function DriverDashboard() {
       setLoading(false);
     }, (err) => {
       console.error('Erro ao carregar perfil do motorista:', err);
+      setDriverError(err);
       setLoading(false);
     });
 
@@ -523,6 +528,15 @@ export default function DriverDashboard() {
 
     return () => unsubStudents();
   }, [driver?.route]);
+
+  // Sincroniza boardingCall a partir do documento da viagem em tempo real
+  useEffect(() => {
+    if (trip?.boardingCall && trip.boardingCall.status === 'active') {
+      setBoardingCall(trip.boardingCall);
+    } else if (!trip?.boardingCall || trip?.boardingCall?.status === 'closed') {
+      setBoardingCall(null);
+    }
+  }, [trip?.boardingCall]);
 
   // Countdown do timer da Chamada de Embarque (motorista)
   useEffect(() => {
@@ -951,15 +965,18 @@ export default function DriverDashboard() {
   };
 
   const handleCloseBoardingCall = async () => {
+    setBoardingCall(null);
+    setBoardingCallSecondsLeft(0);
+    if (boardingCallIntervalRef.current) {
+      clearInterval(boardingCallIntervalRef.current);
+      boardingCallIntervalRef.current = null;
+    }
     if (!trip?.id) return;
-    const closed = boardingCall ? { ...boardingCall, status: 'closed' } : null;
     try {
-      if (trip?.id) await updateDoc(doc(db, 'trips', trip.id), { boardingCall: closed });
+      await updateDoc(doc(db, 'trips', trip.id), { boardingCall: null });
     } catch (e) {
       console.error('Erro ao encerrar chamada:', e);
     }
-    setBoardingCall(null);
-    clearInterval(boardingCallIntervalRef.current);
   };
 
   const handleMarkerPressStart = (lat, lng) => {
@@ -1126,12 +1143,17 @@ export default function DriverDashboard() {
     return s ? s.name : 'Aluno';
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return <Loader message="Carregando painel do motorista..." />;
   }
 
-  if (tripError || attendanceError) {
-    return <ErrorState message="Não foi possível se conectar aos servidores do Rhyme. Verifique sua internet." />;
+  if (driverError || tripError || attendanceError) {
+    return (
+      <ErrorState 
+        message="Não foi possível se conectar aos servidores do Rhyme. Verifique sua conexão com a internet." 
+        onRetry={() => window.location.reload()}
+      />
+    );
   }
 
   if (!driver) {
@@ -1139,11 +1161,14 @@ export default function DriverDashboard() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-[100dvh] w-full overflow-hidden select-none overscroll-none bg-background">
       <Header userProfile={driver} />
 
       {driver?.role === 'admin' && (
-        <div className="bg-card-elevated border-b border-subtle px-4 py-2 flex items-center justify-between z-30 shrink-0">
+        <div 
+          className="bg-card-elevated border-b border-subtle px-4 py-2 flex items-center justify-between z-30 shrink-0 select-none touch-none overscroll-none"
+          onWheel={(e) => e.preventDefault()}
+        >
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 tracking-wider">
               ADMIN
@@ -1363,16 +1388,27 @@ export default function DriverDashboard() {
                           </div>
                           <div className="flex items-center gap-1.5">
                             <button
-                              onClick={() => handleExtendBoardingCall(1)}
-                              className="text-caption hover:text-heading text-[10px] font-bold px-1.5 py-0.5 rounded border border-subtle transition-all"
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                handleExtendBoardingCall(1);
+                              }}
+                              className="text-caption hover:text-heading text-xs font-bold px-2.5 py-1 rounded-lg border border-subtle transition-all active:scale-95 cursor-pointer bg-surface/80"
                               title="Adicionar 1 minuto"
                             >+1 min</button>
                             <button
-                              onClick={handleCloseBoardingCall}
-                              className="text-caption hover:text-danger p-0.5 rounded transition-colors"
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                handleCloseBoardingCall();
+                              }}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface/80 hover:bg-danger/15 text-caption hover:text-danger border border-subtle transition-all cursor-pointer shadow-sm active:scale-95"
                               title="Encerrar chamada"
+                              aria-label="Encerrar chamada"
                             >
-                              <X size={13} />
+                              <X size={18} strokeWidth={2.5} />
                             </button>
                           </div>
                         </div>
@@ -1424,10 +1460,15 @@ export default function DriverDashboard() {
                         </div>
 
                         <button
-                          onClick={handleCloseBoardingCall}
-                          className="w-full flex items-center justify-center gap-2 bg-subtle hover-bg-subtle text-body font-bold text-xs py-2 px-3 rounded-xl transition-all active:scale-[0.98]"
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleCloseBoardingCall();
+                          }}
+                          className="w-full flex items-center justify-center gap-2 bg-subtle hover-bg-subtle text-body hover:text-heading font-bold text-xs py-2.5 px-3 rounded-xl transition-all active:scale-[0.98] cursor-pointer"
                         >
-                          <Check size={13} /> Partir / Encerrar chamada
+                          <Check size={14} /> Partir / Encerrar chamada
                         </button>
                       </div>
                     )}
@@ -1553,13 +1594,18 @@ export default function DriverDashboard() {
                                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.status === 'liberado' ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : s.tripType === 'ida' ? 'bg-zinc-400' : 'bg-amber-500'}`}></span>
                                 <span className="text-heading font-medium truncate">{s.name}</span>
                               </div>
-                              <div className="flex-shrink-0 text-[10px]">
+                              <div className="flex-shrink-0 text-[10px] flex items-center gap-1">
+                                {s.tripType === 'ida' ? (
+                                  <span className="text-[9px] px-1 py-0.5 rounded bg-zinc-500/15 text-zinc-400 font-bold border border-zinc-500/30">Só ida</span>
+                                ) : s.tripType === 'volta' ? (
+                                  <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-400 font-bold border border-amber-500/30">Só volta</span>
+                                ) : (
+                                  <span className="text-[9px] px-1 py-0.5 rounded bg-orange-500/15 text-orange-400 font-bold border border-orange-500/30">Ida/Volta</span>
+                                )}
                                 {s.response === 'coming' ? (
                                   <span className="text-sky-400 font-bold bg-sky-500/10 px-1 py-0.5 rounded">A caminho</span>
                                 ) : s.status === 'liberado' ? (
                                   <span className="text-emerald-400 font-semibold">Liberado</span>
-                                ) : s.tripType === 'ida' ? (
-                                  <span className="text-zinc-400">Só ida</span>
                                 ) : (
                                   <span className="text-amber-400">Aguardando</span>
                                 )}
@@ -1619,11 +1665,18 @@ export default function DriverDashboard() {
                                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.status === 'liberado' ? 'bg-emerald-500' : s.tripType === 'ida' ? 'bg-zinc-400' : 'bg-amber-500'}`}></span>
                                 <span className="text-heading font-medium truncate">{s.name}</span>
                               </div>
-                              <div className="flex-shrink-0 text-[10px]">
+                              <div className="flex-shrink-0 text-[10px] flex items-center gap-1">
+                                {s.tripType === 'ida' ? (
+                                  <span className="text-[9px] px-1 py-0.5 rounded bg-zinc-500/15 text-zinc-400 font-bold border border-zinc-500/30">Só ida</span>
+                                ) : s.tripType === 'volta' ? (
+                                  <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-400 font-bold border border-amber-500/30">Só volta</span>
+                                ) : (
+                                  <span className="text-[9px] px-1 py-0.5 rounded bg-orange-500/15 text-orange-400 font-bold border border-orange-500/30">Ida/Volta</span>
+                                )}
                                 {s.response === 'coming' ? (
-                                  <span className="text-sky-400 font-bold">A caminho</span>
+                                  <span className="text-sky-400 font-bold bg-sky-500/10 px-1 py-0.5 rounded">A caminho</span>
                                 ) : s.status === 'liberado' ? (
-                                  <span className="text-emerald-400">Liberado</span>
+                                  <span className="text-emerald-400 font-semibold">Liberado</span>
                                 ) : (
                                   <span className="text-amber-400">Aguardando</span>
                                 )}

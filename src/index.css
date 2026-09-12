@@ -126,10 +126,22 @@
     --color-gps-dead: #94a3b8;
   }
   
+  html, body {
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
+    touch-action: pan-x pan-y;
+  }
+
+  #root {
+    overscroll-behavior: none;
+    height: 100%;
+  }
+
   body {
     @apply bg-background text-text-primary antialiased;
     font-family: var(--font-sans);
     transition: background-color 0.3s ease, color 0.3s ease;
+    overscroll-behavior: none;
   }
 
   /* Light theme body: warm off-white with a faint texture */

@@ -100,19 +100,23 @@ export default function MapInteractions() {
   const handleOrientation = (e) => {
     if (!isCompassActiveRef.current) return;
 
-    let calculatedBearing = null;
+    let heading = null;
     const screenAngle = getScreenOrientationAngle();
 
     if (e.webkitCompassHeading !== undefined && e.webkitCompassHeading !== null) {
       // iOS Safari: webkitCompassHeading é graus no sentido horário a partir do Norte (0-360)
-      // Para alinhar o mapa 'heads-up' (frente para cima), o mapa deve girar no sentido anti-horário:
-      // bearing = 360 - heading
-      calculatedBearing = (360 - e.webkitCompassHeading - screenAngle + 360) % 360;
+      heading = e.webkitCompassHeading;
     } else if (e.alpha !== null && e.alpha !== undefined) {
       // Android: alpha na especificação W3C gira no sentido anti-horário
-      // Logo, o bearing do mapa correspondente é diretamente alpha menos a rotação da tela
-      calculatedBearing = (e.alpha - screenAngle + 360) % 360;
+      // Azimute horário real a partir do Norte = (360 - alpha) % 360
+      heading = (360 - e.alpha) % 360;
     }
+
+    if (heading === null || isNaN(heading)) return;
+
+    // Para o Leaflet com leaflet-rotate alinhar o mapa 'heads-up' (frente para cima):
+    // O mapa deve girar de acordo com o azimute do usuário compensado pela rotação da tela
+    const calculatedBearing = (heading + screenAngle + 360) % 360;
 
     if (calculatedBearing === null || isNaN(calculatedBearing)) return;
 

@@ -66,10 +66,17 @@ export default function PublicListModal({
                 nameColor = 'text-caption line-through opacity-70';
               }
 
-              let tripTypeLabel = '';
-              if (att.tripType === 'ida_volta') tripTypeLabel = 'Ida e Volta';
-              else if (att.tripType === 'ida') tripTypeLabel = 'Só Ida';
-              else if (att.tripType === 'volta') tripTypeLabel = 'Só Volta';
+              const effectiveTripType = att.tripType || 'ida_volta';
+              let tripTypeLabel = 'Ida e Volta';
+              let tripBadgeStyle = 'bg-orange-500/15 text-orange-400 border-orange-500/30';
+
+              if (effectiveTripType === 'ida') {
+                tripTypeLabel = 'Só Ida';
+                tripBadgeStyle = 'bg-zinc-500/15 text-zinc-400 border-zinc-500/30';
+              } else if (effectiveTripType === 'volta') {
+                tripTypeLabel = 'Só Volta';
+                tripBadgeStyle = 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+              }
 
               return (
                 <div key={att.studentId || att.id || idx} className={`p-3 rounded-2xl flex items-center justify-between gap-3 transition-all ${bgColor}`}>
@@ -84,11 +91,9 @@ export default function PublicListModal({
                     <div className="min-w-0">
                       <p className={`text-sm font-bold truncate flex items-center gap-1.5 ${nameColor}`}>
                         <span className="truncate">{att.studentName || 'Aluno'}</span>
-                        {tripTypeLabel && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-subtle border border-subtle uppercase tracking-wider font-bold">
-                            {tripTypeLabel}
-                          </span>
-                        )}
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full border uppercase tracking-wider font-extrabold shrink-0 ${tripBadgeStyle}`}>
+                          {tripTypeLabel}
+                        </span>
                       </p>
                       <p className="text-xs text-caption mt-1">{att.faculty || 'Outra'} · {att.status}</p>
                     </div>

@@ -305,7 +305,10 @@ export default function Header({ userProfile }) {
 
   return (
     <>
-    <div className="px-4 sm:px-6 py-3.5 bg-surface/80 backdrop-blur-md border-b border-subtle flex justify-between items-center z-50 sticky top-0 shadow-sm shrink-0 transition-colors">
+    <div 
+      className="px-4 sm:px-6 py-3.5 bg-surface/80 backdrop-blur-md border-b border-subtle flex justify-between items-center z-50 sticky top-0 shadow-sm shrink-0 transition-colors select-none touch-none overscroll-none"
+      onWheel={(e) => e.preventDefault()}
+    >
       <div className="flex flex-col">
         {userProfile ? (
           <div className="flex items-center">

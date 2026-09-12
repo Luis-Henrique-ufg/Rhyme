@@ -464,6 +464,7 @@ export default function StudentMap() {
   const [student, setStudent] = useState(null);
   const [attendance, setAttendance] = useState(null);
   const [studentLoading, setStudentLoading] = useState(true);
+  const [studentError, setStudentError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedTripType, setSelectedTripType] = useState('ida_volta');
   const [hasNotified, setHasNotified] = useState(false);
@@ -621,6 +622,9 @@ export default function StudentMap() {
   useEffect(() => {
     if (!user) return;
 
+    setStudentLoading(true);
+    setStudentError(null);
+
     const unsub = onSnapshot(doc(db, 'students', user.uid), (snap) => {
       if (!snap.exists()) {
         setStudentLoading(false);
@@ -633,6 +637,10 @@ export default function StudentMap() {
         return;
       }
       setStudent(data);
+      setStudentLoading(false);
+    }, (err) => {
+      console.error('Erro ao carregar perfil do aluno:', err);
+      setStudentError(err);
       setStudentLoading(false);
     });
 
@@ -1092,12 +1100,17 @@ hyme_checkin_prompted_, 'true');
   // ETA é calculado pelo hook useOsrmEta acima.
   // A variável etaMinutes já está disponível no escopo do componente.
 
-  if (loading) {
-    return <Loader message="Carregando mapa..." />;
+  if (loading || studentLoading) {
+    return <Loader message="Carregando seu perfil e mapa..." />;
   }
 
-  if (tripError || attendancesError) {
-    return <ErrorState message="Não foi possível se conectar aos servidores do Rhyme. Verifique sua internet." />;
+  if (studentError || tripError || attendancesError) {
+    return (
+      <ErrorState 
+        message="Não foi possível se conectar aos servidores do Rhyme. Verifique sua conexão com a internet." 
+        onRetry={() => window.location.reload()}
+      />
+    );
   }
 
   if (!student) {
@@ -1105,11 +1118,14 @@ hyme_checkin_prompted_, 'true');
   }
 
   return (
-    <div className="flex flex-col h-[100dvh] overflow-hidden bg-background">
+    <div className="flex flex-col h-[100dvh] w-full overflow-hidden select-none overscroll-none bg-background">
       <Header userProfile={student} />
 
       {student?.role === 'admin' && (
-        <div className="bg-card-elevated border-b border-subtle px-4 py-2 flex items-center justify-between z-30 shrink-0">
+        <div 
+          className="bg-card-elevated border-b border-subtle px-4 py-2 flex items-center justify-between z-30 shrink-0 select-none touch-none overscroll-none"
+          onWheel={(e) => e.preventDefault()}
+        >
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 tracking-wider">
               ADMIN

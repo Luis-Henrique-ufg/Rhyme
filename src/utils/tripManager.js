@@ -76,7 +76,7 @@ export async function joinTrip(tripId, student, coords) {
   try {
     const snap = await getDoc(attendanceRef);
     if (!snap.exists()) {
-      const defaultTripType = student.defaultTripType || student.tripType || null;
+      const defaultTripType = student.defaultTripType || student.tripType || 'ida_volta';
       const initialData = {
         tripId,
         studentId: student.uid,
@@ -86,11 +86,9 @@ export async function joinTrip(tripId, student, coords) {
         status: 'aguardando',
         lat: coords?.lat ?? -16.675707046574686,
         lng: coords?.lng ?? -49.24547515495722,
+        tripType: defaultTripType,
         updatedAt: serverTimestamp()
       };
-      if (defaultTripType) {
-        initialData.tripType = defaultTripType;
-      }
       await setDoc(attendanceRef, initialData);
     }
   } catch (error) {
