@@ -50,3 +50,28 @@ export const playBoardingAlarmSound = () => {
   setTimeout(() => playTone(1047, 'square', 0.08, 0.55), 1080);
 };
 
+let wakeUpInterval = null;
+
+export const startWakeUpAlarmSound = () => {
+  if (wakeUpInterval) return;
+
+  const playSequence = () => {
+    // Alarme urgente e persistente para acordar o aluno
+    playTone(987.77, 'square', 0.14, 0.6); // B5
+    setTimeout(() => playTone(1318.51, 'square', 0.14, 0.7), 150); // E6
+    setTimeout(() => playTone(987.77, 'square', 0.14, 0.6), 300); // B5
+    setTimeout(() => playTone(1318.51, 'square', 0.25, 0.8), 450); // E6
+  };
+
+  playSequence();
+  wakeUpInterval = setInterval(playSequence, 1200);
+};
+
+export const stopWakeUpAlarmSound = () => {
+  if (wakeUpInterval) {
+    clearInterval(wakeUpInterval);
+    wakeUpInterval = null;
+  }
+};
+
+

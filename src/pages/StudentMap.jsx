@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline } from 'react-leaflet';
-import { Users, Check, RefreshCcw, MapPin, Navigation, LocateFixed, X, Radio, BellRing, Bus } from 'lucide-react';
+import { Users, Check, RefreshCcw, MapPin, Navigation, LocateFixed, X, Radio, BellRing, Bus, Footprints, School, Volume2, Compass } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -15,6 +15,12 @@ import PublicListModal from '../components/PublicListModal';
 import Loader from '../components/Loader';
 import ErrorState from '../components/ErrorState';
 import MapInteractions from '../components/MapInteractions';
+import WakeUpAlarmModal from '../components/WakeUpAlarmModal';
+import WakeUpSettingsModal from '../components/WakeUpSettingsModal';
+import CampusModeHUD, { CAMPUS_POIS } from '../components/CampusModeHUD';
+import MapSearchBar from '../components/MapSearchBar';
+import SearchedPlaceCard from '../components/SearchedPlaceCard';
+import LocationPickerMap from '../components/LocationPickerMap';
 import ReactDOM from 'react-dom';
 import { useCustomAlert } from '../contexts/AlertContext';
 import { playNotificationSound, playBoardingAlarmSound } from '../utils/audioEffects';
@@ -388,6 +394,55 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
   return R * c; // Distância em km
 }
 
+const createPedestrianIcon = () => {
+  return L.divIcon({
+    html: `
+      <div class="relative flex items-center justify-center">
+        <span class="animate-ping absolute inline-flex h-8 w-8 rounded-full bg-sky-400 opacity-60"></span>
+        <div class="w-7 h-7 rounded-full bg-sky-500 border-2 border-white shadow-xl flex items-center justify-center text-white">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 16v-2.38C4 11.5 6.5 9 9.5 9H10V7a3 3 0 0 1 6 0v2h.5c3 0 5.5 2.5 5.5 4.62V16"/>
+            <circle cx="12" cy="4" r="2"/>
+          </svg>
+        </div>
+      </div>
+    `,
+    className: 'bg-transparent border-none',
+    iconSize: [32, 32],
+    iconAnchor: [16, 16]
+  });
+};
+
+const createSearchedPlaceIcon = (name) => {
+  return L.divIcon({
+    html: `
+      <div class="relative flex flex-col items-center">
+        <span class="animate-ping absolute top-0 inline-flex h-6 w-6 rounded-full bg-orange-400 opacity-75"></span>
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 border-2 border-white shadow-xl flex items-center justify-center text-black">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
+        </div>
+        <div class="bg-black/90 text-white text-[10px] font-black px-2 py-0.5 rounded-full border border-orange-500/40 shadow-lg mt-1 whitespace-nowrap">
+          ${name}
+        </div>
+      </div>
+    `,
+    className: 'bg-transparent border-none',
+    iconSize: [120, 50],
+    iconAnchor: [60, 16]
+  });
+};
+
+const MapBridge = ({ onReady }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (map && onReady) onReady(map);
+  }, [map, onReady]);
+  return null;
+};
+
 const RecenterButton = ({ lat, lng }) => {
   const map = useMap();
   const [portalTarget, setPortalTarget] = useState(null);
@@ -478,6 +533,31 @@ export default function StudentMap() {
   const watchIdRef = useRef(null);
   const fallbackIntervalRef = useRef(null);
   const simulationInterval = useRef(null);
+
+  // --- 1. Alerta de Descida / Acorda Aluno ---
+  const [wakeUpSettings, setWakeUpSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('rhyme_wakeup_settings');
+      return saved ? JSON.parse(saved) : { enabled: true, distance: 1000, stopLocation: null };
+    } catch (e) {
+      return { enabled: true, distance: 1000, stopLocation: null };
+    }
+  });
+  const [isWakeUpSettingsOpen, setIsWakeUpSettingsOpen] = useState(false);
+  const [isWakeUpAlarmModalOpen, setIsWakeUpAlarmModalOpen] = useState(false);
+  const [wakeUpAlarmTriggered, setWakeUpAlarmTriggered] = useState(false);
+  const [currentDistanceToStop, setCurrentDistanceToStop] = useState(0);
+  const [isSettingDropOffLocation, setIsSettingDropOffLocation] = useState(false);
+
+  // --- 2. Modo Campus Pedestre ---
+  const [isCampusModeActive, setIsCampusModeActive] = useState(false);
+  const [campusFacultyData, setCampusFacultyData] = useState(null);
+  const [userWalkingCoords, setUserWalkingCoords] = useState(null);
+  const walkingWatchIdRef = useRef(null);
+
+  // --- 3. Busca no Mapa ---
+  const [searchedPlace, setSearchedPlace] = useState(null);
+  const mapInstanceRef = useRef(null);
 
   // --- Data Adapter hooks (deep modules) ---
   const { trip, tripId, loading: tripLoading, error: tripError } = useCurrentTrip(student?.route?.trim());
@@ -1097,8 +1177,133 @@ hyme_checkin_prompted_, 'true');
       setIsSubmitting(false);
     }
   };
-  // ETA é calculado pelo hook useOsrmEta acima.
-  // A variável etaMinutes já está disponível no escopo do componente.
+  // --- 1. Handlers do Alarme de Descida (Acorda Aluno) ---
+  useEffect(() => {
+    if (student) {
+      setWakeUpSettings(prev => {
+        if (student.dropOffLocation) {
+          return { ...prev, stopLocation: student.dropOffLocation };
+        }
+        if (!prev.stopLocation && attendance?.lat && attendance?.lng) {
+          return { ...prev, stopLocation: { lat: attendance.lat, lng: attendance.lng } };
+        }
+        return prev;
+      });
+    }
+  }, [student, attendance?.lat, attendance?.lng]);
+
+  // Monitoramento de proximidade em tempo real da Van até o ponto de descida
+  useEffect(() => {
+    if (!wakeUpSettings?.enabled || wakeUpAlarmTriggered) return;
+    const target = wakeUpSettings?.stopLocation;
+    if (!target?.lat || !target?.lng) return;
+
+    // Posição atual da van (ou GPS transmitido)
+    const busLoc = trip?.busLocation || (isBroadcasting ? broadcastingLocation : null);
+    if (!busLoc?.lat || !busLoc?.lng) return;
+
+    const distKm = getDistanceFromLatLonInKm(busLoc.lat, busLoc.lng, target.lat, target.lng);
+    const distMeters = Math.round(distKm * 1000);
+    setCurrentDistanceToStop(distMeters);
+
+    if (distMeters > 0 && distMeters <= wakeUpSettings.distance) {
+      setWakeUpAlarmTriggered(true);
+      setIsWakeUpAlarmModalOpen(true);
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        try {
+          new Notification('🚨 ACORDA! SUA PARADA ESTÁ PRÓXIMA!', {
+            body: `A Van está a aproximadamente ${distMeters}m do seu ponto de descida!`,
+            icon: '/android-chrome-192x192.png',
+            tag: 'wakeup-alarm',
+            requireInteraction: true
+          });
+        } catch (e) {
+          console.warn('Erro ao disparar notificação do alarme:', e);
+        }
+      }
+    }
+  }, [trip?.busLocation, broadcastingLocation, isBroadcasting, wakeUpSettings?.enabled, wakeUpSettings?.distance, wakeUpSettings?.stopLocation, wakeUpAlarmTriggered]);
+
+  const handleSaveWakeUpSettings = (newSettings) => {
+    setWakeUpSettings(prev => {
+      const updated = { ...prev, ...newSettings };
+      localStorage.setItem('rhyme_wakeup_settings', JSON.stringify(updated));
+      return updated;
+    });
+    setWakeUpAlarmTriggered(false);
+    showAlert('Configurações do despertador salvas!');
+  };
+
+  const handleSetStopLocation = async (coords) => {
+    const lat = coords?.lat ?? coords?.[0];
+    const lng = coords?.lng ?? coords?.[1];
+    if (lat == null || lng == null) return;
+
+    const stopObj = { lat, lng };
+    setWakeUpSettings(prev => {
+      const updated = { ...prev, stopLocation: stopObj, enabled: true };
+      localStorage.setItem('rhyme_wakeup_settings', JSON.stringify(updated));
+      return updated;
+    });
+    setWakeUpAlarmTriggered(false);
+
+    if (user?.uid) {
+      updateDoc(doc(db, 'students', user.uid), { dropOffLocation: stopObj })
+        .catch(e => console.warn('Erro ao persistir dropOffLocation:', e));
+    }
+    showAlert('Ponto de descida atualizado com sucesso!');
+  };
+
+  // --- 2. Handlers do Modo Campus Pedestre ---
+  const startCampusWalkingWatch = () => {
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      walkingWatchIdRef.current = navigator.geolocation.watchPosition(
+        (pos) => {
+          setUserWalkingCoords([pos.coords.latitude, pos.coords.longitude]);
+        },
+        (err) => console.warn('Erro GPS pedestre:', err),
+        { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
+      );
+    }
+  };
+
+  const stopCampusWalkingWatch = () => {
+    if (walkingWatchIdRef.current && typeof navigator !== 'undefined') {
+      navigator.geolocation.clearWatch(walkingWatchIdRef.current);
+      walkingWatchIdRef.current = null;
+    }
+  };
+
+  const toggleCampusMode = (targetPlace = null) => {
+    if (isCampusModeActive && !targetPlace) {
+      setIsCampusModeActive(false);
+      setCampusFacultyData(null);
+      stopCampusWalkingWatch();
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.flyTo(CENTER, 13, { animate: true, duration: 1.2 });
+      }
+    } else {
+      setIsCampusModeActive(true);
+      if (targetPlace) setCampusFacultyData(targetPlace);
+      startCampusWalkingWatch();
+      const coords = targetPlace?.coords || getFacultyCoords(student);
+      if (coords && mapInstanceRef.current) {
+        mapInstanceRef.current.flyTo(coords, 18, { animate: true, duration: 1.5 });
+      }
+    }
+  };
+
+  useEffect(() => {
+    return () => stopCampusWalkingWatch();
+  }, []);
+
+  // --- 3. Handlers da Busca no Mapa ---
+  const handleSelectSearchedPlace = (place) => {
+    setSearchedPlace(place);
+    if (place.coords && mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo(place.coords, 17, { animate: true, duration: 1.2 });
+    }
+  };
 
   if (loading || studentLoading) {
     return <Loader message="Carregando seu perfil e mapa..." />;
@@ -1158,6 +1363,62 @@ hyme_checkin_prompted_, 'true');
       {/* Mapa */}
       <div className="flex-1 relative z-0">
 
+        {/* Barra de Busca de Faculdades e Locais (quando não estiver no Modo Campus) */}
+        {!isCampusModeActive && (
+          <div className="flex items-center gap-2">
+            <MapSearchBar
+              onSelectPlace={handleSelectSearchedPlace}
+              userCoords={attendance?.lat && attendance?.lng ? [attendance.lat, attendance.lng] : null}
+            />
+
+            {/* Botão Flutuante: Modo Campus */}
+            <button
+              type="button"
+              onClick={() => toggleCampusMode()}
+              className="absolute top-3 right-3 sm:right-6 z-[1650] flex items-center gap-1.5 px-3 py-3 rounded-2xl shadow-xl backdrop-blur-md border bg-surface-elevated/95 text-heading border-subtle hover:border-orange-500/40 font-bold hover:text-orange-400 active:scale-95 cursor-pointer transition-all"
+              title="Ativar navegação a pé na faculdade"
+            >
+              <Footprints size={18} strokeWidth={2.5} className="text-orange-500" />
+              <span className="text-xs font-bold hidden sm:inline">Modo Campus</span>
+            </button>
+          </div>
+        )}
+
+        {/* HUD do Modo Campus Pedestre */}
+        {isCampusModeActive && (
+          <CampusModeHUD
+            facultyName={campusFacultyData?.name || student?.faculty || 'UFG'}
+            vanCoords={campusFacultyData?.coords || getFacultyCoords(student)}
+            userWalkingCoords={userWalkingCoords}
+            onExit={() => toggleCampusMode()}
+            onFlyTo={(coords) => {
+              if (coords && mapInstanceRef.current) {
+                mapInstanceRef.current.flyTo(coords, 18, { animate: true, duration: 1.2 });
+              }
+            }}
+            onToggleCompass={() => {
+              const compassBtn = document.querySelector('#navbar-compass-slot button');
+              compassBtn?.click();
+            }}
+            isCompassActive={false}
+            onCenterUser={() => {
+              if (userWalkingCoords && mapInstanceRef.current) {
+                mapInstanceRef.current.flyTo(userWalkingCoords, 18, { animate: true, duration: 1 });
+              }
+            }}
+          />
+        )}
+
+        {/* Card de Local Pesquisado */}
+        {searchedPlace && !isCampusModeActive && (
+          <SearchedPlaceCard
+            place={searchedPlace}
+            onClose={() => setSearchedPlace(null)}
+            onStartCampusMode={(place) => toggleCampusMode(place)}
+            onSetAsDropOff={(place) => handleSetStopLocation(place.coords)}
+          />
+        )}
+
         {/* Indicadores flutuantes de GPS */}
         <GpsStatusBanner
           isBroadcasting={isBroadcasting}
@@ -1179,12 +1440,35 @@ hyme_checkin_prompted_, 'true');
 
         {/* Mapa */}
         <MapContainer center={CENTER} zoom={13} className="w-full h-full" zoomControl={false} attributionControl={false} rotate={true} touchRotate={true}>
+          <MapBridge onReady={(m) => { mapInstanceRef.current = m; }} />
           <MapInteractions />
           <TileLayer
             url={isDark ? TILE_NIGHT : TILE_DAY}
             attribution={isDark ? TILE_ATTR_NIGHT : TILE_ATTR_DAY}
             key={isDark ? 'night' : 'day'}
           />
+
+          {/* Marcador pedestre no Modo Campus */}
+          {isCampusModeActive && userWalkingCoords && (
+            <Marker position={userWalkingCoords} icon={createPedestrianIcon()} zIndexOffset={1100}>
+              <Popup className="dark-popup">
+                <span className="font-bold text-heading">Você caminhando no campus</span>
+              </Popup>
+            </Marker>
+          )}
+
+          {/* Traçado pontilhado pedestre até o ponto da van */}
+          {isCampusModeActive && userWalkingCoords && (campusFacultyData?.coords || getFacultyCoords(student)) && (
+            <Polyline
+              positions={[userWalkingCoords, campusFacultyData?.coords || getFacultyCoords(student)]}
+              pathOptions={{ color: '#f97316', dashArray: '6, 8', weight: 4, opacity: 0.8 }}
+            />
+          )}
+
+          {/* Marcador de local pesquisado */}
+          {searchedPlace && (
+            <Marker position={searchedPlace.coords} icon={createSearchedPlaceIcon(searchedPlace.name)} zIndexOffset={1200} />
+          )}
           {/* Marcador do próprio aluno — antes de liberar (oculto se o aluno estiver transmitindo como a Van) */}
           {attendance?.status !== 'liberado' && attendance?.status !== 'embarcado' && !isBroadcasting && attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && (() => {
             const isSoIda = attendance?.tripType === 'ida';
@@ -1540,6 +1824,26 @@ hyme_checkin_prompted_, 'true');
             </button>
           )}
 
+          {/* Botão de Alerta de Parada (Acorda Aluno) */}
+          <button
+            type="button"
+            onClick={() => setIsWakeUpSettingsOpen(true)}
+            className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center transition-all cursor-pointer ${
+              wakeUpSettings.enabled ? 'text-orange-500 font-bold' : 'text-body hover:text-primary'
+            }`}
+            title="Configurar alarme para não perder a parada na volta"
+          >
+            <div className="p-1.5 sm:p-2 relative">
+              <BellRing size={22} className={wakeUpSettings.enabled ? 'text-orange-500' : ''} />
+              {wakeUpSettings.enabled && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_6px_#10b981]"></span>
+              )}
+            </div>
+            <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
+              {wakeUpSettings.enabled ? 'Alarme ON' : 'Alarme'}
+            </span>
+          </button>
+
         </div>
       )}
 
@@ -1618,6 +1922,55 @@ hyme_checkin_prompted_, 'true');
           title="Lista de Passageiros"
           onStudentStatus={handleStudentStatus}
         />
-            </div>
+
+        {/* Modal de Alarme de Descida (Acorda Aluno) */}
+        <WakeUpAlarmModal
+          isOpen={isWakeUpAlarmModalOpen}
+          distanceMeters={currentDistanceToStop}
+          stopName={wakeUpSettings?.stopLocation ? 'Sua Parada Configurada' : (student?.route ? `Parada em ${student.route}` : 'Seu Ponto de Descida')}
+          onDismiss={() => {
+            setIsWakeUpAlarmModalOpen(false);
+            setWakeUpAlarmTriggered(true);
+          }}
+          onSnooze={() => {
+            setIsWakeUpAlarmModalOpen(false);
+            setWakeUpSettings(prev => ({ ...prev, distance: Math.max(200, prev.distance - 300) }));
+            setWakeUpAlarmTriggered(false);
+          }}
+        />
+
+        {/* Modal de Configuração do Alarme */}
+        <WakeUpSettingsModal
+          isOpen={isWakeUpSettingsOpen}
+          onClose={() => setIsWakeUpSettingsOpen(false)}
+          settings={wakeUpSettings}
+          onSaveSettings={handleSaveWakeUpSettings}
+          onChangeStopLocation={() => {
+            setIsWakeUpSettingsOpen(false);
+            setIsSettingDropOffLocation(true);
+          }}
+        />
+
+        {/* Seletor do Ponto de Descida no Mapa */}
+        {isSettingDropOffLocation && (
+          <LocationPickerMap
+            title="Definir Ponto de Descida (Alarme)"
+            subtitle="Marque no mapa o ponto onde você costuma descer na volta para casa."
+            initialCenter={
+              wakeUpSettings?.stopLocation
+                ? [wakeUpSettings.stopLocation.lat, wakeUpSettings.stopLocation.lng]
+                : CENTER
+            }
+            initialPin={wakeUpSettings?.stopLocation || null}
+            onConfirm={(loc) => {
+              setIsSettingDropOffLocation(false);
+              if (loc) {
+                handleSetStopLocation([loc.lat, loc.lng]);
+              }
+            }}
+            onClose={() => setIsSettingDropOffLocation(false)}
+          />
+        )}
+      </div>
   );
 }
