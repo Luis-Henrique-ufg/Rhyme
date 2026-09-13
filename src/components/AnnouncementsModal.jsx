@@ -3,6 +3,7 @@ import { X, Bell, BellOff, Plus, Trash2, Shield, Bus, AlertCircle, AlertTriangle
 import { collection, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useCustomAlert } from '../contexts/AlertContext';
+import { playSuccessSound, playErrorSound, playPopSound, playDeleteSound } from '../utils/audioEffects';
 
 const CustomRouteSelect = ({ value, onChange, options }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -116,6 +117,7 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
   const handlePublish = async (e) => {
     e.preventDefault();
     if (!message.trim()) {
+      playErrorSound();
       setFormError('Por favor, digite a mensagem do comunicado antes de publicar.');
       return;
     }
@@ -139,6 +141,7 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
         active: true
       });
 
+      playSuccessSound();
       showAlert('Comunicado publicado com sucesso!');
       setMessage('');
       setPriority('info');
@@ -155,6 +158,7 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
     if (!itemToDelete) return;
     const id = itemToDelete.id;
     setItemToDelete(null);
+    playDeleteSound();
     try {
       await deleteDoc(doc(db, 'announcements', id));
       showAlert('Comunicado removido com sucesso.');
@@ -491,7 +495,10 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
                     {canDelete && (
                       <button
                         type="button"
-                        onClick={() => setItemToDelete(item)}
+                        onClick={() => {
+                          playPopSound();
+                          setItemToDelete(item);
+                        }}
                         className="text-caption hover:text-danger p-1 rounded-lg hover:bg-danger/10 transition-colors cursor-pointer"
                         title="Excluir comunicado"
                       >

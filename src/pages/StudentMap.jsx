@@ -23,7 +23,7 @@ import SearchedPlaceCard from '../components/SearchedPlaceCard';
 import LocationPickerMap from '../components/LocationPickerMap';
 import ReactDOM from 'react-dom';
 import { useCustomAlert } from '../contexts/AlertContext';
-import { playNotificationSound, playBoardingAlarmSound } from '../utils/audioEffects';
+import { playNotificationSound, playBoardingAlarmSound, playTapSound, playToggleSound, playPopSound } from '../utils/audioEffects';
 import { useFCM } from '../hooks/useFCM';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-rotate';
@@ -1452,6 +1452,7 @@ hyme_checkin_prompted_, 'true');
 
   const toggleCampusMode = (targetPlace = null) => {
     if (isCampusModeActive && !targetPlace) {
+      playToggleSound(false);
       setIsCampusModeActive(false);
       setCampusFacultyData(null);
       setSelectedCampusPoi(null);
@@ -1460,6 +1461,7 @@ hyme_checkin_prompted_, 'true');
         mapInstanceRef.current.flyTo(CENTER, 13, { animate: true, duration: 1.2 });
       }
     } else {
+      playToggleSound(true);
       setIsCampusModeActive(true);
       setSelectedCampusPoi(null);
       if (targetPlace) setCampusFacultyData(targetPlace);
@@ -1927,6 +1929,7 @@ hyme_checkin_prompted_, 'true');
           <button 
             onClick={() => {
               const newState = !isPublicListOpen;
+              playTapSound();
               setIsPublicListOpen(newState);
               if (newState) setIsPanelCollapsed(true);
             }}
@@ -1943,7 +1946,13 @@ hyme_checkin_prompted_, 'true');
 
           <button 
             onClick={() => {
-              setIsPanelCollapsed(!isPanelCollapsed);
+              const nextCollapsed = !isPanelCollapsed;
+              if (!nextCollapsed) {
+                playPopSound();
+              } else {
+                playTapSound();
+              }
+              setIsPanelCollapsed(nextCollapsed);
               setIsPublicListOpen(false);
             }}
             className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center transition-colors cursor-pointer ${

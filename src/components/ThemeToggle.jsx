@@ -1,4 +1,5 @@
 import { useTheme } from '../contexts/ThemeContext';
+import { playToggleSound } from '../utils/audioEffects';
 
 /**
  * ThemeToggle Component
@@ -7,10 +8,15 @@ import { useTheme } from '../contexts/ThemeContext';
 export default function ThemeToggle({ className = '' }) {
   const { theme, isDark, toggleTheme } = useTheme();
 
+  const handleToggle = () => {
+    playToggleSound(!isDark);
+    toggleTheme();
+  };
+
   return (
     <button
       type="button"
-      onClick={toggleTheme}
+      onClick={handleToggle}
       aria-label={isDark ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
       title={isDark ? 'Modo Claro' : 'Modo Escuro'}
       className={`relative inline-flex items-center w-[66px] h-[34px] rounded-full p-[3px] cursor-pointer transition-all duration-300 select-none outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 ${

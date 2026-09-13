@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Search, X, MapPin, School, Navigation, Sparkles, Loader2, ArrowRight } from 'lucide-react';
+import { playSearchSound, playTapSound } from '../utils/audioEffects';
 
 /**
  * Base de dados local instantânea de faculdades e pontos estratégicos em Goiânia
@@ -99,6 +100,7 @@ export default function MapSearchBar({
   }, [query]);
 
   const handleSelect = (place) => {
+    playTapSound();
     setQuery(place.name);
     setIsOpen(false);
     onSelectPlace?.(place);
@@ -124,7 +126,10 @@ export default function MapSearchBar({
           ref={inputRef}
           type="text"
           value={query}
-          onFocus={() => setIsOpen(true)}
+          onFocus={() => {
+            playSearchSound();
+            setIsOpen(true);
+          }}
           onChange={(e) => {
             setQuery(e.target.value);
             if (!isOpen) setIsOpen(true);

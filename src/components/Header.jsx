@@ -10,6 +10,8 @@ import TripCalendarModal from './TripCalendarModal';
 import AnnouncementsModal from './AnnouncementsModal';
 import LocationPickerMap from './LocationPickerMap';
 import ThemeToggle from './ThemeToggle';
+import SoundToggle from './SoundToggle';
+import { playPopSound, playSuccessSound } from '../utils/audioEffects';
 
 const DropdownSelect = ({ value, onChange, options }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -106,6 +108,7 @@ export default function Header({ userProfile }) {
   }, [userProfile?.role, userProfile?.route]);
 
   const handleOpenAnnouncements = () => {
+    playPopSound();
     setIsAnnouncementsOpen(true);
     setUnreadAnnouncementsCount(0);
     localStorage.setItem('rhyme_last_read_announcement_time', Date.now().toString());
@@ -276,6 +279,7 @@ export default function Header({ userProfile }) {
       }
 
       setSaveSuccess(true);
+      playSuccessSound();
       setTimeout(() => setSaveSuccess(false), 3000);
       showAlert("Perfil e rota atualizados com sucesso!");
     } catch (err) {
@@ -413,7 +417,10 @@ export default function Header({ userProfile }) {
         </button>
 
         <button
-          onClick={() => setIsSettingsOpen(true)}
+          onClick={() => {
+            playPopSound();
+            setIsSettingsOpen(true);
+          }}
           title="Configurações"
           className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-subtle text-body hover:bg-primary/10 hover:text-primary transition-all border border-subtle hover:border-primary/30 group"
         >
@@ -504,11 +511,11 @@ export default function Header({ userProfile }) {
               </div>
             </div>
 
-            {/* Aparência / Tema */}
+            {/* Aparência & Preferências */}
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-heading uppercase tracking-wider flex items-center gap-2">
                 <Sparkles size={16} className="text-primary" />
-                Aparência
+                Aparência e Sons
               </h3>
               <div className="bg-subtle border border-subtle rounded-2xl p-4 flex items-center justify-between">
                 <div>
@@ -516,6 +523,13 @@ export default function Header({ userProfile }) {
                   <span className="text-xs text-caption">Alternar entre modo claro e escuro</span>
                 </div>
                 <ThemeToggle />
+              </div>
+              <div className="bg-subtle border border-subtle rounded-2xl p-4 flex items-center justify-between">
+                <div>
+                  <span className="text-sm font-bold text-heading block">Efeitos Sonoros</span>
+                  <span className="text-xs text-caption">Feedback tátil e sons da interface</span>
+                </div>
+                <SoundToggle />
               </div>
             </div>
 

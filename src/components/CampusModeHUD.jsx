@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Footprints, MapPin, Navigation2, X, Compass, School, Utensils, BookOpen, Building2, Sparkles } from 'lucide-react';
+import { playTapSound, playToggleSound } from '../utils/audioEffects';
 
 /**
  * Campus POIs com coordenadas exatas (Mapbox / OpenStreetMap)
@@ -123,7 +124,10 @@ export default function CampusModeHUD({
           {isUserNearby && (
             <button
               type="button"
-              onClick={onCenterUser}
+              onClick={() => {
+                playTapSound();
+                onCenterUser?.();
+              }}
               className="p-2 rounded-xl bg-subtle hover-bg-subtle text-caption hover:text-heading border border-subtle transition-all cursor-pointer"
               title="Centralizar no meu passo"
             >
@@ -132,7 +136,10 @@ export default function CampusModeHUD({
           )}
           <button
             type="button"
-            onClick={onToggleCompass}
+            onClick={() => {
+              playTapSound();
+              onToggleCompass?.();
+            }}
             className={`p-2 rounded-xl border transition-all cursor-pointer ${
               isCompassActive
                 ? 'bg-orange-500/20 text-orange-400 border-orange-500/40'
@@ -144,7 +151,10 @@ export default function CampusModeHUD({
           </button>
           <button
             type="button"
-            onClick={onExit}
+            onClick={() => {
+              playToggleSound(false);
+              onExit?.();
+            }}
             className="p-2 rounded-xl bg-subtle hover:bg-danger/20 text-caption hover:text-danger border border-subtle transition-all cursor-pointer"
             title="Sair do Modo Campus"
           >
@@ -162,7 +172,10 @@ export default function CampusModeHUD({
             <button
               key={poi.id}
               type="button"
-              onClick={() => onSelectPoi?.(poi)}
+              onClick={() => {
+                playTapSound();
+                onSelectPoi?.(poi);
+              }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-md text-xs font-semibold shrink-0 shadow-md transition-all active:scale-95 cursor-pointer ${
                 isSelected
                   ? 'bg-orange-500 text-black border-2 border-white shadow-orange-500/30 font-bold'
