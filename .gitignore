@@ -31,3 +31,8 @@ skills-lock.json
 # Firebase cache
 .firebase/
 
+
+# Environment variables
+.env
+.env.*
+!.env.example
