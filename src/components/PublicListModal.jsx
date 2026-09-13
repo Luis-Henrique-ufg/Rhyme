@@ -80,7 +80,7 @@ export default function PublicListModal({
 
               return (
                 <div key={att.studentId || att.id || idx} className={`p-3 rounded-2xl flex items-center justify-between gap-3 transition-all ${bgColor}`}>
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     {att.photoURL ? (
                       <img src={att.photoURL} alt={att.studentName} className="w-10 h-10 rounded-full object-cover shrink-0 border border-subtle" />
                     ) : (
@@ -88,14 +88,18 @@ export default function PublicListModal({
                         {(att.studentName || '?').charAt(0).toUpperCase()}
                       </div>
                     )}
-                    <div className="min-w-0">
-                      <p className={`text-sm font-bold truncate flex items-center gap-1.5 ${nameColor}`}>
-                        <span className="truncate">{att.studentName || 'Aluno'}</span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full border uppercase tracking-wider font-extrabold shrink-0 ${tripBadgeStyle}`}>
+                    <div className="min-w-0 flex-1">
+                      <h4 className={`text-sm font-bold truncate leading-tight ${nameColor}`} title={att.studentName}>
+                        {att.studentName || 'Aluno'}
+                      </h4>
+                      <div className="flex items-center gap-1.5 mt-1 min-w-0">
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-md border uppercase tracking-wider font-black shrink-0 ${tripBadgeStyle}`}>
                           {tripTypeLabel}
                         </span>
-                      </p>
-                      <p className="text-xs text-caption mt-1">{att.faculty || 'Outra'} · {att.status}</p>
+                        <span className="text-xs text-caption truncate">
+                          {att.faculty || 'Outra'} · {att.status}
+                        </span>
+                      </div>
                     </div>
                   </div>
 

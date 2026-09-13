@@ -97,42 +97,46 @@ export default function CampusModeHUD({
     <div className="absolute top-2 left-2 right-2 z-[1500] flex flex-col gap-2 pointer-events-none animate-in slide-in-from-top-4 duration-300">
       {/* Barra de Topo do Modo Campus */}
       <div className="bg-surface-elevated/95 backdrop-blur-md border border-orange-500/30 rounded-2xl p-3 shadow-xl flex items-center justify-between pointer-events-auto transition-all">
-        <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <div className="w-8 h-8 rounded-xl bg-orange-500 text-black flex items-center justify-center shrink-0 shadow-md">
             <Footprints size={18} strokeWidth={2.5} />
           </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-black text-heading tracking-wide truncate">{facultyName}</span>
-              <span className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full border shrink-0 ${
+          <div className="min-w-0 flex-1">
+            <h3 className="text-xs font-black text-heading tracking-wide truncate leading-tight" title={facultyName}>
+              {facultyName}
+            </h3>
+
+            <div className="flex items-center gap-1.5 min-w-0 mt-0.5">
+              <span className={`text-[8.5px] font-extrabold uppercase px-1.5 py-0.5 rounded-md border shrink-0 ${
                 isUserNearby
                   ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                   : 'bg-orange-500/20 text-orange-400 border-orange-500/30'
               }`}>
                 {isUserNearby ? 'No Campus' : 'Exploração'}
               </span>
+
+              {selectedPoi ? (
+                <p className="text-[11px] text-caption truncate min-w-0">
+                  <strong className="text-heading font-semibold">{selectedPoi.name}</strong>:{' '}
+                  {routeMetrics?.distanceMeters != null ? (
+                    <span className="text-orange-400 font-bold">
+                      {routeMetrics.distanceMeters < 1000 ? `${routeMetrics.distanceMeters}m` : `${(routeMetrics.distanceMeters / 1000).toFixed(1)}km`}
+                      {routeMetrics.durationMinutes ? ` (~${routeMetrics.durationMinutes} min a pé)` : ''}
+                    </span>
+                  ) : (
+                    <span className="text-orange-400 font-semibold">Traçando trajeto a pé...</span>
+                  )}
+                </p>
+              ) : isUserNearby && distanceInfo ? (
+                <p className="text-[11px] text-caption truncate min-w-0">
+                  Ponto da Van: <strong className="text-orange-400 font-bold">{distanceInfo.meters}m</strong> (~{distanceInfo.minutes} min a pé)
+                </p>
+              ) : (
+                <p className="text-[11px] text-caption truncate min-w-0">
+                  Toque em um prédio ou segure no mapa
+                </p>
+              )}
             </div>
-            {selectedPoi ? (
-              <p className="text-[11px] text-caption truncate">
-                <strong className="text-heading font-semibold">{selectedPoi.name}</strong>:{' '}
-                {routeMetrics?.distanceMeters != null ? (
-                  <span className="text-orange-400 font-bold">
-                    {routeMetrics.distanceMeters < 1000 ? `${routeMetrics.distanceMeters}m` : `${(routeMetrics.distanceMeters / 1000).toFixed(1)}km`}
-                    {routeMetrics.durationMinutes ? ` (~${routeMetrics.durationMinutes} min a pé)` : ''}
-                  </span>
-                ) : (
-                  <span className="text-orange-400 font-semibold">Traçando trajeto a pé...</span>
-                )}
-              </p>
-            ) : isUserNearby && distanceInfo ? (
-              <p className="text-[11px] text-caption truncate">
-                Ponto da Van: <strong className="text-orange-400 font-bold">{distanceInfo.meters}m</strong> (~{distanceInfo.minutes} min a pé)
-              </p>
-            ) : (
-              <p className="text-[11px] text-caption truncate">
-                Segure no mapa para traçar rota ou toque em um prédio
-              </p>
-            )}
           </div>
         </div>
 
