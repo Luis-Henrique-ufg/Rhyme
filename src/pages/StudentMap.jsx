@@ -508,22 +508,80 @@ const createCampusPoiIcon = (name, type = 'building', isSelected = false, isDark
 const createSearchedPlaceIcon = (name) => {
   return L.divIcon({
     html: `
-      <div class="relative flex flex-col items-center">
-        <span class="animate-ping absolute top-0 inline-flex h-6 w-6 rounded-full bg-orange-400 opacity-75"></span>
-        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 border-2 border-white shadow-xl flex items-center justify-center text-black">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-            <circle cx="12" cy="10" r="3"></circle>
-          </svg>
+      <div style="position: relative; display: flex; flex-direction: column; align-items: center; width: 160px; pointer-events: none;">
+        <!-- Container concêntrico exato para o Pin e o Sonar -->
+        <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+          <!-- Anel 1 do Sonar Pulsante (concentricidade perfeita) -->
+          <div style="
+            position: absolute;
+            top: 0; left: 0;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            border: 2.5px solid #f97316;
+            background: radial-gradient(circle, rgba(249,115,22,0.4) 0%, transparent 70%);
+            box-shadow: 0 0 16px rgba(249,115,22,0.6);
+            animation: radarPulse 2.2s cubic-bezier(0.1, 0.5, 0.3, 1) infinite;
+            transform-origin: center center;
+            pointer-events: none;
+          "></div>
+
+          <!-- Anel 2 do Sonar Pulsante (defasado) -->
+          <div style="
+            position: absolute;
+            top: 0; left: 0;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            border: 2px solid #fb923c;
+            background: radial-gradient(circle, rgba(249,115,22,0.2) 0%, transparent 70%);
+            animation: radarPulse 2.2s cubic-bezier(0.1, 0.5, 0.3, 1) 1.1s infinite;
+            transform-origin: center center;
+            pointer-events: none;
+          "></div>
+
+          <!-- Pin Central com Marcador -->
+          <div style="
+            position: relative; z-index: 10;
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f97316, #f59e0b);
+            border: 2.5px solid #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.35), 0 0 12px rgba(249,115,22,0.5);
+            display: flex; align-items: center; justify-content: center;
+            color: #000000;
+          ">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+          </div>
         </div>
-        <div class="bg-black/90 text-white text-[10px] font-black px-2 py-0.5 rounded-full border border-orange-500/40 shadow-lg mt-1 whitespace-nowrap">
+
+        <!-- Badge com o nome do local -->
+        <div style="
+          margin-top: 5px;
+          background: rgba(15, 15, 15, 0.94);
+          color: #ffffff;
+          font-size: 11px;
+          font-weight: 800;
+          font-family: Outfit, Inter, system-ui, sans-serif;
+          padding: 3px 10px;
+          border-radius: 9999px;
+          border: 1.5px solid rgba(249, 115, 22, 0.5);
+          box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+          white-space: nowrap;
+          max-width: 155px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          z-index: 12;
+          pointer-events: auto;
+        ">
           ${name}
         </div>
       </div>
     `,
     className: 'bg-transparent border-none',
-    iconSize: [120, 50],
-    iconAnchor: [60, 16]
+    iconSize: [160, 65],
+    iconAnchor: [80, 18]
   });
 };
 

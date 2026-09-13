@@ -6,7 +6,6 @@ import { Footprints, MapPin, Navigation2, X, Compass, School, Utensils, BookOpen
  */
 export const CAMPUS_POIS = {
   'UFG': [
-    { id: 'portaria', name: 'Portaria da Van (Encontro)', type: 'van', icon: MapPin, coords: [-16.603568, -49.265574] },
     { id: 'bc', name: 'Biblioteca Central (BC)', type: 'biblio', icon: BookOpen, coords: [-16.605554, -49.261135] },
     { id: 'ru', name: 'Restaurante Universitário (RU)', type: 'food', icon: Utensils, coords: [-16.602050, -49.262147] },
     { id: 'inf', name: 'Instituto de Informática (INF)', type: 'building', icon: Building2, coords: [-16.603557, -49.266572] },
@@ -18,7 +17,6 @@ export const CAMPUS_POIS = {
     { id: 'eventos', name: 'Centro de Eventos (Bufáiçal)', type: 'admin', icon: School, coords: [-16.604035, -49.258975] }
   ],
   'UFG - CAMPUS COLEMAR': [
-    { id: 'portaria', name: 'Portaria da Van (Praça Univ.)', type: 'van', icon: MapPin, coords: [-16.675200, -49.242100] },
     { id: 'direito', name: 'Faculdade de Direito', type: 'building', icon: Building2, coords: [-16.675499, -49.243582] },
     { id: 'bc', name: 'Biblioteca Seccional Câmpus 1', type: 'biblio', icon: BookOpen, coords: [-16.675247, -49.243570] },
     { id: 'ru', name: 'Restaurante Universitário', type: 'food', icon: Utensils, coords: [-16.675507, -49.242882] },
@@ -26,20 +24,17 @@ export const CAMPUS_POIS = {
     { id: 'odonto', name: 'Faculdade de Odontologia', type: 'building', icon: Building2, coords: [-16.673250, -49.243500] }
   ],
   'PUC': [
-    { id: 'portaria', name: 'Portaria Área 1 (Ponto da Van)', type: 'van', icon: MapPin, coords: [-16.674528, -49.242286] },
     { id: 'bc', name: 'Biblioteca Central PUC', type: 'biblio', icon: BookOpen, coords: [-16.673800, -49.242900] },
     { id: 'area2', name: 'Área 2 (Engenharias)', type: 'building', icon: Building2, coords: [-16.676500, -49.243500] },
     { id: 'area4', name: 'Área 4 (Saúde e Biológicas)', type: 'building', icon: Building2, coords: [-16.675500, -49.240500] },
     { id: 'campus2', name: 'Câmpus 2 (Jardim Goiás)', type: 'building', icon: School, coords: [-16.697500, -49.232000] }
   ],
   'UNIP': [
-    { id: 'portaria', name: 'Portaria Principal (Ponto da Van)', type: 'van', icon: MapPin, coords: [-16.719133, -49.237381] },
     { id: 'bc', name: 'Biblioteca UNIP', type: 'biblio', icon: BookOpen, coords: [-16.718500, -49.237900] },
     { id: 'food', name: 'Cantina / Pátio Central', type: 'food', icon: Utensils, coords: [-16.719600, -49.236900] },
     { id: 'bloco', name: 'Bloco Acadêmico', type: 'building', icon: Building2, coords: [-16.719300, -49.238200] }
   ],
   'IFG': [
-    { id: 'portaria', name: 'Portaria Principal (Rua 75)', type: 'van', icon: MapPin, coords: [-16.671380, -49.255530] },
     { id: 'bc', name: 'Biblioteca Central IFG', type: 'biblio', icon: BookOpen, coords: [-16.671600, -49.255900] },
     { id: 'food', name: 'Cantina IFG', type: 'food', icon: Utensils, coords: [-16.671900, -49.255100] }
   ]
@@ -66,7 +61,7 @@ export default function CampusModeHUD({
     if (key && CAMPUS_POIS[key]) return CAMPUS_POIS[key];
 
     return [
-      { id: 'portaria', name: `Portaria ${facultyName} (Ponto da Van)`, type: 'van', icon: MapPin, coords: vanCoords }
+      { id: 'campus', name: `${facultyName} (Campus Principal)`, type: 'building', icon: School, coords: vanCoords }
     ];
   }, [facultyName, vanCoords]);
 
@@ -113,7 +108,7 @@ export default function CampusModeHUD({
             </div>
             {isUserNearby && distanceInfo ? (
               <p className="text-[11px] text-caption truncate">
-                Portaria: <strong className="text-orange-400 font-bold">{distanceInfo.meters}m</strong> (~{distanceInfo.minutes} min a pé)
+                Ponto da Van: <strong className="text-orange-400 font-bold">{distanceInfo.meters}m</strong> (~{distanceInfo.minutes} min a pé)
               </p>
             ) : (
               <p className="text-[11px] text-caption truncate">
