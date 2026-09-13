@@ -210,45 +210,55 @@ const createFacultyIcon = (name, isCrominia, isDark = true) => {
   });
 };
 
-// Ícone de aluno — teardrop/pin nativo do Mapbox, mas com foto ou inicial
-const createStudentPinIcon = (name, isCrominia, isDark = true) => {
+// Ícone para ajuste manual de localização (Ponto circular moderno com halo pulsante, sem formato de gota)
+const createAdjustmentPinIcon = (name = 'Novo Ponto', isDark = true) => {
   const night = isDark;
-  const accent = isCrominia ? (isDark ? '#71717a' : '#475569') : '#f97316';
-  const textColor = night ? '#f4f4f5' : '#18181b';
-  const labelBg = night ? 'rgba(10,10,10,0.95)' : 'rgba(255,255,255,0.97)';
-  const shadow = night ? '0 4px 14px rgba(0,0,0,0.65)' : '0 3px 10px rgba(0,0,0,0.32)';
-  const borderCol = night ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
-  // Teardrop SVG pin
-  const pinSvg = `<svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M16 0C7.163 0 0 7.163 0 16c0 10 16 24 16 24s16-14 16-24C32 7.163 24.837 0 16 0z" fill="${accent}"/>
-    <circle cx="16" cy="15" r="8" fill="${night ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.35)'}"/>
-    <path d="M16 11c1.8 0 2.7-.9 2.7-2.7s-.9-2.7-2.7-2.7-2.7.9-2.7 2.7.9 2.7 2.7 2.7zm0 1.35c-1.8 0-5.4.9-5.4 2.7v1.35h10.8v-1.35c0-1.8-3.6-2.7-5.4-2.7z" fill="white"/>
-  </svg>`;
+  const labelBg = night ? 'rgba(15,15,15,0.95)' : 'rgba(255,255,255,0.96)';
+  const labelText = night ? '#f4f4f5' : '#18181b';
   return L.divIcon({
     html: `
       <div style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:none;">
-        ${name ? `<div style="
+        <div style="
           background:${labelBg};
-          color:${textColor};
-          font-size:10px;font-weight:700;
+          color:${labelText};
+          font-size:10px;font-weight:800;
           font-family:Inter,system-ui,sans-serif;
-          padding:2px 7px;border-radius:6px;white-space:nowrap;
-          box-shadow:${shadow};
-          border:1px solid ${borderCol};
-          margin-bottom:3px;max-width:110px;
-          overflow:hidden;text-overflow:ellipsis;
-        ">${name}</div>` : ''}
-        ${pinSvg}
+          padding:2px 8px;border-radius:8px;white-space:nowrap;
+          box-shadow:0 4px 12px rgba(0,0,0,0.3);
+          border:1.5px solid #f97316;
+          margin-bottom:6px;
+        ">${name}</div>
+        <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+          <div style="
+            position:absolute;
+            width:42px;height:42px;
+            border-radius:50%;
+            background:rgba(249,115,22,0.25);
+            border:1.5px solid rgba(249,115,22,0.6);
+            animation:studentHalo 2s ease-out infinite;
+          "></div>
+          <div style="
+            width:26px;height:26px;
+            border-radius:50%;
+            background:linear-gradient(135deg, #f97316, #ea580c);
+            border:2.5px solid #ffffff;
+            box-shadow:0 4px 14px rgba(249,115,22,0.5);
+            display:flex;align-items:center;justify-content:center;
+            color:white;
+          ">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 2v3m0 14v3M2 12h3m14 0h3"/>
+            </svg>
+          </div>
+        </div>
       </div>
     `,
     className: 'bg-transparent border-none',
-    iconSize: [32, name ? 72 : 40],
-    iconAnchor: [16, name ? 72 : 40]
+    iconSize: [42, 60],
+    iconAnchor: [21, 52]
   });
 };
-
-const StudentIcon = createStudentPinIcon('', false);
-const StudentIconAlt = createStudentPinIcon('', true);
 
 // Marcador de Aluno/Passageiro — completamente diferenciado da Van (avatar de pessoa, cores azul/verde/cinza, sem radar de veículo)
 const createStudentMapIcon = (name, isMe, isLiberado, isSoIda, isDark = true) => {
@@ -397,10 +407,25 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
 const createPedestrianIcon = () => {
   return L.divIcon({
     html: `
-      <div class="relative flex items-center justify-center">
-        <span class="animate-ping absolute inline-flex h-8 w-8 rounded-full bg-sky-400 opacity-60"></span>
-        <div class="w-7 h-7 rounded-full bg-sky-500 border-2 border-white shadow-xl flex items-center justify-center text-white">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <div style="position:relative;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+        <div style="
+          position:absolute;
+          width:36px;height:36px;
+          border-radius:50%;
+          background:rgba(249,115,22,0.25);
+          border:1.5px solid rgba(249,115,22,0.6);
+          animation:studentHalo 2s ease-out infinite;
+        "></div>
+        <div style="
+          width:24px;height:24px;
+          border-radius:50%;
+          background:#f97316;
+          border:2px solid #ffffff;
+          box-shadow:0 4px 12px rgba(0,0,0,0.35);
+          display:flex;align-items:center;justify-content:center;
+          color:#000000;
+        ">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 16v-2.38C4 11.5 6.5 9 9.5 9H10V7a3 3 0 0 1 6 0v2h.5c3 0 5.5 2.5 5.5 4.62V16"/>
             <circle cx="12" cy="4" r="2"/>
           </svg>
@@ -408,8 +433,75 @@ const createPedestrianIcon = () => {
       </div>
     `,
     className: 'bg-transparent border-none',
-    iconSize: [32, 32],
-    iconAnchor: [16, 16]
+    iconSize: [36, 36],
+    iconAnchor: [18, 18]
+  });
+};
+
+const createCampusPoiIcon = (name, type = 'building', isSelected = false, isDark = true) => {
+  const night = isDark;
+  const labelBg = isSelected
+    ? '#f97316'
+    : (night ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.96)');
+  const labelText = isSelected
+    ? '#000000'
+    : (night ? '#f4f4f5' : '#18181b');
+  const borderCol = isSelected
+    ? '#ffffff'
+    : (night ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)');
+  const iconBg = isSelected
+    ? '#ffffff'
+    : (type === 'van' ? '#f97316' : '#ea580c');
+  const iconFg = isSelected
+    ? '#f97316'
+    : '#ffffff';
+
+  return L.divIcon({
+    html: `
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;">
+        <div style="
+          background:${labelBg};
+          color:${labelText};
+          font-size:9.5px;
+          font-weight:${isSelected ? '800' : '700'};
+          font-family:Inter,system-ui,sans-serif;
+          padding:2px 7px;
+          border-radius:6px;
+          white-space:nowrap;
+          box-shadow:0 3px 10px rgba(0,0,0,0.3);
+          border:1px solid ${borderCol};
+          margin-bottom:3px;
+          max-width:140px;
+          overflow:hidden;
+          text-overflow:ellipsis;
+        ">${name}</div>
+        <div style="
+          width:${isSelected ? '28px' : '22px'};
+          height:${isSelected ? '28px' : '22px'};
+          border-radius:50%;
+          background:${iconBg};
+          border:2px solid #ffffff;
+          box-shadow:0 4px 12px rgba(0,0,0,0.3);
+          display:flex;align-items:center;justify-content:center;
+          color:${iconFg};
+          transition:all 0.2s;
+        ">
+          ${isSelected ? `
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+          ` : `
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="12" r="6"/>
+            </svg>
+          `}
+        </div>
+      </div>
+    `,
+    className: 'bg-transparent border-none',
+    iconSize: [140, isSelected ? 52 : 44],
+    iconAnchor: [70, isSelected ? 40 : 34]
   });
 };
 
@@ -552,8 +644,27 @@ export default function StudentMap() {
   // --- 2. Modo Campus Pedestre ---
   const [isCampusModeActive, setIsCampusModeActive] = useState(false);
   const [campusFacultyData, setCampusFacultyData] = useState(null);
+  const [selectedCampusPoi, setSelectedCampusPoi] = useState(null);
   const [userWalkingCoords, setUserWalkingCoords] = useState(null);
   const walkingWatchIdRef = useRef(null);
+
+  // POIs do campus ativo
+  const campusPois = useMemo(() => {
+    const key = Object.keys(CAMPUS_POIS).find(k => (campusFacultyData?.name || student?.faculty || 'UFG').toUpperCase().includes(k));
+    return (key && CAMPUS_POIS[key]) ? CAMPUS_POIS[key] : [];
+  }, [campusFacultyData, student]);
+
+  // Checa se o usuário está realmente no campus ou próximo (<= 3km) para evitar traçados de longa distância
+  const isUserNearCampus = useMemo(() => {
+    if (!userWalkingCoords) return false;
+    const campusCenter = campusFacultyData?.coords || getFacultyCoords(student);
+    if (!campusCenter) return false;
+    const distKm = getDistanceFromLatLonInKm(
+      userWalkingCoords[0], userWalkingCoords[1],
+      campusCenter[0], campusCenter[1]
+    );
+    return distKm <= 3.0; // Usuário no campus (até 3km)
+  }, [userWalkingCoords, campusFacultyData, student]);
 
   // --- 3. Busca no Mapa ---
   const [searchedPlace, setSearchedPlace] = useState(null);
@@ -1274,16 +1385,25 @@ hyme_checkin_prompted_, 'true');
     }
   };
 
+  const handleSelectCampusPoi = (poi) => {
+    setSelectedCampusPoi(poi);
+    if (poi?.coords && mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo(poi.coords, 18, { animate: true, duration: 1.2 });
+    }
+  };
+
   const toggleCampusMode = (targetPlace = null) => {
     if (isCampusModeActive && !targetPlace) {
       setIsCampusModeActive(false);
       setCampusFacultyData(null);
+      setSelectedCampusPoi(null);
       stopCampusWalkingWatch();
       if (mapInstanceRef.current) {
         mapInstanceRef.current.flyTo(CENTER, 13, { animate: true, duration: 1.2 });
       }
     } else {
       setIsCampusModeActive(true);
+      setSelectedCampusPoi(null);
       if (targetPlace) setCampusFacultyData(targetPlace);
       startCampusWalkingWatch();
       const coords = targetPlace?.coords || getFacultyCoords(student);
@@ -1363,8 +1483,8 @@ hyme_checkin_prompted_, 'true');
       {/* Mapa */}
       <div className="flex-1 relative z-0">
 
-        {/* Barra de Busca de Faculdades e Locais (quando não estiver no Modo Campus) */}
-        {!isCampusModeActive && (
+        {/* Barra de Busca de Faculdades e Locais (quando não estiver no Modo Campus e não estiver ajustando local) */}
+        {!isCampusModeActive && !isEditingLocation && (
           <div className="flex items-center gap-2">
             <MapSearchBar
               onSelectPlace={handleSelectSearchedPlace}
@@ -1385,17 +1505,15 @@ hyme_checkin_prompted_, 'true');
         )}
 
         {/* HUD do Modo Campus Pedestre */}
-        {isCampusModeActive && (
+        {isCampusModeActive && !isEditingLocation && (
           <CampusModeHUD
             facultyName={campusFacultyData?.name || student?.faculty || 'UFG'}
             vanCoords={campusFacultyData?.coords || getFacultyCoords(student)}
             userWalkingCoords={userWalkingCoords}
+            isUserNearby={isUserNearCampus}
+            selectedPoiId={selectedCampusPoi?.id}
             onExit={() => toggleCampusMode()}
-            onFlyTo={(coords) => {
-              if (coords && mapInstanceRef.current) {
-                mapInstanceRef.current.flyTo(coords, 18, { animate: true, duration: 1.2 });
-              }
-            }}
+            onSelectPoi={handleSelectCampusPoi}
             onToggleCompass={() => {
               const compassBtn = document.querySelector('#navbar-compass-slot button');
               compassBtn?.click();
@@ -1410,7 +1528,7 @@ hyme_checkin_prompted_, 'true');
         )}
 
         {/* Card de Local Pesquisado */}
-        {searchedPlace && !isCampusModeActive && (
+        {searchedPlace && !isCampusModeActive && !isEditingLocation && (
           <SearchedPlaceCard
             place={searchedPlace}
             onClose={() => setSearchedPlace(null)}
@@ -1448,8 +1566,8 @@ hyme_checkin_prompted_, 'true');
             key={isDark ? 'night' : 'day'}
           />
 
-          {/* Marcador pedestre no Modo Campus */}
-          {isCampusModeActive && userWalkingCoords && (
+          {/* Marcador pedestre no Modo Campus (apenas se estiver próximo ou dentro do campus) */}
+          {isCampusModeActive && isUserNearCampus && userWalkingCoords && (
             <Marker position={userWalkingCoords} icon={createPedestrianIcon()} zIndexOffset={1100}>
               <Popup className="dark-popup">
                 <span className="font-bold text-heading">Você caminhando no campus</span>
@@ -1457,13 +1575,36 @@ hyme_checkin_prompted_, 'true');
             </Marker>
           )}
 
-          {/* Traçado pontilhado pedestre até o ponto da van */}
-          {isCampusModeActive && userWalkingCoords && (campusFacultyData?.coords || getFacultyCoords(student)) && (
+          {/* Traçado pontilhado pedestre até o ponto da van ou POI selecionado (apenas dentro do campus) */}
+          {isCampusModeActive && isUserNearCampus && userWalkingCoords && (
             <Polyline
-              positions={[userWalkingCoords, campusFacultyData?.coords || getFacultyCoords(student)]}
-              pathOptions={{ color: '#f97316', dashArray: '6, 8', weight: 4, opacity: 0.8 }}
+              positions={[
+                userWalkingCoords,
+                selectedCampusPoi ? selectedCampusPoi.coords : (campusFacultyData?.coords || getFacultyCoords(student))
+              ]}
+              pathOptions={{ color: '#f97316', dashArray: '6, 8', weight: 4, opacity: 0.85 }}
             />
           )}
+
+          {/* Marcadores dos Prédios/POIs do Campus */}
+          {isCampusModeActive && campusPois.map((poi) => {
+            const isSelected = selectedCampusPoi?.id === poi.id;
+            return (
+              <Marker
+                key={poi.id}
+                position={poi.coords}
+                icon={createCampusPoiIcon(poi.name, poi.type, isSelected, isDark)}
+                zIndexOffset={isSelected ? 1300 : 950}
+                eventHandlers={{
+                  click: () => handleSelectCampusPoi(poi)
+                }}
+              >
+                <Popup className="dark-popup">
+                  <span className="font-bold text-heading">{poi.name}</span>
+                </Popup>
+              </Marker>
+            );
+          })}
 
           {/* Marcador de local pesquisado */}
           {searchedPlace && (
@@ -1545,9 +1686,9 @@ hyme_checkin_prompted_, 'true');
           <LocationPickerMode isEditing={isEditingLocation} onLocationSelected={setTempLocation} />
           {!isEditingLocation && <MapInteractionListener onInteract={() => setIsPanelCollapsed(true)} />}
           
-          {/* Pino temporário do ajuste de local */}
+          {/* Pino temporário do ajuste de local (Circular moderno com pulso, sem gota) */}
           {isEditingLocation && tempLocation?.lat != null && tempLocation?.lng != null && (
-            <Marker position={[tempLocation.lat, tempLocation.lng]} icon={createStudentPinIcon('Novo Local', student.route === 'Cromínia', isDark)} zIndexOffset={900} />
+            <Marker position={[tempLocation.lat, tempLocation.lng]} icon={createAdjustmentPinIcon('Novo Ponto', isDark)} zIndexOffset={900} />
           )}
 
           {/* Botão de Centralizar no GPS */}
@@ -1760,16 +1901,23 @@ hyme_checkin_prompted_, 'true');
               setIsPanelCollapsed(!isPanelCollapsed);
               setIsPublicListOpen(false);
             }}
-            className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center transition-colors ${
+            className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center transition-colors cursor-pointer ${
               !isPanelCollapsed
-                ? 'text-orange-500'
-                : isLiberado
-                ? 'text-emerald-400'
+                ? 'text-orange-500 font-bold'
                 : 'text-body hover:text-primary'
             }`}
           >
             <div className="p-1.5 sm:p-2 relative">
-              {isLiberado ? <Check size={22} className="text-emerald-400" strokeWidth={2.5} /> : <Navigation size={22} />}
+              {isLiberado ? (
+                <>
+                  <Check size={22} className={!isPanelCollapsed ? "text-orange-500" : "text-heading"} strokeWidth={2.5} />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_6px_#10b981]"></span>
+                </>
+              ) : isEmbarcado ? (
+                <Bus size={22} />
+              ) : (
+                <Navigation size={22} />
+              )}
             </div>
             <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
               {isEmbarcado ? 'Embarcado' : isLiberado ? 'Liberado' : 'Embarque'}
