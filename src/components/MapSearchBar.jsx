@@ -111,10 +111,13 @@ export default function MapSearchBar({
   };
 
   return (
-    <div ref={containerRef} className="absolute top-3 left-3 right-3 sm:left-6 sm:max-w-md z-[1600]">
+    <div ref={containerRef} className="absolute top-3 left-3 right-3 sm:left-6 sm:right-auto sm:w-full sm:max-w-md z-[1600]">
       {/* Campo de Busca Principal */}
-      <div className="relative flex items-center w-full bg-surface-elevated/95 backdrop-blur-md border border-subtle focus-within:border-orange-500 rounded-full shadow-xl transition-all">
-        <div className="pl-4 pr-2 text-caption">
+      <div 
+        className="relative flex items-center w-full bg-surface-elevated/95 backdrop-blur-md border border-subtle focus-within:border-orange-500 rounded-full shadow-xl transition-all overflow-hidden"
+        style={{ borderRadius: '9999px' }}
+      >
+        <div className="pl-4 pr-2 text-caption shrink-0">
           <Search size={18} className="text-orange-500" />
         </div>
         <input
@@ -127,7 +130,15 @@ export default function MapSearchBar({
             if (!isOpen) setIsOpen(true);
           }}
           placeholder="Buscar faculdade, bloco, local..."
-          className="w-full py-3 pr-10 bg-transparent text-xs sm:text-sm text-heading placeholder:text-caption outline-none font-medium"
+          className="w-full min-w-0 py-3 pr-10 bg-transparent !bg-transparent !border-0 !shadow-none !outline-none text-xs sm:text-sm text-heading placeholder:text-caption font-medium"
+          style={{
+            backgroundColor: 'transparent',
+            borderColor: 'transparent',
+            borderWidth: 0,
+            outline: 'none',
+            boxShadow: 'none',
+            borderRadius: '9999px'
+          }}
         />
         {query && (
           <button
