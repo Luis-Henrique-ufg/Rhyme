@@ -494,57 +494,73 @@ const createCampusPoiIcon = (name, type = 'building', isSelected = false, isDark
 };
 
 const createCustomDestinationIcon = (distanceLabel = '', durationMinutes = null, isDark = true) => {
-  const night = isDark;
-  const bg = night ? 'rgba(15, 15, 15, 0.94)' : 'rgba(255, 255, 255, 0.96)';
-  const border = night ? 'rgba(249, 115, 22, 0.8)' : '#f97316';
   const durationText = durationMinutes ? ` (~${durationMinutes}min)` : '';
+  const label = distanceLabel ? `Destino • ${distanceLabel}${durationText}` : 'Destino';
+
   return L.divIcon({
     html: `
       <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;width:180px;pointer-events:auto;">
-        <!-- Badge Flutuante com Distância e Tempo Estimado -->
+        <!-- Badge Superior Original Laranja -->
         <div style="
-          background:${bg};
-          color:#f97316;
+          background:#f97316;
+          color:#000000;
           font-size:10px;
           font-weight:800;
           font-family:Inter,system-ui,sans-serif;
           padding:3px 9px;
-          border-radius:9999px;
-          border:1.5px solid ${border};
-          box-shadow:0 4px 14px rgba(249,115,22,0.35);
+          border-radius:8px;
           white-space:nowrap;
+          box-shadow:0 4px 14px rgba(249,115,22,0.45);
+          border:1.5px solid #ffffff;
           margin-bottom:3px;
+          max-width:175px;
+          overflow:hidden;
+          text-overflow:ellipsis;
           display:flex;
           align-items:center;
-          gap:4.5px;
+          gap:4px;
         ">
-          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#f97316;"></span>
-          Destino ${distanceLabel ? `• ${distanceLabel}` : ''}${durationText}
+          <span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#000000;"></span>
+          <span>${label}</span>
         </div>
-        <!-- Anéis de Radar e Pino Central -->
-        <div style="position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
+
+        <!-- Pino Teardrop Original Laranja com Ponta Exata no Solo -->
+        <div style="position:relative;display:flex;flex-direction:column;align-items:center;">
+          <svg width="28" height="34" viewBox="0 0 28 34" fill="none" style="filter:drop-shadow(0 4px 8px rgba(0,0,0,0.45));">
+            <!-- Corpo do Pino em Gota -->
+            <path d="M14 1C6.82 1 1 6.82 1 14c0 9.8 13 19 13 19s13-9.2 13-19c0-7.18-5.82-13-13-13z" fill="#f97316" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+            <!-- Círculo Branco Interno -->
+            <circle cx="14" cy="14" r="5.5" fill="#ffffff"/>
+            <!-- Ponto Laranja Central -->
+            <circle cx="14" cy="14" r="2.5" fill="#f97316"/>
+          </svg>
+
+          <!-- Sombra e Pulso Sutil no Ponto de Contato com o Chão -->
           <div style="
-            position:absolute;top:0;left:0;width:36px;height:36px;border-radius:50%;
-            border:2px solid #f97316;animation:radarPulse 2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+            position:absolute;
+            bottom:-2px;
+            width:12px;
+            height:4px;
+            border-radius:50%;
+            background:rgba(0,0,0,0.35);
+            filter:blur(1px);
           "></div>
           <div style="
-            position:relative;width:28px;height:28px;border-radius:50%;
-            background:#f97316;border:2.5px solid #ffffff;
-            box-shadow:0 4px 14px rgba(0,0,0,0.4);
-            display:flex;align-items:center;justify-content:center;
-            color:#000000;
-          ">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="10" r="10"></circle>
-              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
-            </svg>
-          </div>
+            position:absolute;
+            bottom:-5px;
+            width:16px;
+            height:8px;
+            border-radius:50%;
+            border:1.5px solid rgba(249,115,22,0.6);
+            animation:studentHalo 2s ease-out infinite;
+            pointer-events:none;
+          "></div>
         </div>
       </div>
     `,
     className: 'bg-transparent border-none',
-    iconSize: [160, 56],
-    iconAnchor: [80, 38]
+    iconSize: [180, 64],
+    iconAnchor: [90, 61]
   });
 };
 
@@ -951,17 +967,20 @@ export default function StudentMap() {
 
     const fetchPedestrianRoute = async () => {
       try {
-        // 1ª Opção: Mapbox Directions API (Perfil Walking)
+        // 1ª Opção: Mapbox Directions API (Perfil Walking com busca pelo menor trajeto)
         if (MAPBOX_TOKEN) {
-          const mapboxUrl = `https://api.mapbox.com/directions/v5/mapbox/walking/${oLng},${oLat};${tLng},${tLat}?overview=full&geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+          const mapboxUrl = `https://api.mapbox.com/directions/v5/mapbox/walking/${oLng},${oLat};${tLng},${tLat}?alternatives=true&overview=full&geometries=geojson&access_token=${MAPBOX_TOKEN}`;
           const res = await fetch(mapboxUrl);
           if (res.ok) {
             const data = await res.json();
-            if (data.routes && data.routes[0]?.geometry?.coordinates?.length > 1) {
-              const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+            const validRoutes = (data.routes || []).filter(r => r?.geometry?.coordinates?.length > 1);
+            if (validRoutes.length > 0) {
+              // Seleciona a rota com o menor trajeto possível entre as alternativas
+              const shortestRoute = validRoutes.reduce((prev, curr) => (curr.distance < prev.distance ? curr : prev), validRoutes[0]);
+              const coords = shortestRoute.geometry.coordinates.map(c => [c[1], c[0]]);
               const fullRoute = [campusRouteOrigin, ...coords, campusRouteTarget];
-              const dist = Math.round(data.routes[0].distance);
-              const mins = Math.max(1, Math.round(data.routes[0].duration / 60));
+              const dist = Math.round(shortestRoute.distance);
+              const mins = Math.max(1, Math.round(shortestRoute.duration / 60));
 
               if (!isCancelled) {
                 const metrics = { distanceMeters: dist, durationMinutes: mins };
@@ -974,16 +993,18 @@ export default function StudentMap() {
           }
         }
 
-        // 2ª Opção (Fallback): OpenStreetMap Routed Foot (Pedestre)
-        const osmFootUrl = `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${oLng},${oLat};${tLng},${tLat}?overview=full&geometries=geojson`;
+        // 2ª Opção (Fallback): OpenStreetMap Routed Foot (Pedestre com alternativas)
+        const osmFootUrl = `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${oLng},${oLat};${tLng},${tLat}?alternatives=true&overview=full&geometries=geojson`;
         const osmRes = await fetch(osmFootUrl);
         if (osmRes.ok) {
           const osmData = await osmRes.json();
-          if (osmData.routes && osmData.routes[0]?.geometry?.coordinates?.length > 1) {
-            const coords = osmData.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+          const validRoutes = (osmData.routes || []).filter(r => r?.geometry?.coordinates?.length > 1);
+          if (validRoutes.length > 0) {
+            const shortestRoute = validRoutes.reduce((prev, curr) => (curr.distance < prev.distance ? curr : prev), validRoutes[0]);
+            const coords = shortestRoute.geometry.coordinates.map(c => [c[1], c[0]]);
             const fullRoute = [campusRouteOrigin, ...coords, campusRouteTarget];
-            const dist = Math.round(osmData.routes[0].distance);
-            const duration = osmData.routes[0].duration || (dist / 1.16);
+            const dist = Math.round(shortestRoute.distance);
+            const duration = shortestRoute.duration || (dist / 1.16);
             const mins = Math.max(1, Math.round(duration / 60));
 
             if (!isCancelled) {
