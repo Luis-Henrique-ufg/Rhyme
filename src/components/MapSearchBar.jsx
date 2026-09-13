@@ -113,8 +113,8 @@ export default function MapSearchBar({
   return (
     <div ref={containerRef} className="absolute top-3 left-3 right-3 sm:left-6 sm:max-w-md z-[1600]">
       {/* Campo de Busca Principal */}
-      <div className="relative flex items-center w-full bg-surface-elevated/95 backdrop-blur-md border border-subtle focus-within:border-orange-500 rounded-2xl shadow-xl transition-all">
-        <div className="pl-3.5 pr-2 text-caption">
+      <div className="relative flex items-center w-full bg-surface-elevated/95 backdrop-blur-md border border-subtle focus-within:border-orange-500 rounded-full shadow-xl transition-all">
+        <div className="pl-4 pr-2 text-caption">
           <Search size={18} className="text-orange-500" />
         </div>
         <input
@@ -127,13 +127,13 @@ export default function MapSearchBar({
             if (!isOpen) setIsOpen(true);
           }}
           placeholder="Buscar faculdade, bloco, local..."
-          className="w-full py-3 pr-9 bg-transparent text-xs sm:text-sm text-heading placeholder:text-caption outline-none font-medium"
+          className="w-full py-3 pr-10 bg-transparent text-xs sm:text-sm text-heading placeholder:text-caption outline-none font-medium"
         />
         {query && (
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-3 p-1 rounded-full text-caption hover:text-heading hover:bg-subtle transition-colors cursor-pointer"
+            className="absolute right-3.5 p-1 rounded-full text-caption hover:text-heading hover:bg-subtle transition-colors cursor-pointer"
           >
             <X size={15} />
           </button>
@@ -142,7 +142,7 @@ export default function MapSearchBar({
 
       {/* Dropdown de Sugestões e Resultados */}
       {isOpen && (
-        <div className="mt-2 w-full bg-surface-elevated/98 backdrop-blur-xl border border-subtle rounded-2xl shadow-2xl overflow-hidden max-h-72 overflow-y-auto animate-in fade-in-50 zoom-in-95 duration-150 divide-y divide-subtle/40">
+        <div className="mt-2 w-full bg-surface-elevated/98 backdrop-blur-xl border border-subtle rounded-3xl shadow-2xl overflow-hidden max-h-72 overflow-y-auto animate-in fade-in-50 zoom-in-95 duration-150 divide-y divide-subtle/40">
           {/* Resultados Locais Rápidos */}
           {localResults.length > 0 && (
             <div className="p-1.5">

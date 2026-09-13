@@ -1485,23 +1485,10 @@ hyme_checkin_prompted_, 'true');
 
         {/* Barra de Busca de Faculdades e Locais (quando não estiver no Modo Campus e não estiver ajustando local) */}
         {!isCampusModeActive && !isEditingLocation && (
-          <div className="flex items-center gap-2">
-            <MapSearchBar
-              onSelectPlace={handleSelectSearchedPlace}
-              userCoords={attendance?.lat && attendance?.lng ? [attendance.lat, attendance.lng] : null}
-            />
-
-            {/* Botão Flutuante: Modo Campus */}
-            <button
-              type="button"
-              onClick={() => toggleCampusMode()}
-              className="absolute top-3 right-3 sm:right-6 z-[1650] flex items-center gap-1.5 px-3 py-3 rounded-2xl shadow-xl backdrop-blur-md border bg-surface-elevated/95 text-heading border-subtle hover:border-orange-500/40 font-bold hover:text-orange-400 active:scale-95 cursor-pointer transition-all"
-              title="Ativar navegação a pé na faculdade"
-            >
-              <Footprints size={18} strokeWidth={2.5} className="text-orange-500" />
-              <span className="text-xs font-bold hidden sm:inline">Modo Campus</span>
-            </button>
-          </div>
+          <MapSearchBar
+            onSelectPlace={handleSelectSearchedPlace}
+            userCoords={attendance?.lat && attendance?.lng ? [attendance.lat, attendance.lng] : null}
+          />
         )}
 
         {/* HUD do Modo Campus Pedestre */}
