@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline } from 'react-leaflet';
-import { Users, Check, RefreshCcw, MapPin, Navigation, LocateFixed, X, Radio, BellRing, Bus, Footprints, School, Volume2, Compass } from 'lucide-react';
+import { Users, Check, RefreshCcw, MapPin, Navigation, LocateFixed, X, Radio, BellRing, Bus, Footprints, School, Volume2, Compass, Crosshair } from 'lucide-react';
 import { doc, collection, setDoc, updateDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -23,7 +23,7 @@ import SearchedPlaceCard from '../components/SearchedPlaceCard';
 import LocationPickerMap from '../components/LocationPickerMap';
 import ReactDOM from 'react-dom';
 import { useCustomAlert } from '../contexts/AlertContext';
-import { playNotificationSound, playBoardingAlarmSound, playTapSound, playToggleSound, playPopSound } from '../utils/audioEffects';
+import { playNotificationSound, playBoardingAlarmSound, playTapSound, playToggleSound, playPopSound, playSuccessSound, triggerHaptic } from '../utils/audioEffects';
 import { useFCM } from '../hooks/useFCM';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-rotate';
@@ -439,69 +439,111 @@ const createPedestrianIcon = () => {
 };
 
 const createCampusPoiIcon = (name, type = 'building', isSelected = false, isDark = true) => {
-  const night = isDark;
-  const labelBg = isSelected
-    ? '#f97316'
-    : (night ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.96)');
-  const labelText = isSelected
-    ? '#000000'
-    : (night ? '#f4f4f5' : '#18181b');
-  const borderCol = isSelected
-    ? '#ffffff'
-    : (night ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)');
-  const iconBg = isSelected
-    ? '#ffffff'
-    : (type === 'van' ? '#f97316' : '#ea580c');
-  const iconFg = isSelected
-    ? '#f97316'
-    : '#ffffff';
+  if (!isSelected) {
+    // Marcador oculto por padrão (mantém o mapa limpo), mas funcional (área clicável transparente)
+    return L.divIcon({
+      html: `<div style="width: 38px; height: 38px; cursor: pointer; background: transparent;" title="${name}"></div>`,
+      className: 'bg-transparent border-none',
+      iconSize: [38, 38],
+      iconAnchor: [19, 19]
+    });
+  }
 
+  // Original Laranja quando selecionado
   return L.divIcon({
     html: `
       <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;">
         <div style="
-          background:${labelBg};
-          color:${labelText};
-          font-size:9.5px;
-          font-weight:${isSelected ? '800' : '700'};
+          background:#f97316;
+          color:#000000;
+          font-size:10px;
+          font-weight:800;
           font-family:Inter,system-ui,sans-serif;
-          padding:2px 7px;
-          border-radius:6px;
+          padding:3px 9px;
+          border-radius:8px;
           white-space:nowrap;
-          box-shadow:0 3px 10px rgba(0,0,0,0.3);
-          border:1px solid ${borderCol};
-          margin-bottom:3px;
-          max-width:140px;
+          box-shadow:0 4px 14px rgba(249,115,22,0.4);
+          border:1.5px solid #ffffff;
+          margin-bottom:4px;
+          max-width:180px;
           overflow:hidden;
           text-overflow:ellipsis;
         ">${name}</div>
         <div style="
-          width:${isSelected ? '28px' : '22px'};
-          height:${isSelected ? '28px' : '22px'};
+          width:30px;
+          height:30px;
           border-radius:50%;
-          background:${iconBg};
-          border:2px solid #ffffff;
-          box-shadow:0 4px 12px rgba(0,0,0,0.3);
+          background:#ffffff;
+          border:2.5px solid #f97316;
+          box-shadow:0 4px 12px rgba(0,0,0,0.35);
           display:flex;align-items:center;justify-content:center;
-          color:${iconFg};
+          color:#f97316;
           transition:all 0.2s;
         ">
-          ${isSelected ? `
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-              <circle cx="12" cy="10" r="3"></circle>
-            </svg>
-          ` : `
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="12" cy="12" r="6"/>
-            </svg>
-          `}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+            <circle cx="12" cy="10" r="3"></circle>
+          </svg>
         </div>
       </div>
     `,
     className: 'bg-transparent border-none',
-    iconSize: [140, isSelected ? 52 : 44],
-    iconAnchor: [70, isSelected ? 40 : 34]
+    iconSize: [180, 56],
+    iconAnchor: [90, 42]
+  });
+};
+
+const createCustomDestinationIcon = (distanceLabel = '', isDark = true) => {
+  const night = isDark;
+  const bg = night ? 'rgba(15, 15, 15, 0.94)' : 'rgba(255, 255, 255, 0.96)';
+  const border = night ? 'rgba(249, 115, 22, 0.8)' : '#f97316';
+  return L.divIcon({
+    html: `
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;width:160px;pointer-events:auto;">
+        <!-- Badge Flutuante com Distância -->
+        <div style="
+          background:${bg};
+          color:#f97316;
+          font-size:10px;
+          font-weight:800;
+          font-family:Inter,system-ui,sans-serif;
+          padding:3px 9px;
+          border-radius:9999px;
+          border:1.5px solid ${border};
+          box-shadow:0 4px 14px rgba(249,115,22,0.35);
+          white-space:nowrap;
+          margin-bottom:3px;
+          display:flex;
+          align-items:center;
+          gap:4.5px;
+        ">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#f97316;"></span>
+          Destino ${distanceLabel ? `• ${distanceLabel}` : ''}
+        </div>
+        <!-- Anéis de Radar e Pino Central -->
+        <div style="position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
+          <div style="
+            position:absolute;top:0;left:0;width:36px;height:36px;border-radius:50%;
+            border:2px solid #f97316;animation:radarPulse 2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+          "></div>
+          <div style="
+            position:relative;width:28px;height:28px;border-radius:50%;
+            background:#f97316;border:2.5px solid #ffffff;
+            box-shadow:0 4px 14px rgba(0,0,0,0.4);
+            display:flex;align-items:center;justify-content:center;
+            color:#000000;
+          ">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="10" r="10"></circle>
+              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+            </svg>
+          </div>
+        </div>
+      </div>
+    `,
+    className: 'bg-transparent border-none',
+    iconSize: [160, 56],
+    iconAnchor: [80, 38]
   });
 };
 
@@ -651,6 +693,124 @@ const MapFlyTo = ({ target, trigger }) => {
   return null;
 };
 
+/**
+ * Listener de clique e segura (long-press) no Modo Campus
+ * Permite que o aluno toque e segure por 500ms em qualquer ponto para traçar rota
+ */
+const CampusLongPressHandler = ({ isCampusModeActive, onLongPress }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!isCampusModeActive) return;
+
+    let timer = null;
+    let startPoint = null;
+    const container = map.getContainer();
+
+    const clear = () => {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      startPoint = null;
+    };
+
+    // --- Touch (Mobile) ---
+    const handleTouchStart = (e) => {
+      if (e.touches.length !== 1) {
+        clear();
+        return;
+      }
+      const touch = e.touches[0];
+      startPoint = { x: touch.clientX, y: touch.clientY };
+
+      timer = setTimeout(() => {
+        if (!startPoint) return;
+        const rect = container.getBoundingClientRect();
+        const pt = L.point(startPoint.x - rect.left, startPoint.y - rect.top);
+        const latlng = map.containerPointToLatLng(pt);
+        clear();
+        onLongPress(latlng);
+      }, 500);
+    };
+
+    const handleTouchMove = (e) => {
+      if (!startPoint || e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      const dist = Math.hypot(touch.clientX - startPoint.x, touch.clientY - startPoint.y);
+      if (dist > 12) {
+        clear();
+      }
+    };
+
+    const handleTouchEnd = () => {
+      clear();
+    };
+
+    // --- Mouse (Desktop) ---
+    const handleMouseDown = (e) => {
+      if (e.button !== 0) return; // apenas botão esquerdo
+      startPoint = { x: e.clientX, y: e.clientY };
+
+      timer = setTimeout(() => {
+        if (!startPoint) return;
+        const rect = container.getBoundingClientRect();
+        const pt = L.point(startPoint.x - rect.left, startPoint.y - rect.top);
+        const latlng = map.containerPointToLatLng(pt);
+        clear();
+        onLongPress(latlng);
+      }, 500);
+    };
+
+    const handleMouseMove = (e) => {
+      if (!startPoint) return;
+      const dist = Math.hypot(e.clientX - startPoint.x, e.clientY - startPoint.y);
+      if (dist > 12) {
+        clear();
+      }
+    };
+
+    const handleMouseUp = () => {
+      clear();
+    };
+
+    // --- ContextMenu (Desktop right-click fallback) ---
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+      clear();
+      const rect = container.getBoundingClientRect();
+      const pt = L.point(e.clientX - rect.left, e.clientY - rect.top);
+      const latlng = map.containerPointToLatLng(pt);
+      onLongPress(latlng);
+    };
+
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: true });
+    container.addEventListener('touchend', handleTouchEnd, { passive: true });
+    container.addEventListener('touchcancel', handleTouchEnd, { passive: true });
+
+    container.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    container.addEventListener('contextmenu', handleContextMenu);
+
+    return () => {
+      clear();
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('touchcancel', handleTouchEnd);
+
+      container.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      container.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, [map, isCampusModeActive, onLongPress]);
+
+  return null;
+};
+
 export default function StudentMap() {
   const { user } = useAuth();
   const { theme, isDark } = useTheme();
@@ -703,6 +863,7 @@ export default function StudentMap() {
   const [isCampusModeActive, setIsCampusModeActive] = useState(false);
   const [campusFacultyData, setCampusFacultyData] = useState(null);
   const [selectedCampusPoi, setSelectedCampusPoi] = useState(null);
+  const [customCampusDestination, setCustomCampusDestination] = useState(null);
   const [userWalkingCoords, setUserWalkingCoords] = useState(null);
   const walkingWatchIdRef = useRef(null);
 
@@ -723,6 +884,34 @@ export default function StudentMap() {
     );
     return distKm <= 3.0; // Usuário no campus (até 3km)
   }, [userWalkingCoords, campusFacultyData, student]);
+
+  // Distância até o destino customizado selecionado com clique-e-segura
+  const customDestinationDistance = useMemo(() => {
+    if (!customCampusDestination) return null;
+    const origin = (isUserNearCampus && userWalkingCoords) 
+      ? userWalkingCoords 
+      : (userWalkingCoords || campusFacultyData?.coords || getFacultyCoords(student));
+    if (!origin) return null;
+    const km = getDistanceFromLatLonInKm(
+      origin[0], origin[1],
+      customCampusDestination.lat, customCampusDestination.lng
+    );
+    if (km < 1) {
+      return `${Math.round(km * 1000)}m`;
+    }
+    return `${km.toFixed(1)}km`;
+  }, [customCampusDestination, isUserNearCampus, userWalkingCoords, campusFacultyData, student]);
+
+  const handleCampusLongPress = useCallback((latlng) => {
+    playSuccessSound();
+    triggerHaptic('medium');
+    setCustomCampusDestination({
+      lat: latlng.lat,
+      lng: latlng.lng,
+      name: 'Destino no Mapa'
+    });
+    setSelectedCampusPoi(null);
+  }, []);
 
   // --- 3. Busca no Mapa ---
   const [searchedPlace, setSearchedPlace] = useState(null);
@@ -1189,8 +1378,7 @@ export default function StudentMap() {
 
       // Salva preferência para não solicitar novamente nas próximas visitas/viagens
       if (user?.uid) {
-        localStorage.setItem(
-hyme_checkin_prompted_, 'true');
+        localStorage.setItem(`rhyme_checkin_prompted_${user.uid}`, 'true');
         localStorage.setItem('rhyme_default_trip_type', type);
         try {
           await updateDoc(doc(db, 'users', user.uid), { defaultTripType: type });
@@ -1444,6 +1632,7 @@ hyme_checkin_prompted_, 'true');
   };
 
   const handleSelectCampusPoi = (poi) => {
+    setCustomCampusDestination(null);
     setSelectedCampusPoi(poi);
     if (poi?.coords && mapInstanceRef.current) {
       mapInstanceRef.current.flyTo(poi.coords, 18, { animate: true, duration: 1.2 });
@@ -1456,6 +1645,7 @@ hyme_checkin_prompted_, 'true');
       setIsCampusModeActive(false);
       setCampusFacultyData(null);
       setSelectedCampusPoi(null);
+      setCustomCampusDestination(null);
       stopCampusWalkingWatch();
       if (mapInstanceRef.current) {
         mapInstanceRef.current.flyTo(CENTER, 13, { animate: true, duration: 1.2 });
@@ -1464,6 +1654,7 @@ hyme_checkin_prompted_, 'true');
       playToggleSound(true);
       setIsCampusModeActive(true);
       setSelectedCampusPoi(null);
+      setCustomCampusDestination(null);
       if (targetPlace) setCampusFacultyData(targetPlace);
       startCampusWalkingWatch();
       const coords = targetPlace?.coords || getFacultyCoords(student);
@@ -1559,6 +1750,9 @@ hyme_checkin_prompted_, 'true');
             userWalkingCoords={userWalkingCoords}
             isUserNearby={isUserNearCampus}
             selectedPoiId={selectedCampusPoi?.id}
+            customDestination={customCampusDestination}
+            customDestinationDistance={customDestinationDistance}
+            onClearCustomDestination={() => setCustomCampusDestination(null)}
             onExit={() => toggleCampusMode()}
             onSelectPoi={handleSelectCampusPoi}
             onToggleCompass={() => {
@@ -1607,6 +1801,10 @@ hyme_checkin_prompted_, 'true');
         <MapContainer center={CENTER} zoom={13} className="w-full h-full" zoomControl={false} attributionControl={false} rotate={true} touchRotate={true}>
           <MapBridge onReady={(m) => { mapInstanceRef.current = m; }} />
           <MapInteractions />
+          <CampusLongPressHandler
+            isCampusModeActive={isCampusModeActive}
+            onLongPress={handleCampusLongPress}
+          />
           <TileLayer
             url={isDark ? TILE_NIGHT : TILE_DAY}
             attribution={isDark ? TILE_ATTR_NIGHT : TILE_ATTR_DAY}
@@ -1622,16 +1820,61 @@ hyme_checkin_prompted_, 'true');
             </Marker>
           )}
 
-          {/* Traçado pontilhado pedestre até o ponto da van ou POI selecionado (apenas dentro do campus) */}
-          {isCampusModeActive && isUserNearCampus && userWalkingCoords && (
-            <Polyline
-              positions={[
-                userWalkingCoords,
-                selectedCampusPoi ? selectedCampusPoi.coords : (campusFacultyData?.coords || getFacultyCoords(student))
-              ]}
-              pathOptions={{ color: '#f97316', dashArray: '6, 8', weight: 4, opacity: 0.85 }}
-            />
+          {/* Marcador do Destino Personalizado (Clique e Segura no Modo Campus) */}
+          {isCampusModeActive && customCampusDestination && (
+            <Marker
+              position={[customCampusDestination.lat, customCampusDestination.lng]}
+              icon={createCustomDestinationIcon(customDestinationDistance, isDark)}
+              zIndexOffset={1400}
+            >
+              <Popup className="dark-popup">
+                <div className="flex flex-col gap-1 p-0.5">
+                  <span className="font-bold text-heading text-xs">Destino Selecionado</span>
+                  <span className="text-[11px] text-orange-400 font-semibold">
+                    Distância: {customDestinationDistance || 'Calculando...'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playTapSound();
+                      setCustomCampusDestination(null);
+                    }}
+                    className="mt-1 py-1 px-2 text-[10px] font-bold bg-danger/10 text-danger hover:bg-danger/20 rounded-lg border border-danger/20 transition-colors cursor-pointer"
+                  >
+                    Remover Destino
+                  </button>
+                </div>
+              </Popup>
+            </Marker>
           )}
+
+          {/* Traçado pontilhado pedestre até o ponto da van, POI selecionado ou Destino Personalizado */}
+          {isCampusModeActive && (() => {
+            const origin = (isUserNearCampus && userWalkingCoords)
+              ? userWalkingCoords
+              : (userWalkingCoords || campusFacultyData?.coords || getFacultyCoords(student));
+
+            const targetCoords = customCampusDestination
+              ? [customCampusDestination.lat, customCampusDestination.lng]
+              : (selectedCampusPoi
+                ? selectedCampusPoi.coords
+                : (campusFacultyData?.coords || getFacultyCoords(student)));
+
+            if (!origin || !targetCoords) return null;
+
+            return (
+              <>
+                <Polyline
+                  positions={[origin, targetCoords]}
+                  pathOptions={{ color: '#f97316', weight: 8, opacity: 0.2 }}
+                />
+                <Polyline
+                  positions={[origin, targetCoords]}
+                  pathOptions={{ color: '#f97316', dashArray: '6, 8', weight: 4.5, opacity: 0.95 }}
+                />
+              </>
+            );
+          })()}
 
           {/* Marcadores dos Prédios/POIs do Campus */}
           {isCampusModeActive && campusPois.map((poi) => {
@@ -1646,9 +1889,11 @@ hyme_checkin_prompted_, 'true');
                   click: () => handleSelectCampusPoi(poi)
                 }}
               >
-                <Popup className="dark-popup">
-                  <span className="font-bold text-heading">{poi.name}</span>
-                </Popup>
+                {isSelected && (
+                  <Popup className="dark-popup">
+                    <span className="font-bold text-heading">{poi.name}</span>
+                  </Popup>
+                )}
               </Marker>
             );
           })}

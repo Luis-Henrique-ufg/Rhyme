@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Footprints, MapPin, Navigation2, X, Compass, School, Utensils, BookOpen, Building2, Sparkles } from 'lucide-react';
+import { Footprints, MapPin, Navigation2, X, Compass, School, Utensils, BookOpen, Building2, Sparkles, Crosshair } from 'lucide-react';
 import { playTapSound, playToggleSound } from '../utils/audioEffects';
 
 /**
@@ -50,6 +50,9 @@ export default function CampusModeHUD({
   userWalkingCoords,
   isUserNearby = false,
   selectedPoiId = null,
+  customDestination = null,
+  customDestinationDistance = null,
+  onClearCustomDestination,
   onExit,
   onSelectPoi,
   onToggleCompass,
@@ -113,7 +116,7 @@ export default function CampusModeHUD({
               </p>
             ) : (
               <p className="text-[11px] text-caption truncate">
-                Toque nos prédios para localizar no mapa
+                Segure no mapa para traçar rota ou toque em um prédio
               </p>
             )}
           </div>
@@ -162,6 +165,36 @@ export default function CampusModeHUD({
           </button>
         </div>
       </div>
+
+      {/* Destino Personalizado (Clique e Segura no Mapa) */}
+      {customDestination && (
+        <div className="bg-surface-elevated/95 border border-orange-500/40 rounded-2xl px-3.5 py-2 shadow-lg backdrop-blur-md flex items-center justify-between pointer-events-auto animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-6 h-6 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0 border border-orange-500/30">
+              <Crosshair size={14} />
+            </div>
+            <div className="min-w-0 flex items-center gap-1.5">
+              <span className="text-xs font-bold text-heading truncate">Destino no Mapa</span>
+              {customDestinationDistance && (
+                <span className="px-2 py-0.5 rounded-full bg-orange-500 text-black text-[10px] font-black shrink-0 shadow-sm">
+                  {customDestinationDistance}
+                </span>
+              )}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              playTapSound();
+              onClearCustomDestination?.();
+            }}
+            className="p-1 rounded-lg text-caption hover:text-heading hover:bg-subtle transition-colors cursor-pointer"
+            title="Remover destino"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
 
       {/* Carrossel Horizontal de Atalhos dos Prédios/POIs */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none pointer-events-auto select-none">
