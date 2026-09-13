@@ -168,6 +168,24 @@ export default function Header({ userProfile }) {
     setNewRoute(userProfile?.route || 'Professor Jamil');
   }, [userProfile?.name, userProfile?.faculty, userProfile?.route]);
 
+  // Bloqueio rigoroso de scroll do documento quando qualquer modal estiver aberto
+  useEffect(() => {
+    if (isSettingsOpen || isAnnouncementsOpen || isCalendarOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      window.scrollTo(0, 0);
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      window.scrollTo(0, 0);
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      window.scrollTo(0, 0);
+    };
+  }, [isSettingsOpen, isAnnouncementsOpen, isCalendarOpen]);
+
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
@@ -406,22 +424,54 @@ export default function Header({ userProfile }) {
 
     {/* Settings Modal */}
     {isSettingsOpen && (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsSettingsOpen(false)}></div>
+      <div 
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overscroll-none select-none"
+        onWheel={(e) => {
+          if (!e.target.closest('.custom-scrollbar')) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+        onTouchMove={(e) => {
+          if (!e.target.closest('.custom-scrollbar')) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+      >
+        <div 
+          className="absolute inset-0 bg-black/80 backdrop-blur-sm touch-none overscroll-none" 
+          onClick={() => {
+            setIsSettingsOpen(false);
+            window.scrollTo(0, 0);
+          }}
+        />
         
         <div className="relative w-full max-w-md electric-card bg-card rounded-3xl border border-subtle shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
           {/* Header do Modal */}
-          <div className="p-6 border-b border-subtle bg-gradient-to-b from-primary/10 to-transparent flex justify-between items-center shrink-0">
+          <div 
+            className="p-6 border-b border-subtle bg-gradient-to-b from-primary/10 to-transparent flex justify-between items-center shrink-0 touch-none overscroll-none"
+            onWheel={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
             <h2 className="text-xl font-display font-bold text-heading flex items-center gap-2">
               <Settings size={20} className="text-primary" />
               Configurações
             </h2>
-            <button onClick={() => setIsSettingsOpen(false)} className="text-caption hover:text-heading p-2 rounded-full hover-bg-subtle transition-colors">
+            <button 
+              onClick={() => {
+                setIsSettingsOpen(false);
+                window.scrollTo(0, 0);
+              }} 
+              className="text-caption hover:text-heading p-2 rounded-full hover-bg-subtle transition-colors cursor-pointer"
+            >
               <X size={24} />
             </button>
           </div>
 
-          <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-8">
+          <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-8 overscroll-contain">
             
             {/* Foto de Perfil */}
             <div className="flex flex-col items-center gap-4">

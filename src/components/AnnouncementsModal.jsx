@@ -1,8 +1,64 @@
-import { useState, useEffect } from 'react';
-import { X, Bell, BellOff, Plus, Trash2, Shield, Bus, AlertCircle, AlertTriangle, Info, Send, Check } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Bell, BellOff, Plus, Trash2, Shield, Bus, AlertCircle, AlertTriangle, Info, Send, Check, ChevronDown } from 'lucide-react';
 import { collection, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useCustomAlert } from '../contexts/AlertContext';
+
+const CustomRouteSelect = ({ value, onChange, options }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const selected = options.find(o => o.value === value) || options[0];
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full bg-subtle border border-subtle hover:border-primary/40 rounded-xl px-3 py-2 text-heading text-xs flex items-center justify-between transition-all cursor-pointer shadow-sm"
+      >
+        <span className="font-semibold truncate">{selected.label}</span>
+        <ChevronDown size={14} className={`text-caption transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180 text-primary' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-1.5 bg-card-elevated border border-subtle rounded-2xl shadow-2xl p-1.5 z-50 animate-in fade-in-50 zoom-in-95 duration-150 space-y-1">
+          {options.map((opt) => {
+            const isSelected = opt.value === value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value);
+                  setIsOpen(false);
+                }}
+                className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                  isSelected 
+                    ? 'bg-primary/15 text-primary font-bold' 
+                    : 'text-body hover-bg-subtle hover:text-heading'
+                }`}
+              >
+                <span>{opt.label}</span>
+                {isSelected && <Check size={13} className="text-primary shrink-0" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function AnnouncementsModal({ isOpen, onClose, userProfile, currentUserId }) {
   const { showAlert } = useCustomAlert();
@@ -10,6 +66,8 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
   const [loading, setLoading] = useState(true);
   const [isComposing, setIsComposing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   // Form state
   const canPublish = userProfile?.role === 'admin' || userProfile?.role === 'driver';
@@ -58,10 +116,11 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
   const handlePublish = async (e) => {
     e.preventDefault();
     if (!message.trim()) {
-      showAlert('Digite a mensagem do comunicado.');
+      setFormError('Por favor, digite a mensagem do comunicado antes de publicar.');
       return;
     }
 
+    setFormError('');
     setIsSubmitting(true);
     try {
       // Regra de discrição: se for admin, publica SEMPRE como "Rhyme" (nunca nome pessoal)
@@ -86,17 +145,19 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
       setIsComposing(false);
     } catch (err) {
       console.error('Erro ao publicar comunicado:', err);
-      showAlert('Não foi possível publicar o comunicado. Tente novamente.');
+      setFormError('Não foi possível publicar o comunicado. Tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Tem certeza que deseja excluir este comunicado?')) return;
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    const id = itemToDelete.id;
+    setItemToDelete(null);
     try {
       await deleteDoc(doc(db, 'announcements', id));
-      showAlert('Comunicado removido.');
+      showAlert('Comunicado removido com sucesso.');
     } catch (err) {
       console.error('Erro ao excluir comunicado:', err);
       showAlert('Erro ao remover comunicado.');
@@ -117,10 +178,24 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+    <div 
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overscroll-none select-none"
+      onWheel={(e) => {
+        if (!e.target.closest('.custom-scrollbar')) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }}
+      onTouchMove={(e) => {
+        if (!e.target.closest('.custom-scrollbar')) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }}
+    >
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]" 
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out] touch-none overscroll-none" 
         onClick={onClose}
       />
 
@@ -128,7 +203,13 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
       <div className="relative w-full max-w-lg electric-card bg-card rounded-3xl border border-subtle shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-[fadeIn_0.2s_ease-out]">
         
         {/* Header */}
-        <div className="p-5 border-b border-subtle bg-surface/50 flex justify-between items-center shrink-0">
+        <div 
+          className="p-5 border-b border-subtle bg-surface/50 flex justify-between items-center shrink-0 touch-none overscroll-none"
+          onWheel={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
               <Bell size={18} />
@@ -141,7 +222,7 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
 
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-subtle hover-bg-subtle text-caption hover:text-heading flex items-center justify-center transition-colors border border-subtle"
+            className="w-8 h-8 rounded-full bg-subtle hover-bg-subtle text-caption hover:text-heading flex items-center justify-center transition-colors border border-subtle cursor-pointer"
             title="Fechar"
           >
             <X size={16} />
@@ -150,7 +231,13 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
 
         {/* Sub-Header com Botão de Novo Comunicado para Admin / Motorista */}
         {canPublish && (
-          <div className="px-5 py-3 border-b border-subtle bg-subtle/40 flex items-center justify-between shrink-0">
+          <div 
+            className="px-5 py-3 border-b border-subtle bg-subtle/40 flex items-center justify-between shrink-0 touch-none overscroll-none"
+            onWheel={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
             <div className="text-xs text-body font-medium flex items-center gap-1.5">
               {userProfile?.role === 'admin' ? (
                 <>
@@ -166,8 +253,11 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
             </div>
 
             <button
-              onClick={() => setIsComposing(!isComposing)}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
+              onClick={() => {
+                setIsComposing(!isComposing);
+                setFormError('');
+              }}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer ${
                 isComposing 
                   ? 'bg-subtle text-body hover:text-heading border border-subtle' 
                   : 'btn-primary'
@@ -187,25 +277,32 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
         {/* Formulário de Criação (Composer) */}
         {isComposing && canPublish && (
           <form onSubmit={handlePublish} className="p-5 border-b border-subtle bg-card-elevated space-y-3.5 shrink-0 animate-[fadeIn_0.2s_ease-out]">
+            {formError && (
+              <div className="badge-danger p-2.5 rounded-xl flex items-center gap-2 text-xs animate-in fade-in-50 duration-150">
+                <AlertCircle size={14} className="shrink-0 text-danger" />
+                <span>{formError}</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Seletor de Rota */}
+              {/* Seletor de Rota Customizado */}
               <div>
                 <label className="block text-[11px] font-bold text-caption uppercase tracking-wider mb-1">
-                  Destinatários
+                  Destinatários (Rota)
                 </label>
                 {userProfile?.role === 'admin' ? (
-                  <select
+                  <CustomRouteSelect
                     value={targetRoute}
-                    onChange={(e) => setTargetRoute(e.target.value)}
-                    className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-heading text-xs focus:outline-none focus:border-primary transition-colors cursor-pointer"
-                  >
-                    <option value="Todas">Todas as rotas (Geral)</option>
-                    <option value="Professor Jamil">Rota: Professor Jamil</option>
-                    <option value="Hidrolândia">Rota: Hidrolândia</option>
-                    <option value="Cromínia">Rota: Cromínia</option>
-                  </select>
+                    onChange={(val) => setTargetRoute(val)}
+                    options={[
+                      { value: 'Todas', label: 'Todas as rotas (Geral)' },
+                      { value: 'Professor Jamil', label: 'Rota: Professor Jamil' },
+                      { value: 'Hidrolândia', label: 'Rota: Hidrolândia' },
+                      { value: 'Cromínia', label: 'Rota: Cromínia' }
+                    ]}
+                  />
                 ) : (
-                  <div className="w-full bg-subtle border border-subtle rounded-xl px-3 py-2 text-heading text-xs">
+                  <div className="w-full bg-subtle border border-subtle rounded-xl px-3.5 py-2 text-heading text-xs">
                     Sua Rota: <strong>{userProfile?.route || 'Geral'}</strong>
                   </div>
                 )}
@@ -220,7 +317,7 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
                   <button
                     type="button"
                     onClick={() => setPriority('info')}
-                    className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all border text-center ${
+                    className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all border text-center cursor-pointer ${
                       priority === 'info'
                         ? 'bg-primary/15 text-primary border-primary'
                         : 'bg-subtle text-caption border-transparent hover:text-heading'
@@ -231,7 +328,7 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
                   <button
                     type="button"
                     onClick={() => setPriority('warning')}
-                    className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all border text-center ${
+                    className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all border text-center cursor-pointer ${
                       priority === 'warning'
                         ? 'bg-amber-500/15 text-amber-500 border-amber-500'
                         : 'bg-subtle text-caption border-transparent hover:text-heading'
@@ -242,7 +339,7 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
                   <button
                     type="button"
                     onClick={() => setPriority('urgent')}
-                    className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all border text-center ${
+                    className={`py-1.5 px-2 rounded-xl text-xs font-bold transition-all border text-center cursor-pointer ${
                       priority === 'urgent'
                         ? 'bg-danger/15 text-danger border-danger'
                         : 'bg-subtle text-caption border-transparent hover:text-heading'
@@ -261,12 +358,18 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
               </label>
               <textarea
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={(e) => {
+                  setMessage(e.target.value);
+                  if (formError) setFormError('');
+                }}
                 maxLength={400}
                 rows={3}
                 placeholder="Ex: Cuidado ao fechar a porta da van, não aplique força desnecessária..."
-                className="w-full bg-subtle border border-subtle rounded-xl p-3 text-heading text-sm placeholder:text-caption focus:outline-none focus:border-primary transition-colors resize-none"
-                required
+                className={`w-full bg-subtle border rounded-xl p-3 text-heading text-sm placeholder:text-caption focus:outline-none transition-colors resize-none ${
+                  formError 
+                    ? 'border-danger focus:border-danger focus:ring-1 focus:ring-danger' 
+                    : 'border-subtle focus:border-primary'
+                }`}
               />
               <div className="flex justify-between items-center text-[10px] text-caption mt-1">
                 <span>Dica: Seja claro e direto.</span>
@@ -278,15 +381,18 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
             <div className="flex justify-end gap-2 pt-1">
               <button
                 type="button"
-                onClick={() => setIsComposing(false)}
-                className="px-4 py-2 rounded-xl text-xs font-medium text-caption hover:text-heading transition-colors"
+                onClick={() => {
+                  setIsComposing(false);
+                  setFormError('');
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-medium text-caption hover:text-heading transition-colors cursor-pointer"
               >
                 Descartar
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || !message.trim()}
-                className="btn-primary flex items-center gap-1.5 px-4 py-2 text-xs disabled:opacity-50"
+                className="btn-primary flex items-center gap-1.5 px-4 py-2 text-xs disabled:opacity-50 cursor-pointer"
               >
                 {isSubmitting ? (
                   <>Publicando...</>
@@ -301,7 +407,7 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
         )}
 
         {/* Lista de Comunicados */}
-        <div className="p-5 overflow-y-auto space-y-3.5 flex-1 custom-scrollbar">
+        <div className="p-5 overflow-y-auto space-y-3.5 flex-1 custom-scrollbar overscroll-contain">
           {loading ? (
             <div className="py-12 flex flex-col items-center justify-center text-caption gap-3">
               <div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -384,8 +490,9 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
                     {/* Botão de Exclusão (Admin ou Autor) */}
                     {canDelete && (
                       <button
-                        onClick={() => handleDelete(item.id)}
-                        className="text-caption hover:text-danger p-1 rounded-lg hover:bg-danger/10 transition-colors"
+                        type="button"
+                        onClick={() => setItemToDelete(item)}
+                        className="text-caption hover:text-danger p-1 rounded-lg hover:bg-danger/10 transition-colors cursor-pointer"
                         title="Excluir comunicado"
                       >
                         <Trash2 size={13} />
@@ -409,6 +516,37 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
         </div>
 
       </div>
+
+      {/* Modal Customizado de Confirmação de Exclusão */}
+      {itemToDelete && (
+        <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-[fadeIn_0.15s_ease-out]">
+          <div className="bg-card border border-subtle rounded-3xl p-6 max-w-sm w-full shadow-2xl relative overflow-hidden text-center">
+            <div className="w-12 h-12 bg-danger/10 text-danger rounded-2xl flex items-center justify-center mx-auto mb-3.5 border border-danger/20">
+              <Trash2 size={22} />
+            </div>
+            <h3 className="text-base font-bold text-heading mb-1.5">Excluir comunicado?</h3>
+            <p className="text-xs text-caption mb-5 leading-relaxed">
+              Esta ação não pode ser desfeita e o comunicado será removido permanentemente para todos os alunos.
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setItemToDelete(null)}
+                className="flex-1 py-2.5 rounded-xl bg-subtle hover-bg-subtle text-caption hover:text-heading font-medium text-xs transition-colors border border-subtle cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                className="flex-1 py-2.5 rounded-xl bg-danger hover:bg-danger/90 text-white font-bold text-xs transition-colors shadow-lg shadow-danger/20 cursor-pointer"
+              >
+                Sim, excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

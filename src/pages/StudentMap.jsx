@@ -1539,7 +1539,7 @@ hyme_checkin_prompted_, 'true');
       )}
 
       {/* Mapa */}
-      <div className="flex-1 relative z-0">
+      <div className="flex-1 relative z-0 overflow-hidden">
 
         {/* Barra de Busca de Faculdades e Locais (quando não estiver no Modo Campus e não estiver ajustando local) */}
         {!isCampusModeActive && !isEditingLocation && (
