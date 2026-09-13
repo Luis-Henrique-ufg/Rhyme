@@ -493,14 +493,15 @@ const createCampusPoiIcon = (name, type = 'building', isSelected = false, isDark
   });
 };
 
-const createCustomDestinationIcon = (distanceLabel = '', isDark = true) => {
+const createCustomDestinationIcon = (distanceLabel = '', durationMinutes = null, isDark = true) => {
   const night = isDark;
   const bg = night ? 'rgba(15, 15, 15, 0.94)' : 'rgba(255, 255, 255, 0.96)';
   const border = night ? 'rgba(249, 115, 22, 0.8)' : '#f97316';
+  const durationText = durationMinutes ? ` (~${durationMinutes}min)` : '';
   return L.divIcon({
     html: `
-      <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;width:160px;pointer-events:auto;">
-        <!-- Badge Flutuante com Distância -->
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;cursor:pointer;width:180px;pointer-events:auto;">
+        <!-- Badge Flutuante com Distância e Tempo Estimado -->
         <div style="
           background:${bg};
           color:#f97316;
@@ -518,7 +519,7 @@ const createCustomDestinationIcon = (distanceLabel = '', isDark = true) => {
           gap:4.5px;
         ">
           <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#f97316;"></span>
-          Destino ${distanceLabel ? `• ${distanceLabel}` : ''}
+          Destino ${distanceLabel ? `• ${distanceLabel}` : ''}${durationText}
         </div>
         <!-- Anéis de Radar e Pino Central -->
         <div style="position:relative;width:36px;height:36px;display:flex;align-items:center;justify-content:center;">
@@ -885,12 +886,136 @@ export default function StudentMap() {
     return distKm <= 3.0; // Usuário no campus (até 3km)
   }, [userWalkingCoords, campusFacultyData, student]);
 
+  // Origem da rota pedestre dentro do campus
+  const campusRouteOrigin = useMemo(() => {
+    if (!isCampusModeActive) return null;
+    return (isUserNearCampus && userWalkingCoords) 
+      ? userWalkingCoords 
+      : (userWalkingCoords || campusFacultyData?.coords || getFacultyCoords(student));
+  }, [isCampusModeActive, isUserNearCampus, userWalkingCoords, campusFacultyData, student]);
+
+  // Destino da rota pedestre (destino customizado, POI selecionado ou ponto da van)
+  const campusRouteTarget = useMemo(() => {
+    if (!isCampusModeActive) return null;
+    if (customCampusDestination) {
+      return [customCampusDestination.lat, customCampusDestination.lng];
+    }
+    if (selectedCampusPoi) {
+      return selectedCampusPoi.coords;
+    }
+    if (isUserNearCampus && userWalkingCoords) {
+      return campusFacultyData?.coords || getFacultyCoords(student);
+    }
+    return null;
+  }, [isCampusModeActive, customCampusDestination, selectedCampusPoi, isUserNearCampus, userWalkingCoords, campusFacultyData, student]);
+
+  // Traçado Pedestre pelas calçadas e passarelas internas do campus (Mapbox Walking + OSM Routed-Foot fallback)
+  const campusRouteCacheRef = useRef(new Map());
+  const [campusWalkingRoute, setCampusWalkingRoute] = useState(null);
+  const [campusRouteMetrics, setCampusRouteMetrics] = useState({ distanceMeters: null, durationMinutes: null });
+
+  useEffect(() => {
+    if (!isCampusModeActive || !campusRouteOrigin || !campusRouteTarget) {
+      setCampusWalkingRoute(null);
+      setCampusRouteMetrics({ distanceMeters: null, durationMinutes: null });
+      return;
+    }
+
+    const [oLat, oLng] = campusRouteOrigin;
+    const [tLat, tLng] = campusRouteTarget;
+
+    const straightDistKm = getDistanceFromLatLonInKm(oLat, oLng, tLat, tLng);
+    if (straightDistKm < 0.003) {
+      setCampusWalkingRoute(null);
+      setCampusRouteMetrics({ distanceMeters: 0, durationMinutes: 0 });
+      return;
+    }
+
+    const cacheKey = `${oLat.toFixed(4)},${oLng.toFixed(4)}->${tLat.toFixed(4)},${tLng.toFixed(4)}`;
+    const cached = campusRouteCacheRef.current.get(cacheKey);
+
+    if (cached) {
+      setCampusWalkingRoute(cached.route);
+      setCampusRouteMetrics(cached.metrics);
+      return;
+    }
+
+    // Linha inicial imediata para resposta instantânea na UI
+    setCampusWalkingRoute([campusRouteOrigin, campusRouteTarget]);
+    setCampusRouteMetrics({
+      distanceMeters: Math.round(straightDistKm * 1000),
+      durationMinutes: Math.max(1, Math.round((straightDistKm * 1000) / 70))
+    });
+
+    let isCancelled = false;
+
+    const fetchPedestrianRoute = async () => {
+      try {
+        // 1ª Opção: Mapbox Directions API (Perfil Walking)
+        if (MAPBOX_TOKEN) {
+          const mapboxUrl = `https://api.mapbox.com/directions/v5/mapbox/walking/${oLng},${oLat};${tLng},${tLat}?overview=full&geometries=geojson&access_token=${MAPBOX_TOKEN}`;
+          const res = await fetch(mapboxUrl);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.routes && data.routes[0]?.geometry?.coordinates?.length > 1) {
+              const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+              const fullRoute = [campusRouteOrigin, ...coords, campusRouteTarget];
+              const dist = Math.round(data.routes[0].distance);
+              const mins = Math.max(1, Math.round(data.routes[0].duration / 60));
+
+              if (!isCancelled) {
+                const metrics = { distanceMeters: dist, durationMinutes: mins };
+                campusRouteCacheRef.current.set(cacheKey, { route: fullRoute, metrics });
+                setCampusWalkingRoute(fullRoute);
+                setCampusRouteMetrics(metrics);
+                return;
+              }
+            }
+          }
+        }
+
+        // 2ª Opção (Fallback): OpenStreetMap Routed Foot (Pedestre)
+        const osmFootUrl = `https://routing.openstreetmap.de/routed-foot/route/v1/foot/${oLng},${oLat};${tLng},${tLat}?overview=full&geometries=geojson`;
+        const osmRes = await fetch(osmFootUrl);
+        if (osmRes.ok) {
+          const osmData = await osmRes.json();
+          if (osmData.routes && osmData.routes[0]?.geometry?.coordinates?.length > 1) {
+            const coords = osmData.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+            const fullRoute = [campusRouteOrigin, ...coords, campusRouteTarget];
+            const dist = Math.round(osmData.routes[0].distance);
+            const duration = osmData.routes[0].duration || (dist / 1.16);
+            const mins = Math.max(1, Math.round(duration / 60));
+
+            if (!isCancelled) {
+              const metrics = { distanceMeters: dist, durationMinutes: mins };
+              campusRouteCacheRef.current.set(cacheKey, { route: fullRoute, metrics });
+              setCampusWalkingRoute(fullRoute);
+              setCampusRouteMetrics(metrics);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Campus walking route fallback to straight line:', err);
+      }
+    };
+
+    fetchPedestrianRoute();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [isCampusModeActive, campusRouteOrigin, campusRouteTarget]);
+
   // Distância até o destino customizado selecionado com clique-e-segura
   const customDestinationDistance = useMemo(() => {
     if (!customCampusDestination) return null;
-    const origin = (isUserNearCampus && userWalkingCoords) 
-      ? userWalkingCoords 
-      : (userWalkingCoords || campusFacultyData?.coords || getFacultyCoords(student));
+    if (campusRouteMetrics.distanceMeters != null) {
+      const m = campusRouteMetrics.distanceMeters;
+      if (m < 1000) return `${m}m`;
+      return `${(m / 1000).toFixed(1)}km`;
+    }
+    const origin = campusRouteOrigin;
     if (!origin) return null;
     const km = getDistanceFromLatLonInKm(
       origin[0], origin[1],
@@ -900,7 +1025,7 @@ export default function StudentMap() {
       return `${Math.round(km * 1000)}m`;
     }
     return `${km.toFixed(1)}km`;
-  }, [customCampusDestination, isUserNearCampus, userWalkingCoords, campusFacultyData, student]);
+  }, [customCampusDestination, campusRouteMetrics, campusRouteOrigin]);
 
   const handleCampusLongPress = useCallback((latlng) => {
     playSuccessSound();
@@ -1749,9 +1874,11 @@ export default function StudentMap() {
             vanCoords={campusFacultyData?.coords || getFacultyCoords(student)}
             userWalkingCoords={userWalkingCoords}
             isUserNearby={isUserNearCampus}
+            selectedPoi={selectedCampusPoi}
             selectedPoiId={selectedCampusPoi?.id}
             customDestination={customCampusDestination}
             customDestinationDistance={customDestinationDistance}
+            routeMetrics={campusRouteMetrics}
             onClearCustomDestination={() => setCustomCampusDestination(null)}
             onExit={() => toggleCampusMode()}
             onSelectPoi={handleSelectCampusPoi}
@@ -1824,14 +1951,15 @@ export default function StudentMap() {
           {isCampusModeActive && customCampusDestination && (
             <Marker
               position={[customCampusDestination.lat, customCampusDestination.lng]}
-              icon={createCustomDestinationIcon(customDestinationDistance, isDark)}
+              icon={createCustomDestinationIcon(customDestinationDistance, campusRouteMetrics?.durationMinutes, isDark)}
               zIndexOffset={1400}
             >
               <Popup className="dark-popup">
                 <div className="flex flex-col gap-1 p-0.5">
                   <span className="font-bold text-heading text-xs">Destino Selecionado</span>
                   <span className="text-[11px] text-orange-400 font-semibold">
-                    Distância: {customDestinationDistance || 'Calculando...'}
+                    Distância a pé: {customDestinationDistance || 'Calculando...'}
+                    {campusRouteMetrics?.durationMinutes ? ` (~${campusRouteMetrics.durationMinutes} min)` : ''}
                   </span>
                   <button
                     type="button"
@@ -1848,33 +1976,34 @@ export default function StudentMap() {
             </Marker>
           )}
 
-          {/* Traçado pontilhado pedestre até o ponto da van, POI selecionado ou Destino Personalizado */}
-          {isCampusModeActive && (() => {
-            const origin = (isUserNearCampus && userWalkingCoords)
-              ? userWalkingCoords
-              : (userWalkingCoords || campusFacultyData?.coords || getFacultyCoords(student));
-
-            const targetCoords = customCampusDestination
-              ? [customCampusDestination.lat, customCampusDestination.lng]
-              : (selectedCampusPoi
-                ? selectedCampusPoi.coords
-                : (campusFacultyData?.coords || getFacultyCoords(student)));
-
-            if (!origin || !targetCoords) return null;
-
-            return (
-              <>
-                <Polyline
-                  positions={[origin, targetCoords]}
-                  pathOptions={{ color: '#f97316', weight: 8, opacity: 0.2 }}
-                />
-                <Polyline
-                  positions={[origin, targetCoords]}
-                  pathOptions={{ color: '#f97316', dashArray: '6, 8', weight: 4.5, opacity: 0.95 }}
-                />
-              </>
-            );
-          })()}
+          {/* Traçado pontilhado pedestre pelas calçadas e caminhos internos do campus */}
+          {isCampusModeActive && campusWalkingRoute && campusWalkingRoute.length > 1 && (
+            <>
+              {/* Glow sutil ao redor da rota */}
+              <Polyline
+                positions={campusWalkingRoute}
+                pathOptions={{
+                  color: '#f97316',
+                  weight: 8,
+                  opacity: 0.25,
+                  lineCap: 'round',
+                  lineJoin: 'round'
+                }}
+              />
+              {/* Linha pontilhada pedestre */}
+              <Polyline
+                positions={campusWalkingRoute}
+                pathOptions={{
+                  color: '#f97316',
+                  dashArray: '6, 8',
+                  weight: 4.5,
+                  opacity: 0.95,
+                  lineCap: 'round',
+                  lineJoin: 'round'
+                }}
+              />
+            </>
+          )}
 
           {/* Marcadores dos Prédios/POIs do Campus */}
           {isCampusModeActive && campusPois.map((poi) => {
@@ -1891,7 +2020,15 @@ export default function StudentMap() {
               >
                 {isSelected && (
                   <Popup className="dark-popup">
-                    <span className="font-bold text-heading">{poi.name}</span>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-bold text-heading text-xs">{poi.name}</span>
+                      {campusRouteMetrics?.distanceMeters != null && (
+                        <span className="text-[11px] text-orange-400 font-semibold">
+                          A pé: {campusRouteMetrics.distanceMeters < 1000 ? `${campusRouteMetrics.distanceMeters}m` : `${(campusRouteMetrics.distanceMeters / 1000).toFixed(1)}km`}
+                          {campusRouteMetrics.durationMinutes ? ` (~${campusRouteMetrics.durationMinutes} min)` : ''}
+                        </span>
+                      )}
+                    </div>
                   </Popup>
                 )}
               </Marker>

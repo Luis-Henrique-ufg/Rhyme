@@ -49,9 +49,11 @@ export default function CampusModeHUD({
   vanCoords,
   userWalkingCoords,
   isUserNearby = false,
+  selectedPoi = null,
   selectedPoiId = null,
   customDestination = null,
   customDestinationDistance = null,
+  routeMetrics = null,
   onClearCustomDestination,
   onExit,
   onSelectPoi,
@@ -110,7 +112,19 @@ export default function CampusModeHUD({
                 {isUserNearby ? 'No Campus' : 'Exploração'}
               </span>
             </div>
-            {isUserNearby && distanceInfo ? (
+            {selectedPoi ? (
+              <p className="text-[11px] text-caption truncate">
+                <strong className="text-heading font-semibold">{selectedPoi.name}</strong>:{' '}
+                {routeMetrics?.distanceMeters != null ? (
+                  <span className="text-orange-400 font-bold">
+                    {routeMetrics.distanceMeters < 1000 ? `${routeMetrics.distanceMeters}m` : `${(routeMetrics.distanceMeters / 1000).toFixed(1)}km`}
+                    {routeMetrics.durationMinutes ? ` (~${routeMetrics.durationMinutes} min a pé)` : ''}
+                  </span>
+                ) : (
+                  <span className="text-orange-400 font-semibold">Traçando trajeto a pé...</span>
+                )}
+              </p>
+            ) : isUserNearby && distanceInfo ? (
               <p className="text-[11px] text-caption truncate">
                 Ponto da Van: <strong className="text-orange-400 font-bold">{distanceInfo.meters}m</strong> (~{distanceInfo.minutes} min a pé)
               </p>
@@ -178,6 +192,7 @@ export default function CampusModeHUD({
               {customDestinationDistance && (
                 <span className="px-2 py-0.5 rounded-full bg-orange-500 text-black text-[10px] font-black shrink-0 shadow-sm">
                   {customDestinationDistance}
+                  {routeMetrics?.durationMinutes ? ` • ~${routeMetrics.durationMinutes} min` : ''}
                 </span>
               )}
             </div>
