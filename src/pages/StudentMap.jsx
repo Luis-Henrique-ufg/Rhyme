@@ -453,9 +453,8 @@ const createPedestrianIcon = (isDark = true) => {
             position:relative;
             z-index:2;
           ">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
-              <path d="M4 16v-2.38C4 11.5 6.5 9 9.5 9H10V7a3 3 0 0 1 6 0v2h.5c3 0 5.5 2.5 5.5 4.62V16"/>
-              <circle cx="12" cy="4" r="2"/>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="white" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
             </svg>
           </div>
         </div>
@@ -931,13 +930,13 @@ export default function StudentMap() {
     return distKm <= 3.0; // Usuário no campus (até 3km)
   }, [userWalkingCoords, campusFacultyData, student]);
 
-  // Origem da rota pedestre dentro do campus
+  // Origem da rota pedestre dentro do campus — sempre usa GPS real quando disponível
   const campusRouteOrigin = useMemo(() => {
     if (!isCampusModeActive) return null;
-    return (isUserNearCampus && userWalkingCoords) 
-      ? userWalkingCoords 
-      : (campusFacultyData?.coords || getFacultyCoords(student));
-  }, [isCampusModeActive, isUserNearCampus, userWalkingCoords, campusFacultyData, student]);
+    // Prioridade: GPS em tempo real > coords base do campus (fallback)
+    if (userWalkingCoords) return userWalkingCoords;
+    return campusFacultyData?.coords || getFacultyCoords(student);
+  }, [isCampusModeActive, userWalkingCoords, campusFacultyData, student]);
 
   // Destino da rota pedestre (destino customizado, POI selecionado ou ponto da van)
   const campusRouteTarget = useMemo(() => {
@@ -1396,11 +1395,14 @@ export default function StudentMap() {
   }, [attendance?.tripType]);
 
   // Garante que a rota seja traçada ao carregar a página (F5) caso já esteja liberado
+  // Prioriza GPS em tempo real (userWalkingCoords) sobre coords estáticas do banco de dados
   useEffect(() => {
-    if (isLiberado && attendance?.lat && attendance?.lng && routePath.length === 0) {
-      drawRouteToBus(attendance.lat, attendance.lng);
+    if (isLiberado && routePath.length === 0) {
+      const lat = userWalkingCoords?.[0] ?? attendance?.lat;
+      const lng = userWalkingCoords?.[1] ?? attendance?.lng;
+      if (lat && lng) drawRouteToBus(lat, lng);
     }
-  }, [isLiberado, attendance?.lat, attendance?.lng, trip?.busLocation]);
+  }, [isLiberado, attendance?.lat, attendance?.lng, userWalkingCoords, trip?.busLocation]);
 
   // Efeito de transmissão de GPS da Van pelo aluno embarcado
   useEffect(() => {
