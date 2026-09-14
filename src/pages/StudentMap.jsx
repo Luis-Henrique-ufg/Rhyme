@@ -404,37 +404,66 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
   return R * c; // Distância em km
 }
 
-const createPedestrianIcon = () => {
+const createPedestrianIcon = (isDark = true) => {
+  const night = isDark;
+  const labelBg = night ? 'rgba(15,15,15,0.94)' : 'rgba(255,255,255,0.96)';
+  const labelText = night ? '#f4f4f5' : '#18181b';
+
   return L.divIcon({
     html: `
-      <div style="position:relative;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:none;">
         <div style="
-          position:absolute;
-          width:36px;height:36px;
-          border-radius:50%;
-          background:rgba(249,115,22,0.25);
-          border:1.5px solid rgba(249,115,22,0.6);
-          animation:studentHalo 2s ease-out infinite;
-        "></div>
-        <div style="
-          width:24px;height:24px;
-          border-radius:50%;
-          background:#f97316;
-          border:2px solid #ffffff;
-          box-shadow:0 4px 12px rgba(0,0,0,0.35);
-          display:flex;align-items:center;justify-content:center;
-          color:#000000;
+          background: ${labelBg};
+          color: ${labelText};
+          font-size: 9.5px;
+          font-weight: 800;
+          font-family: Inter, system-ui, sans-serif;
+          padding: 1.5px 7px;
+          border-radius: 6px;
+          white-space: nowrap;
+          box-shadow: 0 2px 8px rgba(0,0,0,${night ? '0.6' : '0.18'});
+          border: 1px solid ${night ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'};
+          margin-bottom: 3px;
+          z-index: 3;
+          display: flex;
+          align-items: center;
+          gap: 3.5px;
         ">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 16v-2.38C4 11.5 6.5 9 9.5 9H10V7a3 3 0 0 1 6 0v2h.5c3 0 5.5 2.5 5.5 4.62V16"/>
-            <circle cx="12" cy="4" r="2"/>
-          </svg>
+          <span style="width: 5px; height: 5px; border-radius: 50%; background: #f97316; display: inline-block; box-shadow: 0 0 6px #f97316;"></span>
+          <span>Você</span>
+        </div>
+
+        <div style="position:relative;width:34px;height:34px;display:flex;align-items:center;justify-content:center;">
+          <div style="
+            position:absolute;
+            inset:-3px;
+            border-radius:50%;
+            background:rgba(249,115,22,0.22);
+            border:1.5px solid rgba(249,115,22,0.65);
+            animation:studentHalo 2.2s ease-out infinite;
+          "></div>
+          <div style="
+            width:26px;height:26px;
+            border-radius:50%;
+            background:#f97316;
+            border:2px solid #ffffff;
+            box-shadow:0 3px 10px rgba(0,0,0,${night ? '0.6' : '0.25'}), 0 0 0 1px rgba(249,115,22,0.4);
+            display:flex;align-items:center;justify-content:center;
+            color:#ffffff;
+            position:relative;
+            z-index:2;
+          ">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
+              <path d="M4 16v-2.38C4 11.5 6.5 9 9.5 9H10V7a3 3 0 0 1 6 0v2h.5c3 0 5.5 2.5 5.5 4.62V16"/>
+              <circle cx="12" cy="4" r="2"/>
+            </svg>
+          </div>
         </div>
       </div>
     `,
     className: 'bg-transparent border-none',
-    iconSize: [36, 36],
-    iconAnchor: [18, 18]
+    iconSize: [60, 50],
+    iconAnchor: [30, 36]
   });
 };
 
@@ -907,7 +936,7 @@ export default function StudentMap() {
     if (!isCampusModeActive) return null;
     return (isUserNearCampus && userWalkingCoords) 
       ? userWalkingCoords 
-      : (userWalkingCoords || campusFacultyData?.coords || getFacultyCoords(student));
+      : (campusFacultyData?.coords || getFacultyCoords(student));
   }, [isCampusModeActive, isUserNearCampus, userWalkingCoords, campusFacultyData, student]);
 
   // Destino da rota pedestre (destino customizado, POI selecionado ou ponto da van)
@@ -1590,16 +1619,16 @@ export default function StudentMap() {
         (error) => {
           console.warn("GPS não capturado com precisão, usando coordenadas base:", error?.message || error);
           const facCoords = getFacultyCoords(student);
-          const fallbackLat = attendance?.lat ?? (facCoords ? facCoords[0] : CENTER[0]);
-          const fallbackLng = attendance?.lng ?? (facCoords ? facCoords[1] : CENTER[1]);
+          const fallbackLat = userWalkingCoords?.[0] ?? attendance?.lat ?? (facCoords ? facCoords[0] : CENTER[0]);
+          const fallbackLng = userWalkingCoords?.[1] ?? attendance?.lng ?? (facCoords ? facCoords[1] : CENTER[1]);
           executeLiberacao(fallbackLat, fallbackLng);
         },
         { enableHighAccuracy: true, timeout: 8000 }
       );
     } else {
       const facCoords = getFacultyCoords(student);
-      const fallbackLat = attendance?.lat ?? (facCoords ? facCoords[0] : CENTER[0]);
-      const fallbackLng = attendance?.lng ?? (facCoords ? facCoords[1] : CENTER[1]);
+      const fallbackLat = userWalkingCoords?.[0] ?? attendance?.lat ?? (facCoords ? facCoords[0] : CENTER[0]);
+      const fallbackLng = userWalkingCoords?.[1] ?? attendance?.lng ?? (facCoords ? facCoords[1] : CENTER[1]);
       executeLiberacao(fallbackLat, fallbackLng);
     }
   };
@@ -1760,11 +1789,28 @@ export default function StudentMap() {
   // --- 2. Handlers do Modo Campus Pedestre ---
   const startCampusWalkingWatch = () => {
     if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      // 1. Obter posição GPS imediatamente com alta precisão sem depender do delay do watchPosition
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (pos?.coords?.latitude != null && pos?.coords?.longitude != null) {
+            setUserWalkingCoords([pos.coords.latitude, pos.coords.longitude]);
+          }
+        },
+        (err) => console.warn('Aviso GPS imediato:', err?.message || err),
+        { enableHighAccuracy: true, maximumAge: 4000, timeout: 8000 }
+      );
+
+      // 2. Acompanhar em tempo real conforme o usuário caminha
+      if (walkingWatchIdRef.current) {
+        navigator.geolocation.clearWatch(walkingWatchIdRef.current);
+      }
       walkingWatchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
-          setUserWalkingCoords([pos.coords.latitude, pos.coords.longitude]);
+          if (pos?.coords?.latitude != null && pos?.coords?.longitude != null) {
+            setUserWalkingCoords([pos.coords.latitude, pos.coords.longitude]);
+          }
         },
-        (err) => console.warn('Erro GPS pedestre:', err),
+        (err) => console.warn('Aviso GPS contínuo pedestre:', err?.message || err),
         { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
       );
     }
@@ -1811,6 +1857,18 @@ export default function StudentMap() {
   };
 
   useEffect(() => {
+    // Pré-aquecimento rápido e passivo do GPS se já autorizado
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (pos?.coords?.latitude != null && pos?.coords?.longitude != null) {
+            setUserWalkingCoords([pos.coords.latitude, pos.coords.longitude]);
+          }
+        },
+        () => {},
+        { enableHighAccuracy: false, maximumAge: 60000, timeout: 4000 }
+      );
+    }
     return () => stopCampusWalkingWatch();
   }, []);
 
@@ -1888,7 +1946,7 @@ export default function StudentMap() {
         {!isCampusModeActive && !isEditingLocation && (
           <MapSearchBar
             onSelectPlace={handleSelectSearchedPlace}
-            userCoords={attendance?.lat && attendance?.lng ? [attendance.lat, attendance.lng] : null}
+            userCoords={userWalkingCoords || (attendance?.lat && attendance?.lng ? [attendance.lat, attendance.lng] : null)}
           />
         )}
 
@@ -1963,14 +2021,23 @@ export default function StudentMap() {
             key={isDark ? 'night' : 'day'}
           />
 
-          {/* Marcador pedestre no Modo Campus (apenas se estiver próximo ou dentro do campus) */}
-          {isCampusModeActive && isUserNearCampus && userWalkingCoords && (
-            <Marker position={userWalkingCoords} icon={createPedestrianIcon()} zIndexOffset={1100}>
-              <Popup className="dark-popup">
-                <span className="font-bold text-heading">Você caminhando no campus</span>
-              </Popup>
-            </Marker>
-          )}
+          {/* Marcador pedestre no Modo Campus com localização em tempo real */}
+          {isCampusModeActive && (() => {
+            const currentCoords = userWalkingCoords || (attendance?.lat && attendance?.lng ? [attendance.lat, attendance.lng] : (campusFacultyData?.coords || getFacultyCoords(student)));
+            if (!currentCoords || !Array.isArray(currentCoords) || !Number.isFinite(currentCoords[0]) || !Number.isFinite(currentCoords[1])) return null;
+            return (
+              <Marker position={currentCoords} icon={createPedestrianIcon(isDark)} zIndexOffset={1200}>
+                <Popup className="dark-popup">
+                  <div className="flex flex-col gap-0.5 p-0.5">
+                    <span className="font-bold text-heading text-xs">Você</span>
+                    <span className="text-[11px] text-caption">
+                      {userWalkingCoords ? 'Sua localização atual (GPS em tempo real)' : 'Localização base no campus'}
+                    </span>
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })()}
 
           {/* Marcador do Destino Personalizado (Clique e Segura no Modo Campus) */}
           {isCampusModeActive && customCampusDestination && (
@@ -2064,8 +2131,8 @@ export default function StudentMap() {
           {searchedPlace && Array.isArray(searchedPlace.coords) && Number.isFinite(searchedPlace.coords[0]) && Number.isFinite(searchedPlace.coords[1]) && (
             <Marker position={searchedPlace.coords} icon={createSearchedPlaceIcon(searchedPlace.name)} zIndexOffset={1200} />
           )}
-          {/* Marcador do próprio aluno — antes de liberar (oculto se o aluno estiver transmitindo como a Van) */}
-          {attendance?.status !== 'liberado' && attendance?.status !== 'embarcado' && !isBroadcasting && attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && (() => {
+          {/* Marcador do próprio aluno — antes de liberar (oculto se o aluno estiver transmitindo como a Van OU em Modo Campus) */}
+          {!isCampusModeActive && attendance?.status !== 'liberado' && attendance?.status !== 'embarcado' && !isBroadcasting && attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && (() => {
             const isSoIda = attendance?.tripType === 'ida';
             const icon = createStudentMapIcon('Você', true, false, isSoIda, isDark);
             return (
@@ -2079,6 +2146,8 @@ export default function StudentMap() {
 
           {/* Marcadores de Alunos — Alunos com status liberado ou só ida */}
           {publicList.filter(a => {
+            // Em Modo Campus, o próprio aluno é renderizado pelo marcador pedestre do campus
+            if (isCampusModeActive && a.studentId === user?.uid) return false;
             // Se o próprio aluno está transmitindo o GPS da van, a Van já representa sua posição na rota
             if (isBroadcasting && a.studentId === user?.uid) return false;
             // Se este aluno é o transmissor da viagem (a bordo), a Van já representa sua posição
@@ -2147,7 +2216,11 @@ export default function StudentMap() {
 
           {/* Botão de Centralizar no GPS */}
           {!isEditingLocation && (
-            isEmbarcado && activeBusLocation?.lat != null && activeBusLocation?.lng != null ? (
+            isCampusModeActive && userWalkingCoords ? (
+              <RecenterButton lat={userWalkingCoords[0]} lng={userWalkingCoords[1]} isPanelCollapsed={isPanelCollapsed} />
+            ) : isCampusModeActive && (campusFacultyData?.coords || getFacultyCoords(student)) ? (
+              <RecenterButton lat={(campusFacultyData?.coords || getFacultyCoords(student))[0]} lng={(campusFacultyData?.coords || getFacultyCoords(student))[1]} isPanelCollapsed={isPanelCollapsed} />
+            ) : isEmbarcado && activeBusLocation?.lat != null && activeBusLocation?.lng != null ? (
               <RecenterButton lat={activeBusLocation.lat} lng={activeBusLocation.lng} isPanelCollapsed={isPanelCollapsed} />
             ) : attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) ? (
               <RecenterButton lat={attendance.lat} lng={attendance.lng} isPanelCollapsed={isPanelCollapsed} />

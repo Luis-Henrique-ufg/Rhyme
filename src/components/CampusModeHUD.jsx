@@ -142,7 +142,7 @@ export default function CampusModeHUD({
 
         {/* Botões de Ação do Topo */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {isUserNearby && (
+          {userWalkingCoords && (
             <button
               type="button"
               onClick={() => {
