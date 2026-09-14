@@ -1740,7 +1740,7 @@ export default function StudentMap() {
   const handleSetStopLocation = async (coords) => {
     const lat = coords?.lat ?? coords?.[0];
     const lng = coords?.lng ?? coords?.[1];
-    if (lat == null || lng == null) return;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
     const stopObj = { lat, lng };
     setWakeUpSettings(prev => {
@@ -1816,8 +1816,12 @@ export default function StudentMap() {
 
   // --- 3. Handlers da Busca no Mapa ---
   const handleSelectSearchedPlace = (place) => {
+    if (!place?.coords || !Array.isArray(place.coords) || !Number.isFinite(place.coords[0]) || !Number.isFinite(place.coords[1])) {
+      console.warn('Coordenadas inválidas para o local pesquisado:', place);
+      return;
+    }
     setSearchedPlace(place);
-    if (place.coords && mapInstanceRef.current) {
+    if (mapInstanceRef.current) {
       mapInstanceRef.current.flyTo(place.coords, 17, { animate: true, duration: 1.2 });
     }
   };
@@ -2057,7 +2061,7 @@ export default function StudentMap() {
           })}
 
           {/* Marcador de local pesquisado */}
-          {searchedPlace && (
+          {searchedPlace && Array.isArray(searchedPlace.coords) && Number.isFinite(searchedPlace.coords[0]) && Number.isFinite(searchedPlace.coords[1]) && (
             <Marker position={searchedPlace.coords} icon={createSearchedPlaceIcon(searchedPlace.name)} zIndexOffset={1200} />
           )}
           {/* Marcador do próprio aluno — antes de liberar (oculto se o aluno estiver transmitindo como a Van) */}

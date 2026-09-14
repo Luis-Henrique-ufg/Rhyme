@@ -75,18 +75,31 @@ export default function MapSearchBar({
       setIsSearchingOnline(true);
       try {
         // Bias na região metropolitana de Goiânia / Goiás
-        const endpoint = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Goiânia')}&limit=4&addressdetails=1`;
+        const endpoint = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Goiânia')}&limit=5&addressdetails=1`;
         const res = await fetch(endpoint, {
-          headers: { 'Accept-Language': 'pt-BR,pt;q=0.9' }
+          headers: { 'Accept-Language': 'pt-BR,pt;q=0.9', 'User-Agent': 'RhymeApp/1.0' }
         });
         if (res.ok) {
           const data = await res.json();
-          const mapped = data.map(item => ({
-            name: item.display_name.split(',')[0],
-            category: item.type || 'Local',
-            coords: [parseFloat(item.lat), parseFloat(item.lng)],
-            isOnline: true
-          }));
+          const mapped = (data || [])
+            .map(item => {
+              const lat = parseFloat(item.lat);
+              const lon = parseFloat(item.lon ?? item.lng);
+              if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+
+              const nameParts = (item.display_name || '').split(',');
+              const primaryName = nameParts[0]?.trim() || 'Local';
+              const secondaryDesc = nameParts.slice(1, 3).map(p => p.trim()).filter(Boolean).join(', ');
+
+              return {
+                name: primaryName,
+                category: secondaryDesc || item.type || item.class || 'Endereço',
+                coords: [lat, lon],
+                isOnline: true
+              };
+            })
+            .filter(Boolean);
+
           setOnlineResults(mapped);
         }
       } catch (err) {
