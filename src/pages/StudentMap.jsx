@@ -2257,149 +2257,149 @@ export default function StudentMap() {
             </div>
           </>
         )}
-      </div>
 
-      {/* Container Flutuante Inferior (Ações do Aluno) */}
-      {!isEditingLocation && (
-        <div className={`absolute bottom-[72px] w-full electric-card bg-card border-t border-subtle rounded-t-[2.5rem] shadow-2xl z-[2000] backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isPanelCollapsed ? 'translate-y-[calc(100%+72px)] opacity-0 pointer-events-none' : 'translate-y-0 opacity-100 pointer-events-auto'}`}>
-        {/* Espaçamento superior que substitui o drag handle */}
-        <div className="w-full flex justify-center pt-6 pb-2"></div>
+        {/* Container Flutuante Inferior (Ações do Aluno) */}
+        {!isEditingLocation && (
+          <div className={`absolute bottom-0 left-0 right-0 w-full electric-card bg-card border-t border-subtle rounded-t-[2.5rem] rounded-b-none shadow-2xl z-[2000] backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] max-h-[calc(100%-80px)] overflow-y-auto custom-scrollbar ${isPanelCollapsed ? 'translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100 pointer-events-auto'}`}>
+            {/* Espaçamento superior que substitui o drag handle */}
+            <div className="w-full flex justify-center pt-6 pb-2"></div>
 
-        <div className="px-6 pb-8">
-          {!trip ? (
-            <div className="text-center py-6">
-              <p className="text-caption font-medium">Nenhuma viagem ativa no momento</p>
-            </div>
-          ) : trip.status === 'finished' ? (
-            isLiberado ? (
-              <div className="text-center py-4 animate-[fadeIn_0.5s_ease-out]">
-                <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <div className="px-6 pb-8">
+              {!trip ? (
+                <div className="text-center py-6">
+                  <p className="text-caption font-medium">Nenhuma viagem ativa no momento</p>
                 </div>
-                <h2 className="text-2xl font-bold text-red-500 mb-2 tracking-tight">Viagem Encerrada</h2>
-                <p className="text-body font-medium leading-relaxed mb-4 text-sm">O motorista finalizou a rota, mas você ainda estava aguardando. Você ficou para trás?</p>
-                <button 
-                  onClick={handleEmergencia}
-                  disabled={isSubmitting}
-                  className="w-full py-4 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold text-lg shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? "REGISTRANDO..." : "FUI ESQUECIDO"}
-                </button>
-              </div>
-            ) : attendance?.status === 'esquecido' ? (
-              <div className="text-center py-6 animate-[fadeIn_0.5s_ease-out]">
-                <div className="w-16 h-16 bg-orange-500/10 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(249,115,22,0.2)]">
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <h2 className="text-2xl font-bold text-orange-500 mb-2 tracking-tight">Alerta Ativo</h2>
-                <p className="text-body font-medium leading-relaxed">Sua ocorrência foi registrada e a coordenação foi avisada do incidente.</p>
-              </div>
-            ) : (
-              <div className="text-center py-6 animate-[fadeIn_0.5s_ease-out]">
-                <div className="w-16 h-16 bg-green-500/10 text-accent rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
-                  <Check size={32} />
-                </div>
-                <h2 className="text-2xl font-bold text-heading mb-2 tracking-tight">Viagem Finalizada</h2>
-                <p className="text-body font-medium leading-relaxed">Todos os alunos foram entregues aos seus destinos.</p>
-              </div>
-            )
-          ) : (
-            <div className="flex flex-col gap-5">
-              
-              {/* Status Header: Destino e ETA */}
-              <div className="flex justify-between items-start">
-                <div className="flex-1 min-w-0 pr-4">
-                  <span className="text-[11px] font-bold text-orange-500 uppercase tracking-widest block mb-1">
-                    {student?.faculty || 'DESTINO'}
-                  </span>
-                  <h2 className="text-xl font-bold text-heading truncate">
-                    {isEmbarcado ? (
-                      'Embarcado no ônibus'
-                    ) : isLiberado ? (
-                      'Confirmado! Aguarde na portaria'
-                    ) : isCancelado ? (
-                      'Presença cancelada hoje'
-                    ) : (
-                      'Aguardando sua confirmação'
-                    )}
-                  </h2>
-                </div>
-
-                {/* Previsão OSRM / Distância Dinâmica */}
-                {isLiberado && trip?.status === 'in_progress' && (
-                  <div className="text-right shrink-0 bg-subtle border border-subtle rounded-2xl px-4 py-2">
-                    <span className="text-[10px] text-caption uppercase tracking-wider block font-bold">Chegada Estimada</span>
-                    <span className="text-2xl font-black text-heading font-mono tracking-tight">
-                      {etaMinutes !== null ? (
-                        etaMinutes <= 1 ? '<1 min' : `~${etaMinutes} min`
-                      ) : (
-                        'Calculando...'
-                      )}
-                    </span>
+              ) : trip.status === 'finished' ? (
+                isLiberado ? (
+                  <div className="text-center py-4 animate-[fadeIn_0.5s_ease-out]">
+                    <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    </div>
+                    <h2 className="text-2xl font-bold text-red-500 mb-2 tracking-tight">Viagem Encerrada</h2>
+                    <p className="text-body font-medium leading-relaxed mb-4 text-sm">O motorista finalizou a rota, mas você ainda estava aguardando. Você ficou para trás?</p>
+                    <button 
+                      onClick={handleEmergencia}
+                      disabled={isSubmitting}
+                      className="w-full py-4 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold text-lg shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {isSubmitting ? "REGISTRANDO..." : "FUI ESQUECIDO"}
+                    </button>
                   </div>
-                )}
-              </div>
+                ) : attendance?.status === 'esquecido' ? (
+                  <div className="text-center py-6 animate-[fadeIn_0.5s_ease-out]">
+                    <div className="w-16 h-16 bg-orange-500/10 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(249,115,22,0.2)]">
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h2 className="text-2xl font-bold text-orange-500 mb-2 tracking-tight">Alerta Ativo</h2>
+                    <p className="text-body font-medium leading-relaxed">Sua ocorrência foi registrada e a coordenação foi avisada do incidente.</p>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 animate-[fadeIn_0.5s_ease-out]">
+                    <div className="w-16 h-16 bg-green-500/10 text-accent rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
+                      <Check size={32} />
+                    </div>
+                    <h2 className="text-2xl font-bold text-heading mb-2 tracking-tight">Viagem Finalizada</h2>
+                    <p className="text-body font-medium leading-relaxed">Todos os alunos foram entregues aos seus destinos.</p>
+                  </div>
+                )
+              ) : (
+                <div className="flex flex-col gap-5">
+                  
+                  {/* Status Header: Destino e ETA */}
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1 min-w-0 pr-4">
+                      <span className="text-[11px] font-bold text-orange-500 uppercase tracking-widest block mb-1">
+                        {student?.faculty || 'DESTINO'}
+                      </span>
+                      <h2 className="text-xl font-bold text-heading truncate">
+                        {isEmbarcado ? (
+                          'Embarcado no ônibus'
+                        ) : isLiberado ? (
+                          'Confirmado! Aguarde na portaria'
+                        ) : isCancelado ? (
+                          'Presença cancelada hoje'
+                        ) : (
+                          'Aguardando sua confirmação'
+                        )}
+                      </h2>
+                    </div>
 
-              {/* Botão de Ação Principal */}
-              <div className="pt-2 flex flex-col gap-2">
-                {/* Se liberado: Mostra o botão LIBERADO com status e opção de atualizar localização */}
-                {isLiberado && (
-                  <>
-                    <button
-                      onClick={handleLiberar}
-                      disabled={isSubmitting}
-                      className="w-full py-4 rounded-full font-display font-black text-base uppercase tracking-wider transition-all duration-300 relative overflow-hidden flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 cursor-pointer"
-                      title="Toque para atualizar sua localização novamente"
-                    >
-                      <Check size={22} strokeWidth={3} />
-                      LIBERADO {attendance?.tripType === 'ida' ? '(SÓ IDA)' : attendance?.tripType === 'volta' ? '(SÓ VOLTA)' : '(IDA E VOLTA)'}
-                    </button>
-                    
-                    <button
-                      onClick={() => handleCancelarEmbarque()}
-                      disabled={isSubmitting}
-                      className="w-full py-2.5 rounded-full font-display font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 text-caption hover:text-danger hover:bg-danger-bg border border-subtle cursor-pointer"
-                    >
-                      <X size={15} />
-                      Cancelar embarque
-                    </button>
-                  </>
-                )}
+                    {/* Previsão OSRM / Distância Dinâmica */}
+                    {isLiberado && trip?.status === 'in_progress' && (
+                      <div className="text-right shrink-0 bg-subtle border border-subtle rounded-2xl px-4 py-2">
+                        <span className="text-[10px] text-caption uppercase tracking-wider block font-bold">Chegada Estimada</span>
+                        <span className="text-2xl font-black text-heading font-mono tracking-tight">
+                          {etaMinutes !== null ? (
+                            etaMinutes <= 1 ? '<1 min' : `~${etaMinutes} min`
+                          ) : (
+                            'Calculando...'
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
-                {/* Se não liberado (aguardando ou cancelado): botão LIBERADO que faz a captura de localização */}
-                {!isLiberado && (
-                  <button
-                    onClick={handleLiberar}
-                    disabled={isSubmitting || isEmbarcado}
-                    className={`w-full py-4 rounded-full font-display font-black text-base uppercase tracking-wider transition-all duration-300 relative overflow-hidden flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] cursor-pointer ${
-                      isEmbarcado
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-default'
-                        : 'btn-primary'
-                    }`}
-                  >
-                    <span className="relative z-10 flex items-center gap-2">
-                      {isEmbarcado ? (
-                        <>
-                          <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                          EMBARCADO
-                        </>
-                      ) : (
-                        <>
-                          <Check size={24} strokeWidth={2.5} />
-                          LIBERADO
-                        </>
-                      )}
-                    </span>
-                  </button>
-                )}
-                {/* Botão de Compartilhar GPS foi movido para a barra inferior */}
-              </div>
+                  {/* Botão de Ação Principal */}
+                  <div className="pt-2 flex flex-col gap-2">
+                    {/* Se liberado: Mostra o botão LIBERADO com status e opção de atualizar localização */}
+                    {isLiberado && (
+                      <>
+                        <button
+                          onClick={handleLiberar}
+                          disabled={isSubmitting}
+                          className="w-full py-4 rounded-full font-display font-black text-base uppercase tracking-wider transition-all duration-300 relative overflow-hidden flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 cursor-pointer"
+                          title="Toque para atualizar sua localização novamente"
+                        >
+                          <Check size={22} strokeWidth={3} />
+                          LIBERADO {attendance?.tripType === 'ida' ? '(SÓ IDA)' : attendance?.tripType === 'volta' ? '(SÓ VOLTA)' : '(IDA E VOLTA)'}
+                        </button>
+                        
+                        <button
+                          onClick={() => handleCancelarEmbarque()}
+                          disabled={isSubmitting}
+                          className="w-full py-2.5 rounded-full font-display font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 text-caption hover:text-danger hover:bg-danger-bg border border-subtle cursor-pointer"
+                        >
+                          <X size={15} />
+                          Cancelar embarque
+                        </button>
+                      </>
+                    )}
 
+                    {/* Se não liberado (aguardando ou cancelado): botão LIBERADO que faz a captura de localização */}
+                    {!isLiberado && (
+                      <button
+                        onClick={handleLiberar}
+                        disabled={isSubmitting || isEmbarcado}
+                        className={`w-full py-4 rounded-full font-display font-black text-base uppercase tracking-wider transition-all duration-300 relative overflow-hidden flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] cursor-pointer ${
+                          isEmbarcado
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-default'
+                            : 'btn-primary'
+                        }`}
+                      >
+                        <span className="relative z-10 flex items-center gap-2">
+                          {isEmbarcado ? (
+                            <>
+                              <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                              EMBARCADO
+                            </>
+                          ) : (
+                            <>
+                              <Check size={24} strokeWidth={2.5} />
+                              LIBERADO
+                            </>
+                          )}
+                        </span>
+                      </button>
+                    )}
+                    {/* Botão de Compartilhar GPS foi movido para a barra inferior */}
+                  </div>
+
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-      )}
 
       {/* Bottom Navigation Bar (WhatsApp style) */}
       {!isEditingLocation && (
