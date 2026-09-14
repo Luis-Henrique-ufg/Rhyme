@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manual de Processos de Software — Rhyme | Versão 2.0</title>
+  <meta name="description" content="Manual de Processos de Software v2.0 para o sistema Rhyme (Transporte Universitário em Tempo Real) — INF0449 UFG. Suporta Modo Leitura e Modo Apresentação para Projetor.">
+  
+  <!-- Tailwind CSS & Iconify -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+
+  <!-- Google Fonts: Newsreader, Instrument Sans, Inter, IBM Plex Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,200;0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            warm: {
+              beige: '#E6E3D6',
+              light: '#EAE8DE',
+              sage: '#9EA08F',
+              lime: '#D4F268',
+              limeHover: '#C3E354',
+              paleYellow: '#FBFCD4',
+              palePink: '#EBC8D6',
+              paleBlue: '#C4C9D9'
+            },
+            rhyme: {
+              primary: '#0F172A',
+              accent: '#0D9488',
+              accentLight: '#2DD4BF',
+              bus: '#F59E0B',
+              route: '#6366F1'
+            },
+            stone: {
+              950: '#0c0a09',
+              900: '#1c1917',
+              800: '#292524',
+              700: '#44403c',
+              600: '#57534e',
+              500: '#78716c',
+              400: '#a8a29e',
+              300: '#d6d3d1',
+              200: '#e7e5e4',
+              100: '#f5f5f4',
+              50: '#fafaf9'
+            }
+          },
+          fontFamily: {
+            sans: ['"Instrument Sans"', 'Inter', 'sans-serif'],
+            serif: ['"Newsreader"', '"Playfair Display"', 'serif'],
+            mono: ['"IBM Plex Mono"', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Instrument Sans', sans-serif;
+      background-color: #E6E3D6;
+      color: #262624;
+      line-height: 1.6;
+      transition: all 0.3s ease;
+    }
+
+    .font-serif {
+      font-family: 'Newsreader', serif;
+    }
+
+    /* Serrated bottom ticket pattern */
+    .ticket-bottom {
+      background-image: radial-gradient(circle, transparent 50%, #9EA08F 50%);
+      background-size: 20px 20px;
+      background-position: -10px -10px;
+      height: 10px;
+      width: 100%;
+      transform: rotate(180deg);
+    }
+
+    /* Sticky Navigation */
+    .ds-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background-color: rgba(230, 227, 214, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(38, 38, 36, 0.12);
+      transition: all 0.3s ease;
+    }
+
+    /* Custom Editable Inputs */
+    .editable-slot {
+      border-bottom: 1px dashed rgba(28, 25, 23, 0.3);
+      padding: 1px 4px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .editable-slot:hover, .editable-slot:focus {
+      border-bottom-color: #1c1917;
+      background: rgba(212, 242, 104, 0.3);
+    }
+
+    /* ==========================================================================
+       MODO APRESENTAÇÃO (OTIMIZADO PARA PROJETOR DE SALA DE AULA)
+       ISOLADO DENTRO DE @media screen PARA NÃO AFETAR O PRINT / PDF!
+       ========================================================================== */
+    :root {
+      --pres-scale: 1;
+    }
+
+    @media screen {
+      body.presentation-mode .ds-nav {
+        display: none !important;
+      }
+
+      body.presentation-mode {
+        font-size: calc(22px * var(--pres-scale)) !important;
+        line-height: 1.75 !important;
+        background-color: #E6E3D6 !important;
+        color: #0c0a09 !important;
+      }
+
+      body.presentation-mode .print-container {
+        max-width: 1550px !important;
+        padding-left: 3rem !important;
+        padding-right: 3rem !important;
+        padding-top: 2.5rem !important;
+        padding-bottom: 45vh !important;
+      }
+
+      body.presentation-mode h1 {
+        font-size: calc(clamp(4.2rem, 7.5vw, 7rem) * var(--pres-scale)) !important;
+        line-height: 0.95 !important;
+        letter-spacing: -0.035em !important;
+      }
+
+      body.presentation-mode h2 {
+        font-size: calc(clamp(3rem, 5vw, 5rem) * var(--pres-scale)) !important;
+        line-height: 1.05 !important;
+        margin-bottom: 1.75rem !important;
+        letter-spacing: -0.02em !important;
+      }
+
+      body.presentation-mode h3 {
+        font-size: calc(clamp(2rem, 3.2vw, 3rem) * var(--pres-scale)) !important;
+        line-height: 1.2 !important;
+      }
+
+      body.presentation-mode h4 {
+        font-size: calc(1.55rem * var(--pres-scale)) !important;
+        line-height: 1.3 !important;
+      }
+
+      body.presentation-mode p,
+      body.presentation-mode li {
+        font-size: calc(1.35rem * var(--pres-scale)) !important;
+        line-height: 1.75 !important;
+        color: #1c1917 !important;
+      }
+
+      body.presentation-mode .text-sm {
+        font-size: calc(1.22rem * var(--pres-scale)) !important;
+        line-height: 1.65 !important;
+      }
+
+      body.presentation-mode .text-xs {
+        font-size: calc(1.08rem * var(--pres-scale)) !important;
+        line-height: 1.5 !important;
+      }
+
+      body.presentation-mode table {
+        font-size: calc(1.22rem * var(--pres-scale)) !important;
+      }
+
+      body.presentation-mode th,
+      body.presentation-mode td {
+        padding: 1.4rem 1.85rem !important;
+        font-size: calc(1.22rem * var(--pres-scale)) !important;
+      }
+
+      body.presentation-mode th {
+        font-size: calc(1.08rem * var(--pres-scale)) !important;
+        letter-spacing: 0.08em !important;
+      }
+
+      body.presentation-mode .rounded-3xl,
+      body.presentation-mode .rounded-2xl {
+        padding: 2.75rem !important;
+        box-shadow: 0 24px 50px -12px rgba(0, 0, 0, 0.09) !important;
+        border-width: 2px !important;
+        border-color: #d6d3d1 !important;
+      }
+
+      body.presentation-mode .grid-cols-4,
+      body.presentation-mode .lg\:grid-cols-4,
+      body.presentation-mode .sm\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 2rem !important;
+      }
+
+      body.presentation-mode .grid-cols-5,
+      body.presentation-mode .lg\:grid-cols-5 {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 2rem !important;
+      }
+
+      body.presentation-mode #capa .max-w-md {
+        max-width: 620px !important;
+      }
+
+      body.presentation-mode .slide-spotlight {
+        scroll-margin-top: 40px;
+        min-height: 88vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-top: 2rem;
+        padding-bottom: 25vh !important;
+        border-bottom: 2px dashed rgba(158, 160, 143, 0.45);
+        transition: all 0.3s ease;
+      }
+
+      body.presentation-mode .presentation-slide-active {
+        background: rgba(255, 255, 255, 0.45);
+        border-radius: 2.5rem;
+        box-shadow: 0 0 0 10px rgba(158, 160, 143, 0.18);
+        padding: 3.5rem !important;
+        margin-bottom: 4rem;
+      }
+
+      body.presentation-mode #presenterDeck {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        z-index: 9999 !important;
+      }
+
+      #presenterDeck.deck-bottom {
+        bottom: 1.5rem !important;
+        top: auto !important;
+        transform: translate(-50%, 0) !important;
+      }
+      #presenterDeck.deck-top {
+        top: 1.5rem !important;
+        bottom: auto !important;
+        transform: translate(-50%, 0) !important;
+      }
+
+      #presenterDeck.deck-idle {
+        opacity: 0.18 !important;
+        transform: translate(-50%, 12px) scale(0.96) !important;
+      }
+      #presenterDeck.deck-idle:hover {
+        opacity: 1 !important;
+        transform: translate(-50%, 0) scale(1) !important;
+      }
+
+      #presenterDeck.deck-minimized #deckFullControls {
+        display: none !important;
+      }
+      #presenterDeck.deck-minimized {
+        padding: 0.4rem 0.8rem !important;
+        border-radius: 9999px !important;
+      }
+    }
+
+    /* Print & PDF Layout Rules */
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 1.5cm 1.2cm 1.5cm 1.2cm;
+      }
+      body {
+        background: #ffffff !important;
+        color: #1c1917 !important;
+        font-size: 10pt !important;
+        line-height: 1.45 !important;
+      }
+      .ds-nav, #presenterDeck, .no-print {
+        display: none !important;
+      }
+      .print-container {
+        max-width: 100% !important;
+        padding: 0 !important;
+      }
+      .print-page-break {
+        page-break-before: always !important;
+        break-before: page !important;
+      }
+      .print-page-cover {
+        page-break-after: always !important;
+        break-after: page !important;
+        min-height: 95vh !important;
+      }
+      .shadow-sm, .shadow-md, .shadow-xl, .shadow-2xl {
+        box-shadow: none !important;
+      }
+      .border {
+        border-color: #d6d3d1 !important;
+      }
+    }
+  </style>
+</head>
+<body class="selection:bg-[#D4F268] selection:text-stone-900">
+
+  <!-- TOP STICKY BAR: MODO LEITURA -->
+  <nav class="ds-nav py-3.5 px-6" aria-label="Navegação do Manual">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="#hero" class="flex items-center gap-2 text-stone-900 font-serif text-lg font-medium tracking-tight hover:opacity-80 transition-opacity">
+          <div class="w-8 h-8 rounded-lg bg-stone-900 text-[#E6E3D6] flex items-center justify-center font-bold text-sm shadow-sm">R</div>
+          <span class="font-bold font-sans tracking-tight">Rhyme</span>
+          <span class="text-xs font-mono uppercase tracking-widest text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-300/40 font-semibold">v2.0</span>
+        </a>
+      </div>
+
+      <div class="hidden xl:flex items-center gap-6 text-xs font-sans font-medium text-stone-600">
+        <a href="#capa" class="hover:text-stone-900 transition-colors">Capa & Squad</a>
+        <a href="#historico" class="hover:text-stone-900 transition-colors">Histórico</a>
+        <a href="#sec1" class="hover:text-stone-900 transition-colors">1. O Software Rhyme</a>
+        <a href="#sec2" class="hover:text-stone-900 transition-colors">2. Acordos (ISO 12207)</a>
+        <a href="#sec3" class="hover:text-stone-900 transition-colors">3. Ciclo de Vida (5 Pilares)</a>
+        <a href="#sec4" class="hover:text-stone-900 transition-colors">4. Matriz RACI</a>
+        <a href="#sec-pop" class="hover:text-stone-900 transition-colors">5. POPs Operacionais</a>
+        <a href="#referencias" class="hover:text-stone-900 transition-colors">Referências</a>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="togglePresentationMode()" class="px-3.5 py-1.5 rounded-full bg-stone-900 text-[#E6E3D6] text-xs font-medium flex items-center gap-1.5 hover:bg-stone-800 transition-all shadow-sm" title="Ativa visual para Projetor (Slides + Deck)">
+          <iconify-icon icon="solar:presentation-graph-linear" width="16"></iconify-icon>
+          <span class="hidden sm:inline">Modo Projetor</span>
+        </button>
+        <button onclick="window.print()" class="p-2 rounded-full border border-stone-800/15 text-stone-700 hover:bg-stone-800/5 transition-colors" title="Imprimir / Exportar PDF">
+          <iconify-icon icon="solar:printer-linear" width="16"></iconify-icon>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="print-container max-w-7xl mx-auto px-6 py-8" id="hero">
+
+    <!-- SEÇÃO / SLIDE 1: CAPA & SQUAD -->
+    <section id="capa" class="slide-spotlight ds-section min-h-[85vh] flex flex-col justify-between pt-8 pb-16 border-b border-stone-300/40 print-page-cover">
+      <!-- Cabeçalho Acadêmico -->
+      <div class="w-full flex flex-col md:flex-row md:items-center justify-between pb-8 border-b border-stone-800/10 gap-4">
+        <div>
+          <span class="text-[11px] font-bold tracking-[0.15em] uppercase text-stone-500 font-sans block mb-1">
+            Universidade Federal de Goiás • Instituto de Informática
+          </span>
+          <p class="text-sm font-medium text-stone-800 font-sans">
+            INF0449 • Processos de Engenharia de Software • Semestre 2026/2
+          </p>
+        </div>
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-stone-400/30 bg-white/40 text-xs font-sans text-stone-700 self-start md:self-auto">
+          <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+          <span>Versão Oficial 2.0 • Sistema Rhyme</span>
+        </div>
+      </div>
+
+      <!-- Hero Visual Central -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center my-12">
+        <!-- Textos Principais -->
+        <div class="lg:col-span-7 flex flex-col items-start">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-stone-400/30 bg-stone-100/40 text-xs text-stone-700 mb-6 font-sans">
+            <span class="w-2 h-2 rounded-full bg-[#0D9488]"></span>
+            <span>Manual Oficial de Governança de Software • ISO/IEC/IEEE 12207</span>
+          </div>
+
+          <h1 class="text-5xl md:text-7xl lg:text-8xl leading-[0.95] tracking-tight text-stone-900 mb-6 font-serif font-light">
+            <span class="block text-stone-500 italic font-serif">Manual de</span>
+            Processos
+            <span class="block text-stone-900">de Software <span class="text-emerald-700 font-sans font-bold text-4xl md:text-5xl align-top">v2.0</span></span>
+          </h1>
+
+          <p class="text-lg md:text-xl text-stone-600 max-w-xl leading-relaxed mb-8 font-sans font-normal">
+            Governança, processos de acordo (aquisição e fornecimento), arquitetura serverless em tempo real, ciclo de vida e procedimentos operacionais padronizados para o sistema <strong>Rhyme</strong>.
+          </p>
+
+          <div class="flex flex-wrap items-center gap-4">
+            <a href="#sec1" class="px-7 py-3.5 bg-stone-900 text-[#E6E3D6] rounded-full text-sm font-medium flex items-center gap-3 hover:bg-stone-800 transition-all shadow-xl shadow-stone-900/10">
+              <span>Apresentação Rhyme</span>
+              <iconify-icon icon="solar:arrow-right-linear" width="18"></iconify-icon>
+            </a>
+            <a href="#sec2" class="px-6 py-3.5 bg-transparent border border-stone-800/20 text-stone-900 rounded-full text-sm font-medium hover:bg-stone-800/5 transition-colors">
+              <span>Processos de Acordo</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Ticket Card do Squad (Rhyme Core) -->
+        <div class="lg:col-span-5 flex justify-center lg:justify-end">
+          <div class="w-full max-w-md bg-[#9EA08F] shadow-2xl rounded-2xl overflow-hidden transform hover:-translate-y-1 transition-transform duration-300">
+            <!-- Ticket Header -->
+            <div class="p-6 border-b border-stone-900/10 flex justify-between items-start">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-widest text-stone-800/70 mb-1 font-sans">Equipe de Engenharia</p>
+                <h3 class="font-serif text-3xl text-stone-900 leading-tight">Squad Rhyme Core</h3>
+              </div>
+              <iconify-icon class="text-stone-900" icon="solar:bus-bold" width="28"></iconify-icon>
+            </div>
+
+            <!-- Ticket Body -->
+            <div class="p-6 bg-[#9EA08F] text-stone-900">
+              <p class="text-xs font-bold uppercase tracking-widest text-stone-800/70 mb-3 font-sans">Membros do Squad & Papéis</p>
+              
+              <ul class="space-y-2.5 text-xs font-sans">
+                <li class="p-2.5 bg-white/40 rounded-lg flex justify-between items-center backdrop-blur-sm">
+                  <span contenteditable="true" class="editable-slot font-semibold text-stone-900">[Líder de Produto / PO]</span>
+                  <span contenteditable="true" class="editable-slot font-mono text-stone-700">Mat: 202600001</span>
+                </li>
+                <li class="p-2.5 bg-white/40 rounded-lg flex justify-between items-center backdrop-blur-sm">
+                  <span contenteditable="true" class="editable-slot font-semibold text-stone-900">[Tech Lead / Fullstack]</span>
+                  <span contenteditable="true" class="editable-slot font-mono text-stone-700">Mat: 202600002</span>
+                </li>
+                <li class="p-2.5 bg-white/40 rounded-lg flex justify-between items-center backdrop-blur-sm">
+                  <span contenteditable="true" class="editable-slot font-semibold text-stone-900">[Cloud & PWA Engineer]</span>
+                  <span contenteditable="true" class="editable-slot font-mono text-stone-700">Mat: 202600003</span>
+                </li>
+                <li class="p-2.5 bg-white/40 rounded-lg flex justify-between items-center backdrop-blur-sm">
+                  <span contenteditable="true" class="editable-slot font-semibold text-stone-900">[QA & Operações de Campo]</span>
+                  <span contenteditable="true" class="editable-slot font-mono text-stone-700">Mat: 202600004</span>
+                </li>
+              </ul>
+
+              <!-- Barcode Visual -->
+              <div class="mt-6 pt-4 border-t border-stone-900/10 flex items-end justify-between gap-1 h-8 opacity-70">
+                <div class="w-1 bg-stone-900 h-full"></div>
+                <div class="w-0.5 bg-stone-900 h-full"></div>
+                <div class="w-2 bg-stone-900 h-full"></div>
+                <div class="w-1 bg-stone-900 h-3/4"></div>
+                <div class="w-3 bg-stone-900 h-full"></div>
+                <div class="w-0.5 bg-stone-900 h-full"></div>
+                <div class="w-1 bg-stone-900 h-3/4"></div>
+                <div class="w-4 bg-stone-900 h-full"></div>
+                <div class="w-1 bg-stone-900 h-full"></div>
+                <div class="w-2 bg-stone-900 h-full"></div>
+              </div>
+            </div>
+
+            <!-- Serrated Bottom -->
+            <div class="h-3 w-full bg-[#E6E3D6]" style="mask-image: radial-gradient(circle at 10px 0, transparent 0, transparent 5px, black 5px); mask-size: 20px 10px; mask-repeat: repeat-x;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rodapé da Capa -->
+      <div class="w-full flex justify-between items-center pt-6 border-t border-stone-800/10 text-xs font-sans text-stone-500">
+        <span>Goiânia • GO • Setembro de 2026</span>
+        <span>Projeto Rhyme • Rotas Cromínia & Professor Jamil</span>
+      </div>
+    </section>
+
+    <!-- METRICS OVERVIEW -->
+    <div class="my-16 grid grid-cols-2 md:grid-cols-4 gap-6 no-print">
+      <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1 font-sans">Módulo 01</p>
+        <p class="text-3xl md:text-4xl font-serif text-stone-900">Rhyme</p>
+        <p class="text-xs text-stone-500 mt-2 font-sans">Transporte Universitário em Tempo Real</p>
+      </div>
+
+      <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1 font-sans">Módulo 02</p>
+        <p class="text-3xl md:text-4xl font-serif text-stone-900">Acordos</p>
+        <p class="text-xs text-stone-500 mt-2 font-sans">Aquisição PaaS & Fornecimento SLA</p>
+      </div>
+
+      <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1 font-sans">SLA de Uptime</p>
+        <p class="text-3xl md:text-4xl font-serif text-stone-900">99,9%</p>
+        <p class="text-xs text-stone-500 mt-2 font-sans">Janela Crítica: 15h00 às 23h30</p>
+      </div>
+
+      <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm">
+        <p class="text-xs font-bold uppercase tracking-widest text-stone-400 mb-1 font-sans">Versão Atual</p>
+        <p class="text-3xl md:text-4xl font-serif text-stone-900">v2.0</p>
+        <p class="text-xs text-stone-500 mt-2 font-sans">Manual Completo + 4 POPs</p>
+      </div>
+    </div>
+
+    <!-- SEÇÃO / SLIDE 2: HISTÓRICO DE VERSÕES DO DOCUMENTO -->
+    <section id="historico" class="slide-spotlight ds-section py-16 border-t border-stone-300/40 print-page-break">
+      <div class="mb-8">
+        <span class="text-[11px] font-bold tracking-[0.15em] uppercase text-stone-500 font-sans block mb-2">
+          Auditoria e Governança • Página 02
+        </span>
+        <h2 class="text-4xl md:text-5xl font-serif font-light text-stone-900 leading-tight">
+          Histórico de Versões do Documento
+        </h2>
+        <p class="text-stone-600 text-sm max-w-2xl mt-2 font-sans">
+          Registro formal de todas as revisões realizadas pela equipe <strong>Squad Rhyme Core</strong> ao longo do ciclo de engenharia de software.
+        </p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
+        <table class="w-full text-left text-xs font-sans">
+          <thead>
+            <tr class="border-b border-stone-200 bg-stone-50 text-stone-700 font-semibold uppercase tracking-wider">
+              <th class="py-4 px-6">Versão</th>
+              <th class="py-4 px-6">Data</th>
+              <th class="py-4 px-6">Autor / Papel</th>
+              <th class="py-4 px-6">Revisor</th>
+              <th class="py-4 px-6">Descrição das Alterações e Entregáveis</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-stone-100 text-stone-800">
+            <tr class="hover:bg-stone-50/80 transition-colors">
+              <td class="py-4 px-6 font-mono font-bold text-stone-900">v1.0</td>
+              <td class="py-4 px-6 font-mono text-stone-600">08/09/2026</td>
+              <td class="py-4 px-6">PO & Arquiteto</td>
+              <td class="py-4 px-6">Tech Lead</td>
+              <td class="py-4 px-6 leading-relaxed">
+                Levantamento inicial de requisitos funcionais (RF01 a RF10), requisitos não funcionais (RNF01 a RNF06), modelagem NoSQL do Firestore (<code class="font-mono bg-stone-100 px-1 py-0.5 rounded">students</code>, <code class="font-mono bg-stone-100 px-1 py-0.5 rounded">trips</code>, <code class="font-mono bg-stone-100 px-1 py-0.5 rounded">attendance</code>) e mapeamento das rotas de Cromínia e Professor Jamil.
+              </td>
+            </tr>
+            <tr class="hover:bg-stone-50/80 transition-colors">
+              <td class="py-4 px-6 font-mono font-bold text-stone-900">v1.5</td>
+              <td class="py-4 px-6 font-mono text-stone-600">09/09/2026</td>
+              <td class="py-4 px-6">Tech Lead & Dev</td>
+              <td class="py-4 px-6">QA Lead</td>
+              <td class="py-4 px-6 leading-relaxed">
+                Implementação do PWA com Vite e Tailwind CSS 4, mapas interativos Leaflet, roteamento protegido via Firebase Authentication, componentes de carregamento, toggle de tema e testes preliminares de build.
+              </td>
+            </tr>
+            <tr class="hover:bg-stone-50/80 transition-colors bg-emerald-50/40">
+              <td class="py-4 px-6 font-mono font-bold text-emerald-800">v2.0</td>
+              <td class="py-4 px-6 font-mono text-stone-600">10/09/2026</td>
+              <td class="py-4 px-6 font-semibold">Squad Rhyme Core</td>
+              <td class="py-4 px-6">Docente INF0449</td>
+              <td class="py-4 px-6 leading-relaxed font-medium text-stone-900">
+                <strong>Versão 2.0 Completa:</strong> Consolidação dos Processos de Acordo (ISO/IEC/IEEE 12207), matriz de fornecedores terceirizados (Firebase/OSM), Acordo de Nível de Serviço (SLA 99,9%), formalização dos 5 pilares do ciclo de vida, matriz RACI detalhada e 4 Procedimentos Operacionais Padronizados (Deploy, Geofencing, Emergência e Git).
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SEÇÃO / SLIDE 3: 1. APRESENTAÇÃO DO SOFTWARE RHYME -->
+    <section id="sec1" class="slide-spotlight ds-section py-16 border-t border-stone-300/40 print-page-break">
+      <div class="mb-8">
+        <span class="text-[11px] font-bold tracking-[0.15em] uppercase text-stone-500 font-sans block mb-2">
+          Parte 1 — Definição e Escopo do Produto
+        </span>
+        <h2 class="text-4xl md:text-5xl font-serif font-light text-stone-900 leading-tight">
+          1. Apresentação do Software (Rhyme)
+        </h2>
+        <p class="text-stone-600 text-sm max-w-2xl mt-2 font-sans">
+          Definição do produto, público-alvo, escopo, funcionalidades operacionais, restrições e premissas arquiteturais.
+        </p>
+      </div>
+
+      <!-- 1.1 Nome e Problema -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+        <div class="lg:col-span-7 bg-white rounded-3xl p-8 border border-stone-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-stone-400 font-sans block mb-2">1.1. Nome e Descrição</span>
+            <h3 class="text-2xl md:text-3xl font-serif text-stone-900 mb-3">Rhyme — Gestão e Rastreamento de Transporte Universitário</h3>
+            <p class="text-stone-600 text-sm leading-relaxed mb-6 font-sans">
+              O <strong>Rhyme</strong> é uma plataforma digital em tempo real projetada para modernizar e substituir as tradicionais listas de presença manuais compartilhadas em grupos de WhatsApp. O sistema atende rotas universitárias intermunicipais (ligando cidades como Cromínia e Professor Jamil às universidades da Região Metropolitana de Goiânia, como UFG, PUC e UniCamps), centralizando a telemetria do ônibus, o status de liberação dos estudantes e a notificação inteligente por proximidade física.
+            </p>
+          </div>
+
+          <div class="p-5 bg-warm-light rounded-2xl border border-stone-200">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-stone-800 mb-1 font-sans">O Problema Crítico que Resolve:</h4>
+            <p class="text-xs text-stone-600 leading-relaxed font-sans">
+              Coordenar embarques através de grupos de mensagens instantâneas gera <strong>sobrecarga cognitiva severa e distração perigosa ao volante</strong> para o motorista, que é forçado a ler mensagens de texto com o veículo em movimento. Paralelamente, os alunos sofrem com a incerteza dos horários de chegada, o risco constante de serem esquecidos em pontos isolados à noite e o desperdício de tempo e combustível do ônibus rodando para paradas vazias.
+            </p>
+          </div>
+        </div>
+
+        <!-- 1.2 Público Alvo -->
+        <div class="lg:col-span-5 bg-white rounded-3xl p-8 border border-stone-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-stone-400 font-sans block mb-2">1.2. Público-Alvo e Stakeholders</span>
+            <h3 class="text-2xl font-serif text-stone-900 mb-4">Usuários e Atores Chave</h3>
+            <ul class="space-y-3 font-sans text-xs text-stone-600">
+              <li class="flex items-start gap-3 p-3 bg-stone-50 rounded-xl">
+                <iconify-icon icon="solar:user-graduate-linear" class="text-stone-800 shrink-0 mt-0.5" width="20"></iconify-icon>
+                <div>
+                  <strong class="text-stone-900 block">Estudantes Universitários:</strong>
+                  Cerca de 30 alunos por rota que necessitam monitorar o ônibus, registrar sua liberação da aula com 1 clique e receber avisos push de chegada.
+                </div>
+              </li>
+              <li class="flex items-start gap-3 p-3 bg-stone-50 rounded-xl">
+                <iconify-icon icon="solar:steering-wheel-linear" class="text-stone-800 shrink-0 mt-0.5" width="20"></iconify-icon>
+                <div>
+                  <strong class="text-stone-900 block">Motoristas de Transporte:</strong>
+                  Profissionais que necessitam de um painel consolidado com contadores legíveis, transmissão automática de GPS e lista consolidada por faculdade.
+                </div>
+              </li>
+              <li class="flex items-start gap-3 p-3 bg-stone-50 rounded-xl">
+                <iconify-icon icon="solar:buildings-linear" class="text-stone-800 shrink-0 mt-0.5" width="20"></iconify-icon>
+                <div>
+                  <strong class="text-stone-900 block">Associações Estudantis & Prefeituras:</strong>
+                  Gestores que buscam otimização de combustível, histórico auditável de viagens e redução do risco de incidentes de segurança.
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- 1.3 Módulos Funcionais do Rhyme -->
+      <div class="mb-8">
+        <span class="text-xs font-bold uppercase tracking-wider text-stone-400 font-sans block mb-4">1.3. Escopo Funcional do Sistema</span>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          
+          <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm hover:border-stone-400 transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-warm-light flex items-center justify-center text-stone-900 mb-4">
+              <iconify-icon icon="solar:map-point-wave-bold" width="22"></iconify-icon>
+            </div>
+            <h4 class="font-serif text-lg font-medium text-stone-900 mb-2">Rastreamento & Geofencing</h4>
+            <p class="text-xs text-stone-600 leading-relaxed font-sans mb-3">
+              Mapa interativo Leaflet com renderização dos pontos de embarque universitários e da telemetria contínua do ônibus via GPS.
+            </p>
+            <span class="inline-block text-[10px] font-mono font-medium text-stone-500 bg-stone-100 px-2 py-0.5 rounded">
+              Haversine 1km • FCM Push
+            </span>
+          </div>
+
+          <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm hover:border-stone-400 transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-warm-light flex items-center justify-center text-stone-900 mb-4">
+              <iconify-icon icon="solar:check-circle-bold" width="22"></iconify-icon>
+            </div>
+            <h4 class="font-serif text-lg font-medium text-stone-900 mb-2">Status One-Touch do Aluno</h4>
+            <p class="text-xs text-stone-600 leading-relaxed font-sans mb-3">
+              Botão simplificado para indicar 'Liberado' ou 'Aguardando', sincronizando instantaneamente no Firestore para todos os nós conectados.
+            </p>
+            <span class="inline-block text-[10px] font-mono font-medium text-stone-500 bg-stone-100 px-2 py-0.5 rounded">
+              Firestore Listener &lt;100ms
+            </span>
+          </div>
+
+          <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm hover:border-stone-400 transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-warm-light flex items-center justify-center text-stone-900 mb-4">
+              <iconify-icon icon="solar:bus-bold" width="22"></iconify-icon>
+            </div>
+            <h4 class="font-serif text-lg font-medium text-stone-900 mb-2">Cockpit do Motorista</h4>
+            <p class="text-xs text-stone-600 leading-relaxed font-sans mb-3">
+              Dashboard de alto contraste com contagem de alunos liberados por faculdade, botão de iniciar/encerrar viagem e alertas sonoros.
+            </p>
+            <span class="inline-block text-[10px] font-mono font-medium text-stone-500 bg-stone-100 px-2 py-0.5 rounded">
+              Interface Veicular • Áudio Alert
+            </span>
+          </div>
+
+          <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm hover:border-stone-400 transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-warm-light flex items-center justify-center text-stone-900 mb-4">
+              <iconify-icon icon="solar:shield-warning-bold" width="22"></iconify-icon>
+            </div>
+            <h4 class="font-serif text-lg font-medium text-stone-900 mb-2">Emergência & Colaboração</h4>
+            <p class="text-xs text-stone-600 leading-relaxed font-sans mb-3">
+              Recurso 'Fui Esquecido' para alerta prioritário e modo âncora colaborativa, permitindo que alunos a bordo transmitam o GPS caso o motorista perca o sinal.
+            </p>
+            <span class="inline-block text-[10px] font-mono font-medium text-stone-500 bg-stone-100 px-2 py-0.5 rounded">
+              Âncora Colaborativa • Emergência
+            </span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 1.4 Restrições, Premissas e Arquitetura -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="bg-white rounded-3xl p-8 border border-stone-200 shadow-sm">
+          <span class="text-xs font-bold uppercase tracking-wider text-stone-400 font-sans block mb-2">1.4. Restrições e Premissas</span>
+          <h3 class="text-xl font-serif text-stone-900 mb-4">Limites Operacionais e Regulatórios</h3>
+          <div class="space-y-3 font-sans text-xs text-stone-600">
+            <div class="p-3 bg-stone-50 rounded-xl border border-stone-200/60">
+              <strong class="text-stone-900 block mb-1">Acesso Universal via PWA (Sem App Store):</strong>
+              Premissa de que os alunos e motoristas utilizam sistemas operacionais heterogêneos (Android, iOS). A solução deve rodar 100% no navegador e ser instalável sem burocracia de lojas.
+            </div>
+            <div class="p-3 bg-stone-50 rounded-xl border border-stone-200/60">
+              <strong class="text-stone-900 block mb-1">Resiliência à Conectividade Intermitente em Rodovia:</strong>
+              Em trajetos rurais entre municípios, a rede 4G pode oscilar. O Service Worker e o Firestore Offline Persistence devem reter o estado e re-sincronizar sem travar a interface.
+            </div>
+            <div class="p-3 bg-stone-50 rounded-xl border border-stone-200/60">
+              <strong class="text-stone-900 block mb-1">Conformidade com a LGPD:</strong>
+              A geolocalização do aluno não é rastreada de forma contínua ou perpétua. As coordenadas são associadas estritamente ao ponto de embarque da faculdade e descartadas após o término da viagem.
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-8 border border-stone-200 shadow-sm">
+          <span class="text-xs font-bold uppercase tracking-wider text-stone-400 font-sans block mb-2">1.5. Arquitetura Tecnológica</span>
+          <h3 class="text-xl font-serif text-stone-900 mb-4">Stack Serverless Orientado a Eventos</h3>
+          <div class="space-y-3 font-sans text-xs text-stone-600">
+            <div class="flex items-center justify-between p-2.5 bg-stone-50 rounded-lg">
+              <span class="font-medium text-stone-800">Frontend Web & PWA</span>
+              <span class="font-mono bg-stone-200/80 px-2 py-0.5 rounded text-stone-700">React 19 • Vite 8 • Tailwind CSS 4</span>
+            </div>
+            <div class="flex items-center justify-between p-2.5 bg-stone-50 rounded-lg">
+              <span class="font-medium text-stone-800">Camada de Mapas & Roteamento</span>
+              <span class="font-mono bg-stone-200/80 px-2 py-0.5 rounded text-stone-700">Leaflet 1.9 • React-Leaflet 5 • OpenStreetMap</span>
+            </div>
+            <div class="flex items-center justify-between p-2.5 bg-stone-50 rounded-lg">
+              <span class="font-medium text-stone-800">Banco de Dados em Tempo Real</span>
+              <span class="font-mono bg-stone-200/80 px-2 py-0.5 rounded text-stone-700">Google Cloud Firestore (NoSQL Realtime)</span>
+            </div>
+            <div class="flex items-center justify-between p-2.5 bg-stone-50 rounded-lg">
+              <span class="font-medium text-stone-800">Lógica Serverless & Geofencing</span>
+              <span class="font-mono bg-stone-200/80 px-2 py-0.5 rounded text-stone-700">Firebase Cloud Functions v2 (Trigger onUpdate)</span>
+            </div>
+            <div class="flex items-center justify-between p-2.5 bg-stone-50 rounded-lg">
+              <span class="font-medium text-stone-800">Notificações Push & Hosting</span>
+              <span class="font-mono bg-stone-200/80 px-2 py-0.5 rounded text-stone-700">Firebase Cloud Messaging (FCM) & Hosting CDN</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO / SLIDE 4: 2. PROCESSOS DE ACORDO (ISO/IEC/IEEE 12207) -->
+    <section id="sec2" class="slide-spotlight ds-section py-16 border-t border-stone-300/40 print-page-break">
+      <div class="mb-8">
+        <span class="text-[11px] font-bold tracking-[0.15em] uppercase text-stone-500 font-sans block mb-2">
+          Parte 2 — Governança Contratual conforme ISO/IEC/IEEE 12207
+        </span>
+        <h2 class="text-4xl md:text-5xl font-serif font-light text-stone-900 leading-tight">
+          2. Processos de Acordo (Aquisição & Fornecimento)
+        </h2>
+        <p class="text-stone-600 text-sm max-w-2xl mt-2 font-sans">
+          Governança formal das relações comerciais e tecnológicas do Rhyme, tanto na contratação de infraestrutura terceirizada quanto no fornecimento da plataforma como serviço aos estudantes e municípios.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <!-- 2.1 Aquisição -->
+        <div class="bg-white rounded-3xl p-8 border border-stone-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-start mb-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-stone-400 font-sans">2.1. Processo de Aquisição</span>
+              <span class="px-2.5 py-1 rounded-full bg-stone-100 text-[10px] font-mono font-medium text-stone-600">Como Adquirente</span>
+            </div>
+            <h3 class="text-2xl font-serif text-stone-900 mb-4">Serviços Contratados em PaaS/SaaS</h3>
+            <p class="text-xs text-stone-600 leading-relaxed mb-6 font-sans">
+              Para viabilizar uma operação estável e econômica sem custo fixo de servidores legados, o projeto adota infraestrutura de ponta contratada sob modelo PaaS/Serverless:
+            </p>
+            <ul class="space-y-3 font-sans text-xs text-stone-700">
+              <li class="p-3 bg-stone-50 rounded-xl">
+                <strong class="text-stone-900 block mb-0.5">Google Cloud / Firebase Platform:</strong>
+                Subscrição PaaS com SLA contratado de 99,95% de disponibilidade. Provê banco Firestore com replicação multi-região, Firebase Authentication e Cloud Functions v2 elásticas.
+              </li>
+              <li class="p-3 bg-stone-50 rounded-xl">
+                <strong class="text-stone-900 block mb-0.5">Cartografia Digital OpenStreetMap & Tile CDN:</strong>
+                Camada de renderização geográfica aberta com cache em CDN, garantindo ausência de limites punitivos de faturamento por requisições de mapa.
+              </li>
+              <li class="p-3 bg-stone-50 rounded-xl">
+                <strong class="text-stone-900 block mb-0.5">Infraestrutura Web Push / FCM:</strong>
+                Serviço de mensageria para entrega de alertas push em segundo plano sem necessidade de manter sockets abertos no aparelho do estudante.
+              </li>
+            </ul>
+          </div>
+          <div class="mt-6 pt-4 border-t border-stone-100 flex items-center justify-between text-[11px] font-mono text-stone-500">
+            <span>ISO 12207: Cláusula 6.1.1 (Aquisição)</span>
+            <span>Auditoria Contratual Semestral</span>
+          </div>
+        </div>
+
+        <!-- 2.2 Fornecimento -->
+        <div class="bg-white rounded-3xl p-8 border border-stone-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-start mb-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-stone-400 font-sans">2.2. Processo de Fornecimento</span>
+              <span class="px-2.5 py-1 rounded-full bg-emerald-100 text-[10px] font-mono font-medium text-emerald-800">Como Provedor</span>
+            </div>
+            <h3 class="text-2xl font-serif text-stone-900 mb-4">Acordo de Nível de Serviço (SLA) com Usuários</h3>
+            <p class="text-xs text-stone-600 leading-relaxed mb-6 font-sans">
+              O Rhyme é disponibilizado como serviço essencial de transporte para a Associação Estudantil e Prefeituras conveniadas, sob as seguintes cláusulas garantidas:
+            </p>
+            <ul class="space-y-3 font-sans text-xs text-stone-700">
+              <li class="p-3 bg-stone-50 rounded-xl">
+                <div class="flex justify-between items-center mb-1">
+                  <strong class="text-stone-900">Uptime Crítico na Janela Noturna:</strong>
+                  <span class="font-mono text-emerald-700 font-bold">99,9%</span>
+                </div>
+                <span class="text-stone-500 block leading-normal">
+                  Disponibilidade prioritária das <strong>15h00 às 23h30</strong> em dias úteis, período correspondente à saída e retorno dos estudantes universitários.
+                </span>
+              </li>
+              <li class="p-3 bg-stone-50 rounded-xl">
+                <div class="flex justify-between items-center mb-1">
+                  <strong class="text-stone-900">RTO (Tempo Máximo de Restauração):</strong>
+                  <span class="font-mono text-stone-800 font-bold">&lt; 15 min</span>
+                </div>
+                <span class="text-stone-500 block leading-normal">
+                  Em caso de falha de telemetria, ativação imediata do fallback para modo âncora colaborativa pelos alunos embarcados.
+                </span>
+              </li>
+              <li class="p-3 bg-stone-50 rounded-xl">
+                <div class="flex justify-between items-center mb-1">
+                  <strong class="text-stone-900">RPO (Perda Máxima Tolerada de Dados):</strong>
+                  <span class="font-mono text-stone-800 font-bold">&lt; 1 min</span>
+                </div>
+                <span class="text-stone-500 block leading-normal">
+                  Garantido pela persistência de transações atômicas no Firestore com listeners locais no navegador.
+                </span>
+              </li>
+            </ul>
+          </div>
+          <div class="mt-6 pt-4 border-t border-stone-100 flex items-center justify-between text-[11px] font-mono text-stone-500">
+            <span>ISO 12207: Cláusula 6.1.2 (Fornecimento)</span>
+            <span>Suporte N1 via App</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Matriz de Fornecedores Críticos -->
+      <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
+        <div class="p-6 border-b border-stone-100">
+          <h3 class="font-serif text-lg font-medium text-stone-900">Matriz de Gestão de Fornecedores Críticos (ISO 12207)</h3>
+          <p class="text-xs text-stone-500 font-sans mt-1">Mapeamento de dependências externas, SLAs garantidos e planos de mitigação operacional.</p>
+        </div>
+        <table class="w-full text-left text-xs font-sans">
+          <thead>
+            <tr class="border-b border-stone-200 bg-stone-50 text-stone-700 font-semibold uppercase tracking-wider">
+              <th class="py-3.5 px-6">Fornecedor / Serviço</th>
+              <th class="py-3.5 px-6">Função no Rhyme</th>
+              <th class="py-3.5 px-6">SLA Contratado</th>
+              <th class="py-3.5 px-6">Risco Técnico Identificado</th>
+              <th class="py-3.5 px-6">Plano de Mitigação de Falha</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-stone-100 text-stone-800">
+            <tr class="hover:bg-stone-50/80">
+              <td class="py-3.5 px-6 font-semibold">Google Firebase (Firestore)</td>
+              <td class="py-3.5 px-6">Banco em tempo real e presença</td>
+              <td class="py-3.5 px-6 font-mono text-emerald-700">99,95%</td>
+              <td class="py-3.5 px-6 text-stone-600">Queda no cluster multi-região</td>
+              <td class="py-3.5 px-6 text-stone-600">Persistência local no IndexedDB e re-sincronização automática via SDK</td>
+            </tr>
+            <tr class="hover:bg-stone-50/80">
+              <td class="py-3.5 px-6 font-semibold">Firebase Cloud Functions v2</td>
+              <td class="py-3.5 px-6">Cálculo de Haversine e envio FCM</td>
+              <td class="py-3.5 px-6 font-mono text-emerald-700">99,95%</td>
+              <td class="py-3.5 px-6 text-stone-600">Atraso na execução (cold start)</td>
+              <td class="py-3.5 px-6 text-stone-600">Instâncias mínimas aquecidas na janela das 16h às 23h; fallback de cálculo no cliente</td>
+            </tr>
+            <tr class="hover:bg-stone-50/80">
+              <td class="py-3.5 px-6 font-semibold">OpenStreetMap / Tile Servers</td>
+              <td class="py-3.5 px-6">Tiles cartográficos para Leaflet</td>
+              <td class="py-3.5 px-6 font-mono text-stone-600">99,50%</td>
+              <td class="py-3.5 px-6 text-stone-600">Rate limit ou lentidão na renderização</td>
+              <td class="py-3.5 px-6 text-stone-600">Cache agressivo via Service Worker e tiles de fallback (CartoDB Positron / OSM)</td>
+            </tr>
+            <tr class="hover:bg-stone-50/80">
+              <td class="py-3.5 px-6 font-semibold">Provedores de Telefonia Móvel</td>
+              <td class="py-3.5 px-6">Conexão 4G/5G dos dispositivos</td>
+              <td class="py-3.5 px-6 font-mono text-amber-700">Variável (~95%)</td>
+              <td class="py-3.5 px-6 text-stone-600">Pontos cegos na rodovia GO-020</td>
+              <td class="py-3.5 px-6 text-stone-600">Modo âncora colaborativa entre múltiplos aparelhos e indicador visual de sinal offline</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SEÇÃO / SLIDE 5: 3. METODOLOGIA E CICLO DE VIDA (5 PILARES) -->
+    <section id="sec3" class="slide-spotlight ds-section py-16 border-t border-stone-300/40 print-page-break">
+      <div class="mb-8">
+        <span class="text-[11px] font-bold tracking-[0.15em] uppercase text-stone-500 font-sans block mb-2">
+          Fundamentação Teórica • Seção 03
+        </span>
+        <h2 class="text-4xl md:text-5xl font-serif font-light text-stone-900 leading-tight">
+          3. Metodologia e Ciclo de Vida do Software
+        </h2>
+        <p class="text-stone-600 text-sm max-w-2xl mt-2 font-sans">
+          A equipe alinha a engenharia de software do Rhyme diferenciando rigorosamente os <strong>5 pilares conceituais</strong> (Sommerville & Pressman):
+        </p>
+      </div>
+
+      <!-- 5 Cards Conceituais -->
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-12">
+        <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm">
+          <span class="text-xs font-mono text-stone-400 font-semibold block mb-1">01</span>
+          <h4 class="font-serif text-lg font-medium text-stone-900 mb-2">Metodologia</h4>
+          <p class="text-xs text-stone-600 leading-relaxed font-sans mb-3">
+            Filosofia Ágil combinada com práticas Lean e mentalidade <strong>Mobile-First PWA</strong> com foco em entrega contínua.
+          </p>
+          <span class="text-[10px] font-mono text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded font-semibold">Por que / Filosofia</span>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm">
+          <span class="text-xs font-mono text-stone-400 font-semibold block mb-1">02</span>
+          <h4 class="font-serif text-lg font-medium text-stone-900 mb-2">Processo</h4>
+          <p class="text-xs text-stone-600 leading-relaxed font-sans mb-3">
+            Macroatividades ordenadas: Requisitos, Arquitetura Serverless, Codificação, Testes de Campo e Deploy Contínuo.
+          </p>
+          <span class="text-[10px] font-mono text-stone-600 bg-stone-100 px-2 py-0.5 rounded font-semibold">O que fazer</span>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm">
+          <span class="text-xs font-mono text-stone-400 font-semibold block mb-1">03</span>
+          <h4 class="font-serif text-lg font-medium text-stone-900 mb-2">Modelo</h4>
+          <p class="text-xs text-stone-600 leading-relaxed font-sans mb-3">
+            Fluxo temporal <strong>Iterativo e Incremental</strong> estruturado em Sprints quinzenais de entrega funcional real.
+          </p>
+          <span class="text-[10px] font-mono text-stone-600 bg-stone-100 px-2 py-0.5 rounded font-semibold">Como estruturar o fluxo</span>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm">
+          <span class="text-xs font-mono text-stone-400 font-semibold block mb-1">04</span>
+          <h4 class="font-serif text-lg font-medium text-stone-900 mb-2">Método</h4>
+          <p class="text-xs text-stone-600 leading-relaxed font-sans mb-3">
+            Técnicas prescritivas: Histórias de Usuário, Emuladores Firebase, Code Review por pares e Conventional Commits.
+          </p>
+          <span class="text-[10px] font-mono text-stone-600 bg-stone-100 px-2 py-0.5 rounded font-semibold">Como executar</span>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-stone-200 shadow-sm">
+          <span class="text-xs font-mono text-stone-400 font-semibold block mb-1">05</span>
+          <h4 class="font-serif text-lg font-medium text-stone-900 mb-2">Procedimento</h4>
+          <p class="text-xs text-stone-600 leading-relaxed font-sans mb-3">
+            Checklists operacionais de baixo nível (POPs) para Pull Requests, Deploy no Firebase e resposta a incidentes.
+          </p>
+          <span class="text-[10px] font-mono text-stone-600 bg-stone-100 px-2 py-0.5 rounded font-semibold">Passo a passo exato</span>
+        </div>
+      </div>
+
+      <!-- Ciclo de Vida Aplicado -->
+      <div class="bg-white rounded-3xl p-8 border border-stone-200 shadow-sm">
+        <h3 class="font-serif text-2xl text-stone-900 mb-4">O Ciclo de Vida do Rhyme: Da Elicitação ao Monitoramento em Trânsito</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-xs font-sans text-stone-600">
+          <div class="p-4 bg-warm-light rounded-2xl border border-stone-200">
+            <span class="font-mono text-[10px] uppercase tracking-wider text-stone-500 font-bold block mb-1">Fase 1</span>
+            <strong class="text-stone-900 block text-sm mb-2">Elicitação & Modelagem</strong>
+            <p class="leading-relaxed">
+              Mapeamento de faculdades, paradas rodoviárias e regras de negócio com alunos e motoristas das rotas Cromínia e Professor Jamil. Definição do schema do Firestore.
+            </p>
+          </div>
+          <div class="p-4 bg-warm-light rounded-2xl border border-stone-200">
+            <span class="font-mono text-[10px] uppercase tracking-wider text-stone-500 font-bold block mb-1">Fase 2</span>
+            <strong class="text-stone-900 block text-sm mb-2">Desenvolvimento & Emulação</strong>
+            <p class="leading-relaxed">
+              Construção dos componentes React, integração do Leaflet e testes locais com o Firebase Local Emulator Suite para simular mutações em tempo real sem custo de nuvem.
+            </p>
+          </div>
+          <div class="p-4 bg-warm-light rounded-2xl border border-stone-200">
+            <span class="font-mono text-[10px] uppercase tracking-wider text-stone-500 font-bold block mb-1">Fase 3</span>
+            <strong class="text-stone-900 block text-sm mb-2">Validação em Campo</strong>
+            <p class="leading-relaxed">
+              Testes rodoviários reais embarcados no ônibus universitário, validando precisão de geofencing, estabilidade de GPS veicular e resiliência a túneis e áreas rurais.
+            </p>
+          </div>
+          <div class="p-4 bg-warm-light rounded-2xl border border-stone-200">
+            <span class="font-mono text-[10px] uppercase tracking-wider text-stone-500 font-bold block mb-1">Fase 4</span>
+            <strong class="text-stone-900 block text-sm mb-2">Operação & Telemetria</strong>
+            <p class="leading-relaxed">
+              Deploy automatizado no Firebase Hosting, monitoramento de latência e gatilhos de alerta emergencial ('Botão Fui Esquecido').
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO / SLIDE 6: 4. GOVERNANÇA, PAPÉIS E MATRIZ RACI -->
+    <section id="sec4" class="slide-spotlight ds-section py-16 border-t border-stone-300/40 print-page-break">
+      <div class="mb-8">
+        <span class="text-[11px] font-bold tracking-[0.15em] uppercase text-stone-500 font-sans block mb-2">
+          Governança de Equipe • Seção 04
+        </span>
+        <h2 class="text-4xl md:text-5xl font-serif font-light text-stone-900 leading-tight">
+          4. Governança, Papéis e Matriz RACI
+        </h2>
+        <p class="text-stone-600 text-sm max-w-2xl mt-2 font-sans">
+          Divisão inequívoca de responsabilidades operacionais e decisórias entre os papéis de engenharia do <strong>Squad Rhyme Core</strong>.
+        </p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm mb-8">
+        <table class="w-full text-left text-xs font-sans">
+          <thead>
+            <tr class="border-b border-stone-200 bg-stone-50 text-stone-700 font-semibold uppercase tracking-wider">
+              <th class="py-4 px-6">Atividade do Ciclo de Engenharia</th>
+              <th class="py-4 px-4 text-center">Product Owner</th>
+              <th class="py-4 px-4 text-center">Tech Lead</th>
+              <th class="py-4 px-4 text-center">Desenvolvedores</th>
+              <th class="py-4 px-4 text-center">QA / Campo</th>
+              <th class="py-4 px-4 text-center">DevOps / Cloud</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-stone-100 text-stone-800">
+            <tr class="hover:bg-stone-50/80">
+              <td class="py-4 px-6 font-medium">1. Elicitação e Priorização do Backlog</td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">A / R</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">C</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">C</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">C</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-50 text-stone-400">I</span></td>
+            </tr>
+            <tr class="hover:bg-stone-50/80">
+              <td class="py-4 px-6 font-medium">2. Arquitetura e Modelagem do Firestore</td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">C</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">A / R</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">R</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">C</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">C</span></td>
+            </tr>
+            <tr class="hover:bg-stone-50/80">
+              <td class="py-4 px-6 font-medium">3. Desenvolvimento PWA, UI e Mapas Leaflet</td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-50 text-stone-400">I</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">A</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">R</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">C</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-50 text-stone-400">I</span></td>
+            </tr>
+            <tr class="hover:bg-stone-50/80">
+              <td class="py-4 px-6 font-medium">4. Regras de Segurança (firestore.rules)</td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-50 text-stone-400">I</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">A</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">R</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">C</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">R</span></td>
+            </tr>
+            <tr class="hover:bg-stone-50/80">
+              <td class="py-4 px-6 font-medium">5. Cloud Functions (Geofencing & Push FCM)</td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-50 text-stone-400">I</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">A</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">R</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">C</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">R</span></td>
+            </tr>
+            <tr class="hover:bg-stone-50/80">
+              <td class="py-4 px-6 font-medium">6. Homologação & Testes de Campo na Rodovia</td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">C</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">C</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">C</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">A / R</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">C</span></td>
+            </tr>
+            <tr class="hover:bg-stone-50/80">
+              <td class="py-4 px-6 font-medium">7. Pipeline de CI/CD e Deploy no Firebase</td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-50 text-stone-400">I</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">A</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-50 text-stone-400">I</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-50 text-stone-400">I</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">R</span></td>
+            </tr>
+            <tr class="hover:bg-stone-50/80">
+              <td class="py-4 px-6 font-medium">8. Gestão de Incidentes e Resposta Emergencial</td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">A</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">R</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">R</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 font-medium">C</span></td>
+              <td class="py-4 px-4 text-center"><span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">R</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Legenda RACI -->
+      <div class="flex flex-wrap items-center gap-6 p-4 bg-white/60 rounded-xl border border-stone-200 text-xs font-sans text-stone-600">
+        <span class="font-bold uppercase tracking-wider text-stone-400 font-mono text-[10px]">Legenda:</span>
+        <div class="flex items-center gap-1.5"><span class="px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 font-bold text-[10px]">R</span> <span><strong>Responsible:</strong> Executa a tarefa diretamente</span></div>
+        <div class="flex items-center gap-1.5"><span class="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">A</span> <span><strong>Accountable:</strong> Dono final e aprovador formal</span></div>
+        <div class="flex items-center gap-1.5"><span class="px-1.5 py-0.2 rounded bg-stone-100 text-stone-700 font-bold text-[10px]">C</span> <span><strong>Consulted:</strong> Opina previamente por conhecimento técnico</span></div>
+        <div class="flex items-center gap-1.5"><span class="px-1.5 py-0.2 rounded bg-stone-50 text-stone-400 font-bold text-[10px]">I</span> <span><strong>Informed:</strong> Notificado dos resultados da etapa</span></div>
+      </div>
+    </section>
+
+    <!-- SEÇÃO / SLIDE 7: 5. PROCEDIMENTOS OPERACIONAIS PADRONIZADOS (POPs) -->
+    <section id="sec-pop" class="slide-spotlight ds-section py-16 border-t border-stone-300/40 print-page-break">
+      <div class="mb-8">
+        <span class="text-[11px] font-bold tracking-[0.15em] uppercase text-stone-500 font-sans block mb-2">
+          Instruções Operacionais de Baixo Nível • Procedimentos
+        </span>
+        <h2 class="text-4xl md:text-5xl font-serif font-light text-stone-900 leading-tight">
+          Procedimentos Operacionais Padronizados (POPs)
+        </h2>
+        <p class="text-stone-600 text-sm max-w-2xl mt-2 font-sans">
+          Roteiros prescritivos e verificáveis que guiam as rotinas técnicas críticas do projeto Rhyme.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        
+        <!-- POP-DEV-01 -->
+        <div class="bg-white rounded-3xl p-8 border border-stone-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-start mb-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-stone-400 font-sans">POP-DEV-01</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-stone-100 text-[10px] font-mono font-medium text-stone-700">Desenvolvimento</span>
+            </div>
+            <h4 class="font-serif text-2xl font-medium text-stone-900 mb-3">Checklist de Pull Request & Git</h4>
+            <p class="text-xs text-stone-600 leading-relaxed mb-4 font-sans">
+              Procedimento mandatório antes de qualquer integração na branch <code class="bg-stone-100 px-1 py-0.5 rounded font-mono">main</code>:
+            </p>
+            <ol class="list-decimal pl-4 space-y-2 text-xs font-sans text-stone-600 leading-relaxed">
+              <li>Criar branch temática a partir da <code class="bg-stone-100 px-1 py-0.5 rounded font-mono">main</code>: <code class="bg-stone-100 px-1 py-0.5 rounded font-mono">feature/*</code> ou <code class="bg-stone-100 px-1 py-0.5 rounded font-mono">fix/*</code>.</li>
+              <li>Estruturar commits no padrão <em>Conventional Commits</em> (ex.: <code class="bg-stone-100 px-1 py-0.5 rounded font-mono">feat(map): add student location pin</code>).</li>
+              <li>Executar validação estática local via <code class="bg-stone-100 px-1 py-0.5 rounded font-mono">npm run lint</code> (Oxlint) com zero erros.</li>
+              <li>Executar build limpo via <code class="bg-stone-100 px-1 py-0.5 rounded font-mono">npm run build</code> validando empacotamento Vite.</li>
+              <li>Submeter PR vinculando a Issue do GitHub e coletar aprovação compulsória de ao menos 1 revisor do squad antes do Squash & Merge.</li>
+            </ol>
+          </div>
+          <div class="mt-6 pt-4 border-t border-stone-100 text-[11px] font-mono text-stone-400">
+            Responsável: Desenvolvedor • Aprovador: Tech Lead
+          </div>
+        </div>
+
+        <!-- POP-OPS-01 -->
+        <div class="bg-white rounded-3xl p-8 border border-stone-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-start mb-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-stone-400 font-sans">POP-OPS-01</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-stone-100 text-[10px] font-mono font-medium text-stone-700">Operações & Nuvem</span>
+            </div>
+            <h4 class="font-serif text-2xl font-medium text-stone-900 mb-3">Pipeline de Deploy & Segurança no Firebase</h4>
+            <p class="text-xs text-stone-600 leading-relaxed mb-4 font-sans">
+              Sequência mandatória para publicação de novas versões no ecossistema serverless do Google:
+            </p>
+            <ol class="list-decimal pl-4 space-y-2 text-xs font-sans text-stone-600 leading-relaxed">
+              <li>Disparo automático do pipeline do GitHub Actions ao realizar merge na branch <code class="bg-stone-100 px-1 py-0.5 rounded font-mono">main</code>.</li>
+              <li>Validação sintática compulsória das regras de segurança com <code class="bg-stone-100 px-1 py-0.5 rounded font-mono">firebase deploy --only firestore:rules</code>.</li>
+              <li>Compilação dos assets PWA em <code class="bg-stone-100 px-1 py-0.5 rounded font-mono">dist/</code> e deploy no CDN do Firebase Hosting.</li>
+              <li>Atualização das Cloud Functions v2 (<code class="bg-stone-100 px-1 py-0.5 rounded font-mono">checkBusDistanceAndNotify</code>) mantendo instâncias mínimas.</li>
+              <li>Execução de teste de sanidade (*smoke test*) em dispositivo móvel com login de aluno e de motorista.</li>
+            </ol>
+          </div>
+          <div class="mt-6 pt-4 border-t border-stone-100 text-[11px] font-mono text-stone-400">
+            Responsável: DevOps / Cloud • Aprovador: Tech Lead
+          </div>
+        </div>
+
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- POP-GEO-01 -->
+        <div class="bg-white rounded-3xl p-8 border border-stone-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-start mb-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-stone-400 font-sans">POP-GEO-01</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-stone-100 text-[10px] font-mono font-medium text-stone-700">Geofencing & FCM</span>
+            </div>
+            <h4 class="font-serif text-2xl font-medium text-stone-900 mb-3">Homologação de Geofencing e Notificação Push</h4>
+            <p class="text-xs text-stone-600 leading-relaxed mb-4 font-sans">
+              Procedimento de teste e calibração do raio de 1 km disparado pela fórmula de Haversine:
+            </p>
+            <ol class="list-decimal pl-4 space-y-2 text-xs font-sans text-stone-600 leading-relaxed">
+              <li>Criar viagem de teste simulando a rota de Cromínia no Firebase Emulator.</li>
+              <li>Cadastrar estudante de teste com status <code class="bg-stone-100 px-1 py-0.5 rounded font-mono">liberado</code> no ponto da UFG Samambaia.</li>
+              <li>Atualizar telemetria do ônibus no documento <code class="bg-stone-100 px-1 py-0.5 rounded font-mono">trips</code> posicionando as coordenadas a 1,2 km de distância (nenhum alerta deve disparar).</li>
+              <li>Mover a coordenada do ônibus para 0,8 km do aluno: verificar disparo da Cloud Function e inserção do UID em <code class="bg-stone-100 px-1 py-0.5 rounded font-mono">notifiedStudents</code>.</li>
+              <li>Validar recebimento do Push Notification com padrão de vibração tátil no aparelho do aluno.</li>
+            </ol>
+          </div>
+          <div class="mt-6 pt-4 border-t border-stone-100 text-[11px] font-mono text-stone-400">
+            Responsável: QA Lead • Aprovador: Cloud Engineer
+          </div>
+        </div>
+
+        <!-- POP-EMERG-01 -->
+        <div class="bg-white rounded-3xl p-8 border border-stone-200 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-start mb-4">
+              <span class="text-xs font-bold uppercase tracking-wider text-stone-400 font-sans">POP-EMERG-01</span>
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-100 text-[10px] font-mono font-medium text-amber-800">Contingência</span>
+            </div>
+            <h4 class="font-serif text-2xl font-medium text-stone-900 mb-3">Protocolo do 'Botão Fui Esquecido' & Âncora</h4>
+            <p class="text-xs text-stone-600 leading-relaxed mb-4 font-sans">
+              Procedimento operacional quando um estudante ativa o alarme de emergência:
+            </p>
+            <ol class="list-decimal pl-4 space-y-2 text-xs font-sans text-stone-600 leading-relaxed">
+              <li>Aluno aciona o botão de emergência no app: documento gravado na coleção <code class="bg-stone-100 px-1 py-0.5 rounded font-mono">emergencies</code>.</li>
+              <li>Cockpit do motorista emite alarme sonoro persistente (<code class="bg-stone-100 px-1 py-0.5 rounded font-mono">audioEffects.js</code>) e destaca o aluno em vermelho piscante no mapa.</li>
+              <li>Se o ônibus já estiver em rodovia, o motorista avalia viabilidade de parada segura e entra em contato via canal de emergência.</li>
+              <li>Caso o motorista perca conectividade ou bateria: o sistema habilita automaticamente a transmissão do aluno a bordo mais próximo (<code class="bg-stone-100 px-1 py-0.5 rounded font-mono">locationProviderRole: 'student'</code>).</li>
+              <li>Ao resolver o incidente, o registro de emergência é auditado e formalmente arquivado pelo PO.</li>
+            </ol>
+          </div>
+          <div class="mt-6 pt-4 border-t border-stone-100 text-[11px] font-mono text-stone-400">
+            Responsável: Motorista & Aluno • Auditoria: Product Owner
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- SEÇÃO 8: REFERÊNCIAS BIBLIOGRÁFICAS -->
+    <section id="referencias" class="ds-section py-16 border-t border-stone-300/40">
+      <div class="mb-6">
+        <span class="text-[11px] font-bold tracking-[0.15em] uppercase text-stone-500 font-sans block mb-1">
+          Fundamentação Teórica e Normas Técnicas
+        </span>
+        <h3 class="text-2xl font-serif text-stone-900">Referências Bibliográficas</h3>
+      </div>
+      <ul class="space-y-2 text-xs font-sans text-stone-600 leading-relaxed max-w-3xl">
+        <li>• <strong>ISO/IEC/IEEE 12207:2017</strong> — Systems and software engineering — Software life cycle processes.</li>
+        <li>• <strong>SOMMERVILLE, Ian.</strong> <em>Engenharia de Software</em>. 10ª Edição. São Paulo: Pearson, 2018.</li>
+        <li>• <strong>PRESSMAN, Roger S.; MAXIM, Bruce R.</strong> <em>Engenharia de Software: Uma Abordagem Profissional</em>. 8ª Edição. McGraw-Hill, 2016.</li>
+        <li>• <strong>GOOGLE CLOUD.</strong> <em>Firebase Firestore Security Rules and Cloud Functions Architecture Guide</em>. Documentação Oficial, 2026.</li>
+        <li>• <strong>W3C & MDN WEB DOCS.</strong> <em>Progressive Web Apps (PWA) and Web Push Protocol Specification</em>, 2026.</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <!-- ==========================================================================
+       PRESENTER DECK FLUTUANTE (EXIBIDO APENAS NO MODO APRESENTAÇÃO)
+       ========================================================================== -->
+  <aside id="presenterDeck" class="fixed left-1/2 -translate-x-1/2 deck-bottom opacity-0 pointer-events-none transition-all duration-300 flex items-center gap-3 bg-stone-900/90 text-[#E6E3D6] px-5 py-3 rounded-full backdrop-blur-md shadow-2xl border border-white/10 no-print" aria-label="Controle do Projetor">
+    
+    <div id="deckFullControls" class="flex items-center gap-4">
+      <!-- Navegação de Slides -->
+      <div class="flex items-center gap-1">
+        <button onclick="prevSlide()" class="p-2 rounded-full hover:bg-white/15 text-[#E6E3D6] transition-colors" title="Slide Anterior (Seta Esquerda / Backspace)">
+          <iconify-icon icon="solar:arrow-left-linear" width="20"></iconify-icon>
+        </button>
+        <span id="slideCounter" class="font-mono text-xs font-semibold px-2">1 / 7</span>
+        <button onclick="nextSlide()" class="p-2 rounded-full hover:bg-white/15 text-[#E6E3D6] transition-colors" title="Próximo Slide (Seta Direita / Espaço)">
+          <iconify-icon icon="solar:arrow-right-linear" width="20"></iconify-icon>
+        </button>
+      </div>
+
+      <div class="h-4 w-[1px] bg-white/20"></div>
+
+      <!-- Título do Slide Ativo -->
+      <span id="activeSlideTitle" class="text-xs font-medium max-w-[280px] truncate hidden md:inline-block text-stone-300">
+        Capa & Squad Rhyme
+      </span>
+
+      <div class="h-4 w-[1px] bg-white/20"></div>
+
+      <!-- Controle de Fonte (Zoom do Projetor) -->
+      <div class="flex items-center gap-1 text-xs">
+        <button onclick="changeFontSize(-0.1)" class="px-2 py-1 rounded hover:bg-white/15 transition-colors font-mono" title="Diminuir Fonte (-)">A-</button>
+        <button onclick="resetFontSize()" class="px-2 py-1 rounded hover:bg-white/15 transition-colors font-mono text-[10px]" title="Resetar Fonte (0)">100%</button>
+        <button onclick="changeFontSize(0.1)" class="px-2 py-1 rounded hover:bg-white/15 transition-colors font-mono" title="Aumentar Fonte (+)">A+</button>
+      </div>
+
+      <div class="h-4 w-[1px] bg-white/20"></div>
+
+      <!-- Alternar Posição (Topo / Rodapé) -->
+      <button onclick="toggleDeckPosition()" class="p-2 rounded-full hover:bg-white/15 transition-colors" title="Mudar Posição do Menu (Tecla T)">
+        <iconify-icon icon="solar:sort-vertical-linear" width="18"></iconify-icon>
+      </button>
+
+      <!-- Tela Cheia -->
+      <button onclick="toggleFullscreen()" class="p-2 rounded-full hover:bg-white/15 transition-colors" title="Tela Cheia (F11)">
+        <iconify-icon icon="solar:full-screen-linear" width="18"></iconify-icon>
+      </button>
+    </div>
+
+    <!-- Botão Minimizar / Fechar -->
+    <div class="flex items-center gap-1">
+      <button onclick="toggleDeckMinimize()" class="p-2 rounded-full hover:bg-white/15 transition-colors" title="Minimizar Barra (Tecla M)">
+        <iconify-icon id="minimizeIcon" icon="solar:minimize-linear" width="18"></iconify-icon>
+      </button>
+      <button onclick="togglePresentationMode()" class="p-2 rounded-full hover:bg-red-500/80 text-white transition-colors ml-1" title="Sair do Modo Projetor (Esc)">
+        <iconify-icon icon="solar:close-circle-linear" width="20"></iconify-icon>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ==========================================================================
+       JAVASCRIPT LOGIC
+       ========================================================================== -->
+  <script>
+    const slides = [
+      { id: 'capa', title: 'Capa & Squad Rhyme' },
+      { id: 'historico', title: 'Histórico de Versões do Documento' },
+      { id: 'sec1', title: '1. Apresentação do Software Rhyme' },
+      { id: 'sec2', title: '2. Processos de Acordo (ISO 12207)' },
+      { id: 'sec3', title: '3. Metodologia e Ciclo de Vida (5 Pilares)' },
+      { id: 'sec4', title: '4. Governança e Matriz RACI' },
+      { id: 'sec-pop', title: '5. Procedimentos Operacionais Padronizados' }
+    ];
+
+    let currentSlideIndex = 0;
+    let isPresentationActive = false;
+    let currentScale = 1.0;
+    let isDeckMinimized = false;
+    let isDeckAtTop = false;
+    let idleTimer = null;
+
+    function resetIdleTimer() {
+      const deck = document.getElementById('presenterDeck');
+      if (!deck || !isPresentationActive) return;
+
+      deck.classList.remove('deck-idle');
+      clearTimeout(idleTimer);
+
+      idleTimer = setTimeout(() => {
+        if (isPresentationActive) {
+          deck.classList.add('deck-idle');
+        }
+      }, 3500);
+    }
+
+    function toggleDeckPosition() {
+      const deck = document.getElementById('presenterDeck');
+      if (!deck) return;
+      isDeckAtTop = !isDeckAtTop;
+      deck.classList.toggle('deck-top', isDeckAtTop);
+      deck.classList.toggle('deck-bottom', !isDeckAtTop);
+      resetIdleTimer();
+    }
+
+    function toggleDeckMinimize() {
+      const deck = document.getElementById('presenterDeck');
+      const icon = document.getElementById('minimizeIcon');
+      if (!deck) return;
+      isDeckMinimized = !isDeckMinimized;
+      deck.classList.toggle('deck-minimized', isDeckMinimized);
+      if (icon) {
+        icon.setAttribute('icon', isDeckMinimized ? 'solar:maximize-linear' : 'solar:minimize-linear');
+      }
+      resetIdleTimer();
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+      resetIdleTimer();
+    }
+
+    function changeFontSize(delta) {
+      currentScale = Math.max(0.7, Math.min(1.8, currentScale + delta));
+      document.documentElement.style.setProperty('--pres-scale', currentScale);
+      resetIdleTimer();
+    }
+
+    function resetFontSize() {
+      currentScale = 1.0;
+      document.documentElement.style.setProperty('--pres-scale', currentScale);
+      resetIdleTimer();
+    }
+
+    function updateSlideUI() {
+      slides.forEach((slide, idx) => {
+        const el = document.getElementById(slide.id);
+        if (el) {
+          if (idx === currentSlideIndex) {
+            el.classList.add('presentation-slide-active');
+          } else {
+            el.classList.remove('presentation-slide-active');
+          }
+        }
+      });
+
+      const counter = document.getElementById('slideCounter');
+      const title = document.getElementById('activeSlideTitle');
+      if (counter) counter.innerText = `${currentSlideIndex + 1} / ${slides.length}`;
+      if (title) title.innerText = slides[currentSlideIndex].title;
+    }
+
+    function goToSlide(index) {
+      if (index < 0) index = 0;
+      if (index >= slides.length) index = slides.length - 1;
+      currentSlideIndex = index;
+
+      const target = document.getElementById(slides[currentSlideIndex].id);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      updateSlideUI();
+      resetIdleTimer();
+    }
+
+    function nextSlide() {
+      if (currentSlideIndex < slides.length - 1) {
+        goToSlide(currentSlideIndex + 1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlideIndex > 0) {
+        goToSlide(currentSlideIndex - 1);
+      }
+    }
+
+    function togglePresentationMode() {
+      isPresentationActive = !isPresentationActive;
+      document.body.classList.toggle('presentation-mode', isPresentationActive);
+
+      if (isPresentationActive) {
+        goToSlide(currentSlideIndex);
+        resetIdleTimer();
+        window.addEventListener('mousemove', resetIdleTimer);
+        window.addEventListener('keydown', resetIdleTimer);
+      } else {
+        slides.forEach(slide => {
+          const el = document.getElementById(slide.id);
+          if (el) el.classList.remove('presentation-slide-active');
+        });
+        window.removeEventListener('mousemove', resetIdleTimer);
+        window.removeEventListener('keydown', resetIdleTimer);
+      }
+    }
+
+    // Atalhos de Teclado
+    window.addEventListener('keydown', (e) => {
+      // Tecla F para ativar modo apresentação
+      if ((e.key === 'p' || e.key === 'P') && !isPresentationActive && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+        e.preventDefault();
+        togglePresentationMode();
+        return;
+      }
+
+      if (isPresentationActive) {
+        if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+          e.preventDefault();
+          nextSlide();
+        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+          e.preventDefault();
+          prevSlide();
+        } else if (e.key === '+' || e.key === '=') {
+          e.preventDefault();
+          changeFontSize(0.1);
+        } else if (e.key === '-' || e.key === '_') {
+          e.preventDefault();
+          changeFontSize(-0.1);
+        } else if (e.key === '0') {
+          e.preventDefault();
+          resetFontSize();
+        } else if (e.key === 't' || e.key === 'T') {
+          e.preventDefault();
+          toggleDeckPosition();
+        } else if (e.key === 'm' || e.key === 'M') {
+          e.preventDefault();
+          toggleDeckMinimize();
+        } else if (e.key === 'Escape') {
+          togglePresentationMode();
+        }
+      }
+    });
+  </script>
+</body>
+</html>

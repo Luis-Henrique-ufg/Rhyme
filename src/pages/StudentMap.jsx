@@ -680,7 +680,7 @@ const MapBridge = ({ onReady }) => {
   return null;
 };
 
-const RecenterButton = ({ lat, lng }) => {
+const RecenterButton = ({ lat, lng, isBroadcasting }) => {
   const map = useMap();
   const [portalTarget, setPortalTarget] = useState(null);
   
@@ -692,13 +692,35 @@ const RecenterButton = ({ lat, lng }) => {
     return () => clearInterval(interval);
   }, []);
 
+  const handleRecenter = (e) => {
+    e.stopPropagation();
+    // Se o aluno está transmitindo ativamente o GPS da Van, busca a posição exata atual do GPS do aparelho
+    if (isBroadcasting && typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (pos?.coords?.latitude != null && pos?.coords?.longitude != null) {
+            map.flyTo([pos.coords.latitude, pos.coords.longitude], 16, { duration: 1.2 });
+          } else if (lat && lng) {
+            map.flyTo([lat, lng], 16, { duration: 1.2 });
+          }
+        },
+        () => {
+          if (lat && lng) map.flyTo([lat, lng], 16, { duration: 1.2 });
+        },
+        { enableHighAccuracy: true, timeout: 4000, maximumAge: 1000 }
+      );
+      return;
+    }
+
+    if (lat && lng) {
+      map.flyTo([lat, lng], 16, { duration: 1.2 });
+    }
+  };
+
   const content = (
     <button
-      onClick={(e) => {
-        e.stopPropagation();
-        if (lat && lng) map.flyTo([lat, lng], 15, { duration: 1.5 });
-      }}
-      className="w-full min-w-0 flex flex-col items-center justify-center text-body hover:text-primary transition-colors"
+      onClick={handleRecenter}
+      className="w-full min-w-0 flex flex-col items-center justify-center text-body hover:text-primary transition-colors cursor-pointer"
       title="Centralizar"
     >
       <div className="p-1.5 sm:p-2"><LocateFixed size={22} strokeWidth={2.5} /></div>
@@ -881,6 +903,7 @@ export default function StudentMap() {
   const [isEditingLocation, setIsEditingLocation] = useState(false);
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [hasSeenCheckInModal, setHasSeenCheckInModal] = useState(false);
+  const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [tempLocation, setTempLocation] = useState(null);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);
   const [routePath, setRoutePath] = useState([]);
@@ -1139,6 +1162,9 @@ export default function StudentMap() {
   // --- Prioridade Motorista > Aluno ---
   // O motorista está ativo (live ou stale): aluno não deve transmitir
   const isDriverActive = trip?.locationProviderRole === 'driver' && (gpsState === 'live' || gpsState === 'stale');
+  const isAnotherStudentActive = trip?.locationProviderRole === 'student' &&
+    (gpsState === 'live' || gpsState === 'stale') &&
+    trip?.locationProviderId !== user?.uid;
 
   const busIcon    = useMemo(() => createBusIcon(false, isDark, gpsState, elapsedLabel), [isDark, gpsState, elapsedLabel]);
   const busIconAlt = useMemo(() => createBusIcon(true,  isDark, gpsState, elapsedLabel), [isDark, gpsState, elapsedLabel]);
@@ -1404,18 +1430,9 @@ export default function StudentMap() {
     }
   }, [isLiberado, attendance?.lat, attendance?.lng, userWalkingCoords, trip?.busLocation]);
 
-  // Efeito de transmissão de GPS da Van pelo aluno embarcado
+  // Efeito de transmissão de GPS da Van pelo aluno
   useEffect(() => {
     if (isBroadcasting && user?.uid) {
-      // 1. Imediatamente inicializa a posição com os dados disponíveis para não ter delay visual
-      if (!broadcastingLocation) {
-        if (attendance?.lat && attendance?.lng) {
-          setBroadcastingLocation({ lat: attendance.lat, lng: attendance.lng });
-        } else if (trip?.busLocation?.lat && trip?.busLocation?.lng) {
-          setBroadcastingLocation({ lat: trip.busLocation.lat, lng: trip.busLocation.lng });
-        }
-      }
-
       const sendLocation = async (position) => {
         const { latitude, longitude } = position.coords;
         setBroadcastingLocation({ lat: latitude, lng: longitude });
@@ -1476,40 +1493,70 @@ export default function StudentMap() {
     }
   }, [isBroadcasting, trip?.id, tripId, user?.uid, student?.name, attendance?.lat, attendance?.lng]);
 
-  const handleToggleBroadcasting = async () => {
-    // Bloqueia aluno se motorista já está transmitindo ao vivo
-    if (!isBroadcasting && isDriverActive) {
-      showAlert('O motorista já está compartilhando a localização. Você não precisa ativar o GPS.');
-      return;
+  const stopBroadcasting = useCallback(async () => {
+    setIsBroadcasting(false);
+    setBroadcastingLocation(null);
+    if (watchIdRef.current) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
     }
-
-    const nextState = !isBroadcasting;
-    setIsBroadcasting(nextState);
-
-    if (nextState) {
-      if (attendance?.lat && attendance?.lng) {
-        setBroadcastingLocation({ lat: attendance.lat, lng: attendance.lng });
-      } else if (trip?.busLocation?.lat && trip?.busLocation?.lng) {
-        setBroadcastingLocation({ lat: trip.busLocation.lat, lng: trip.busLocation.lng });
+    if (fallbackIntervalRef.current) {
+      clearInterval(fallbackIntervalRef.current);
+      fallbackIntervalRef.current = null;
+    }
+    const targetTripId = tripId || trip?.id;
+    if (targetTripId && (trip?.locationProviderId === user?.uid || !trip?.locationProviderId)) {
+      try {
+        await updateDoc(doc(db, 'trips', targetTripId), {
+          locationProviderStatus: 'paused'
+        });
+      } catch (e) {
+        console.warn('Falha ao marcar GPS como pausado:', e);
       }
-      setFocusTrigger(prev => prev + 1);
-      showAlert('Transmissão da Van ativada! O ícone da Van agora segue sua posição em tempo real.');
-    } else {
-      setBroadcastingLocation(null);
-      // Marca o sinal como pausado no Firestore para todos os outros usuários
-      const targetTripId = tripId || trip?.id;
-      if (targetTripId && (trip?.locationProviderId === user?.uid || !trip?.locationProviderId)) {
-        try {
-          await updateDoc(doc(db, 'trips', targetTripId), {
-            locationProviderStatus: 'paused'
-          });
-        } catch (e) {
-          console.warn('Falha ao marcar GPS como pausado:', e);
-        }
-      }
-      showAlert('Transmissão da Van pausada.');
+    }
+    showAlert('Transmissão da Van pausada.');
+  }, [tripId, trip?.id, trip?.locationProviderId, user?.uid, showAlert]);
+
+  const startBroadcasting = async () => {
+    if (!user?.uid || !trip?.id) return;
+
+    setIsBroadcasting(true);
+    showAlert('Transmissão da Van ativada! O ícone da Van agora segue sua posição em tempo real.');
+
+    // Captura imediatamente o GPS real do dispositivo e foca o mapa nele
+    if (typeof navigator !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (pos?.coords?.latitude != null && pos?.coords?.longitude != null) {
+            setBroadcastingLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+            setFocusTrigger(prev => prev + 1);
+          }
+        },
+        (err) => console.warn('GPS inicial no startBroadcasting:', err),
+        { enableHighAccuracy: true, timeout: 6000, maximumAge: 1000 }
+      );
     }
   };
+
+  const handleToggleBroadcasting = () => {
+    if (isBroadcasting) {
+      stopBroadcasting();
+    } else {
+      if (isDriverActive) {
+        showAlert('O motorista já está compartilhando a localização. Você não precisa ativar o GPS.');
+        return;
+      }
+      setShowBroadcastModal(true);
+    }
+  };
+
+  // Desativa automaticamente a transmissão do aluno caso o motorista assuma o GPS
+  useEffect(() => {
+    if (isBroadcasting && trip?.locationProviderRole === 'driver' && (gpsState === 'live' || gpsState === 'stale')) {
+      stopBroadcasting();
+      showAlert('O motorista iniciou a transmissão do GPS. A sua transmissão foi desativada.');
+    }
+  }, [trip?.locationProviderRole, gpsState, isBroadcasting, stopBroadcasting, showAlert]);
 
   const handleTripTypeChange = async (type) => {
     setSelectedTripType(type);
@@ -2219,13 +2266,15 @@ export default function StudentMap() {
           {/* Botão de Centralizar no GPS */}
           {!isEditingLocation && (
             isCampusModeActive && userWalkingCoords ? (
-              <RecenterButton lat={userWalkingCoords[0]} lng={userWalkingCoords[1]} isPanelCollapsed={isPanelCollapsed} />
+              <RecenterButton lat={userWalkingCoords[0]} lng={userWalkingCoords[1]} isPanelCollapsed={isPanelCollapsed} isBroadcasting={isBroadcasting} />
             ) : isCampusModeActive && (campusFacultyData?.coords || getFacultyCoords(student)) ? (
-              <RecenterButton lat={(campusFacultyData?.coords || getFacultyCoords(student))[0]} lng={(campusFacultyData?.coords || getFacultyCoords(student))[1]} isPanelCollapsed={isPanelCollapsed} />
-            ) : isEmbarcado && activeBusLocation?.lat != null && activeBusLocation?.lng != null ? (
-              <RecenterButton lat={activeBusLocation.lat} lng={activeBusLocation.lng} isPanelCollapsed={isPanelCollapsed} />
+              <RecenterButton lat={(campusFacultyData?.coords || getFacultyCoords(student))[0]} lng={(campusFacultyData?.coords || getFacultyCoords(student))[1]} isPanelCollapsed={isPanelCollapsed} isBroadcasting={isBroadcasting} />
+            ) : (isBroadcasting || isEmbarcado) && activeBusLocation?.lat != null && activeBusLocation?.lng != null ? (
+              <RecenterButton lat={activeBusLocation.lat} lng={activeBusLocation.lng} isPanelCollapsed={isPanelCollapsed} isBroadcasting={isBroadcasting} />
             ) : attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) ? (
-              <RecenterButton lat={attendance.lat} lng={attendance.lng} isPanelCollapsed={isPanelCollapsed} />
+              <RecenterButton lat={attendance.lat} lng={attendance.lng} isPanelCollapsed={isPanelCollapsed} isBroadcasting={isBroadcasting} />
+            ) : activeBusLocation?.lat != null && activeBusLocation?.lng != null ? (
+              <RecenterButton lat={activeBusLocation.lat} lng={activeBusLocation.lng} isPanelCollapsed={isPanelCollapsed} isBroadcasting={isBroadcasting} />
             ) : null
           )}
 
@@ -2312,7 +2361,12 @@ export default function StudentMap() {
                         {student?.faculty || 'DESTINO'}
                       </span>
                       <h2 className="text-xl font-bold text-heading truncate">
-                        {isEmbarcado ? (
+                        {isBroadcasting ? (
+                          <span className="text-red-500 dark:text-red-400 flex items-center gap-2">
+                            <Radio size={20} className="animate-pulse shrink-0" />
+                            Transmitindo GPS da Van
+                          </span>
+                        ) : isEmbarcado ? (
                           'Embarcado no ônibus'
                         ) : isLiberado ? (
                           'Confirmado! Aguarde na portaria'
@@ -2369,18 +2423,25 @@ export default function StudentMap() {
                     {!isLiberado && (
                       <button
                         onClick={handleLiberar}
-                        disabled={isSubmitting || isEmbarcado}
+                        disabled={isSubmitting || (isEmbarcado && attendance?.tripType === 'ida')}
                         className={`w-full py-4 rounded-full font-display font-black text-base uppercase tracking-wider transition-all duration-300 relative overflow-hidden flex items-center justify-center gap-3 shadow-lg active:scale-[0.98] cursor-pointer ${
-                          isEmbarcado
+                          isEmbarcado && attendance?.tripType === 'ida'
                             ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-default'
+                            : isEmbarcado
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20'
                             : 'btn-primary'
                         }`}
                       >
                         <span className="relative z-10 flex items-center gap-2">
-                          {isEmbarcado ? (
+                          {isEmbarcado && attendance?.tripType === 'ida' ? (
                             <>
                               <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                              EMBARCADO
+                              EMBARCADO (SÓ IDA)
+                            </>
+                          ) : isEmbarcado ? (
+                            <>
+                              <Check size={24} strokeWidth={2.5} />
+                              LIBERAR PARA A VOLTA
                             </>
                           ) : (
                             <>
@@ -2488,7 +2549,7 @@ export default function StudentMap() {
              </>
           )}
 
-          {isEmbarcado && (
+          {(isEmbarcado || !isDriverActive || isBroadcasting) && (
             <button 
               onClick={handleToggleBroadcasting}
               className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center transition-all cursor-pointer ${
@@ -2500,8 +2561,10 @@ export default function StudentMap() {
             >
               <div className="p-1.5 sm:p-2 relative">
                 <Radio size={22} className={isBroadcasting ? "animate-pulse" : ""} />
-                {isBroadcasting && (
+                {isBroadcasting ? (
                   <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full shadow-[0_0_8px_#ef4444] animate-ping"></span>
+                ) : !isDriverActive && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_6px_#f59e0b]"></span>
                 )}
               </div>
               <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">{isBroadcasting ? 'GPS Ativo' : 'Enviar GPS'}</span>
@@ -2531,7 +2594,74 @@ export default function StudentMap() {
         </div>
       )}
 
-{/* Modal de Check-in (Trajeto) */}
+        {/* Modal de Transmissão de GPS da Van pelo Aluno */}
+        {showBroadcastModal && (
+          <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              onClick={() => setShowBroadcastModal(false)}
+            ></div>
+            <div className="relative electric-card bg-card w-full max-w-sm rounded-3xl border border-subtle shadow-2xl overflow-hidden p-6 text-center animate-in zoom-in-95 duration-300">
+              <div className="w-16 h-16 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_30px_rgba(245,158,11,0.25)] relative">
+                <Radio size={32} className="animate-pulse" />
+                <span className="absolute top-2 right-2 w-3 h-3 bg-amber-500 rounded-full animate-ping"></span>
+              </div>
+              <h2 className="text-xl font-bold text-heading mb-2">Transmitir GPS da Van</h2>
+              
+              {isAnotherStudentActive ? (
+                <div className="mb-5 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-500 text-xs font-medium text-left flex items-start gap-2.5">
+                  <Radio size={18} className="shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Aviso:</strong> {trip?.locationProviderName || 'Outro passageiro'} já está transmitindo no momento. Ao confirmar, você assumirá a transmissão oficial da van.
+                  </span>
+                </div>
+              ) : (
+                <p className="text-sm text-caption mb-5 leading-relaxed">
+                  O motorista ainda não compartilhou a localização. Você já está a bordo da van?
+                </p>
+              )}
+
+              <div className="bg-subtle/50 rounded-2xl p-4 mb-6 text-xs text-body text-left space-y-2.5 border border-subtle">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_6px_#10b981]"></div>
+                  <span>O ícone da Van seguirá sua posição em tempo real para todos na rota.</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-2 h-2 rounded-full bg-orange-500 shrink-0 shadow-[0_0_6px_#f97316]"></div>
+                  <span>Ao chegar na faculdade, basta pausar o GPS; seu trajeto e presença continuam normais.</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0 shadow-[0_0_6px_#3b82f6]"></div>
+                  <span>Na volta da aula, você continua podendo usar o botão <strong>LIBERADO</strong> normalmente.</span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowBroadcastModal(false);
+                    startBroadcasting();
+                  }}
+                  className="w-full py-3.5 rounded-xl font-bold bg-orange-500 hover:bg-orange-600 text-black shadow-lg shadow-orange-500/20 transition-all cursor-pointer active:scale-[0.98] flex items-center justify-center gap-2"
+                >
+                  <Radio size={18} />
+                  <span>Sim, estou na van e quero transmitir</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowBroadcastModal(false)}
+                  className="w-full py-2.5 rounded-xl font-medium text-caption hover:text-heading transition-colors cursor-pointer text-sm"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Check-in (Trajeto) */}
         {showCheckInModal && (
           <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4">
             <div
