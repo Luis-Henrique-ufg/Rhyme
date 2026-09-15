@@ -2072,7 +2072,7 @@ export default function StudentMap() {
 
           {/* Marcador pedestre no Modo Campus com localização em tempo real */}
           {isCampusModeActive && (() => {
-            const currentCoords = userWalkingCoords || (attendance?.lat && attendance?.lng ? [attendance.lat, attendance.lng] : (campusFacultyData?.coords || getFacultyCoords(student)));
+            const currentCoords = (isBroadcasting && broadcastingLocation ? [broadcastingLocation.lat, broadcastingLocation.lng] : null) || userWalkingCoords || (attendance?.lat && attendance?.lng ? [attendance.lat, attendance.lng] : (campusFacultyData?.coords || getFacultyCoords(student)));
             if (!currentCoords || !Array.isArray(currentCoords) || !Number.isFinite(currentCoords[0]) || !Number.isFinite(currentCoords[1])) return null;
             return (
               <Marker position={currentCoords} icon={createPedestrianIcon(isDark)} zIndexOffset={1200}>
@@ -2080,7 +2080,11 @@ export default function StudentMap() {
                   <div className="flex flex-col gap-0.5 p-0.5">
                     <span className="font-bold text-heading text-xs">Você</span>
                     <span className="text-[11px] text-caption">
-                      {userWalkingCoords ? 'Sua localização atual (GPS em tempo real)' : 'Localização base no campus'}
+                      {isBroadcasting
+                        ? 'Transmitindo GPS da Van em tempo real'
+                        : userWalkingCoords
+                        ? 'Sua localização atual (GPS em tempo real)'
+                        : 'Localização base no campus'}
                     </span>
                   </div>
                 </Popup>
@@ -2180,6 +2184,20 @@ export default function StudentMap() {
           {searchedPlace && Array.isArray(searchedPlace.coords) && Number.isFinite(searchedPlace.coords[0]) && Number.isFinite(searchedPlace.coords[1]) && (
             <Marker position={searchedPlace.coords} icon={createSearchedPlaceIcon(searchedPlace.name)} zIndexOffset={1200} />
           )}
+          {/* Marcador do próprio aluno enquanto transmite fora do Modo Campus */}
+          {!isCampusModeActive && isBroadcasting && broadcastingLocation?.lat != null && broadcastingLocation?.lng != null && (
+            <Marker position={[broadcastingLocation.lat, broadcastingLocation.lng]} icon={createPedestrianIcon(isDark)} zIndexOffset={1200}>
+              <Popup className="dark-popup">
+                <div className="flex flex-col gap-0.5 p-0.5">
+                  <span className="font-bold text-heading text-xs">Você</span>
+                  <span className="text-[11px] text-orange-400 font-semibold">
+                    Transmitindo GPS da Van em tempo real
+                  </span>
+                </div>
+              </Popup>
+            </Marker>
+          )}
+
           {/* Marcador do próprio aluno — antes de liberar (oculto se o aluno estiver transmitindo como a Van OU em Modo Campus) */}
           {!isCampusModeActive && attendance?.status !== 'liberado' && attendance?.status !== 'embarcado' && !isBroadcasting && attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && (() => {
             const isSoIda = attendance?.tripType === 'ida';
@@ -2219,8 +2237,8 @@ export default function StudentMap() {
             );
           })}
 
-          {/* Marcador do Ônibus / Van em Tempo Real */}
-          {activeBusLocation?.lat != null && activeBusLocation?.lng != null && !isNaN(activeBusLocation.lat) && !isNaN(activeBusLocation.lng) && (
+          {/* Marcador do Ônibus / Van em Tempo Real (oculto na tela de quem está transmitindo para exibir apenas o ícone de pessoa) */}
+          {!isBroadcasting && activeBusLocation?.lat != null && activeBusLocation?.lng != null && !isNaN(activeBusLocation.lat) && !isNaN(activeBusLocation.lng) && (
             <Marker 
               key={trip?.id ? `${trip.id}_bus` : 'active_bus'} 
               position={[activeBusLocation.lat, activeBusLocation.lng]} 
