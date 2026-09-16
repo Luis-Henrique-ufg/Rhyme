@@ -404,10 +404,14 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
   return R * c; // Distância em km
 }
 
-const createPedestrianIcon = (isDark = true) => {
+const createPedestrianIcon = (isDark = true, isLiberado = false) => {
   const night = isDark;
   const labelBg = night ? 'rgba(15,15,15,0.94)' : 'rgba(255,255,255,0.96)';
   const labelText = night ? '#f4f4f5' : '#18181b';
+  const mainColor = isLiberado ? '#10b981' : '#f97316';
+  const haloBg = isLiberado ? 'rgba(16, 185, 129, 0.25)' : 'rgba(249,115,22,0.22)';
+  const haloBorder = isLiberado ? 'rgba(16, 185, 129, 0.65)' : 'rgba(249,115,22,0.65)';
+  const roleLabel = isLiberado ? 'Você (Liberado)' : 'Você';
 
   return L.divIcon({
     html: `
@@ -429,8 +433,8 @@ const createPedestrianIcon = (isDark = true) => {
           align-items: center;
           gap: 3.5px;
         ">
-          <span style="width: 5px; height: 5px; border-radius: 50%; background: #f97316; display: inline-block; box-shadow: 0 0 6px #f97316;"></span>
-          <span>Você</span>
+          <span style="width: 5px; height: 5px; border-radius: 50%; background: ${mainColor}; display: inline-block; box-shadow: 0 0 6px ${mainColor};"></span>
+          <span>${roleLabel}</span>
         </div>
 
         <div style="position:relative;width:34px;height:34px;display:flex;align-items:center;justify-content:center;">
@@ -438,16 +442,16 @@ const createPedestrianIcon = (isDark = true) => {
             position:absolute;
             inset:-3px;
             border-radius:50%;
-            background:rgba(249,115,22,0.22);
-            border:1.5px solid rgba(249,115,22,0.65);
+            background:${haloBg};
+            border:1.5px solid ${haloBorder};
             animation:studentHalo 2.2s ease-out infinite;
           "></div>
           <div style="
             width:26px;height:26px;
             border-radius:50%;
-            background:#f97316;
+            background:${mainColor};
             border:2px solid #ffffff;
-            box-shadow:0 3px 10px rgba(0,0,0,${night ? '0.6' : '0.25'}), 0 0 0 1px rgba(249,115,22,0.4);
+            box-shadow:0 3px 10px rgba(0,0,0,${night ? '0.6' : '0.25'}), 0 0 0 1px rgba(16,185,129,0.3);
             display:flex;align-items:center;justify-content:center;
             color:#ffffff;
             position:relative;
@@ -1634,6 +1638,24 @@ export default function StudentMap() {
     const attendanceId = `${trip.id}_${user.uid}`;
 
     const executeLiberacao = async (lat, lng) => {
+      // Feedback visual e otimista imediato no estado local do aluno
+      setAttendance(prev => ({
+        ...(prev || {}),
+        tripId: trip.id,
+        studentId: user.uid,
+        studentName: student?.name || 'Aluno',
+        faculty: student?.faculty || 'Outra',
+        route: normalizeRoute(student?.route) || 'Professor Jamil',
+        status: 'liberado',
+        lat,
+        lng
+      }));
+
+      // Voo suave do mapa para centralizar e destacar a nova posição do aluno liberado
+      if (mapInstanceRef.current && Number.isFinite(lat) && Number.isFinite(lng)) {
+        mapInstanceRef.current.flyTo([lat, lng], 16, { animate: true, duration: 1.2 });
+      }
+
       try {
         await setDoc(doc(db, 'attendance', attendanceId), {
           tripId: trip.id,
@@ -1685,6 +1707,21 @@ export default function StudentMap() {
   const handleSaveLocation = async () => {
     if (!tempLocation || !trip || !user) return;
     setIsSubmitting(true);
+    // Feedback otimista imediato
+    setAttendance(prev => ({
+      ...(prev || {}),
+      tripId: trip.id,
+      studentId: user.uid,
+      studentName: student?.name || 'Aluno',
+      status: 'liberado',
+      lat: tempLocation.lat,
+      lng: tempLocation.lng
+    }));
+
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo([tempLocation.lat, tempLocation.lng], 16, { animate: true, duration: 1.2 });
+    }
+
     try {
       const attendanceId = `${trip.id}_${user.uid}`;
       await setDoc(doc(db, 'attendance', attendanceId), {
@@ -2075,13 +2112,15 @@ export default function StudentMap() {
             const currentCoords = (isBroadcasting && broadcastingLocation ? [broadcastingLocation.lat, broadcastingLocation.lng] : null) || userWalkingCoords || (attendance?.lat && attendance?.lng ? [attendance.lat, attendance.lng] : (campusFacultyData?.coords || getFacultyCoords(student)));
             if (!currentCoords || !Array.isArray(currentCoords) || !Number.isFinite(currentCoords[0]) || !Number.isFinite(currentCoords[1])) return null;
             return (
-              <Marker position={currentCoords} icon={createPedestrianIcon(isDark)} zIndexOffset={1200}>
+              <Marker position={currentCoords} icon={createPedestrianIcon(isDark, isLiberado)} zIndexOffset={1200}>
                 <Popup className="dark-popup">
                   <div className="flex flex-col gap-0.5 p-0.5">
-                    <span className="font-bold text-heading text-xs">Você</span>
+                    <span className="font-bold text-heading text-xs">{isLiberado ? 'Você (Liberado)' : 'Você'}</span>
                     <span className="text-[11px] text-caption">
                       {isBroadcasting
                         ? 'Transmitindo GPS da Van em tempo real'
+                        : isLiberado
+                        ? 'Liberado · Pronto para embarque'
                         : userWalkingCoords
                         ? 'Sua localização atual (GPS em tempo real)'
                         : 'Localização base no campus'}
@@ -2198,40 +2237,57 @@ export default function StudentMap() {
             </Marker>
           )}
 
-          {/* Marcador do próprio aluno — antes de liberar (oculto se o aluno estiver transmitindo como a Van OU em Modo Campus) */}
-          {!isCampusModeActive && attendance?.status !== 'liberado' && attendance?.status !== 'embarcado' && !isBroadcasting && attendance?.lat != null && attendance?.lng != null && !isNaN(attendance.lat) && !isNaN(attendance.lng) && (() => {
+          {/* Marcador DEDICADO do próprio aluno (visível antes e após liberar; reflete imediatamente status liberado em verde com halo) */}
+          {!isCampusModeActive && !isBroadcasting && attendance?.status !== 'embarcado' && attendance?.status !== 'cancelado' && (() => {
+            const facCoords = getFacultyCoords(student);
+            const myLat = attendance?.lat ?? (facCoords ? facCoords[0] : null);
+            const myLng = attendance?.lng ?? (facCoords ? facCoords[1] : null);
+            if (myLat == null || myLng == null || isNaN(myLat) || isNaN(myLng)) return null;
+
             const isSoIda = attendance?.tripType === 'ida';
-            const icon = createStudentMapIcon('Você', true, false, isSoIda, isDark);
+            const icon = createStudentMapIcon('Você', true, isLiberado, isSoIda, isDark);
             return (
-              <Marker key={`my_loc_${attendance?.status || 'waiting'}`} position={[attendance.lat, attendance.lng]} icon={icon} zIndexOffset={900}>
+              <Marker
+                key={`my_loc_${attendance?.status || 'waiting'}_${myLat}_${myLng}`}
+                position={[myLat, myLng]}
+                icon={icon}
+                zIndexOffset={1100}
+              >
                 <Popup className="dark-popup">
-                  <span className="font-bold text-heading">Sua localização {isSoIda ? '(Só Ida)' : ''}</span>
+                  <div className="flex flex-col gap-0.5 p-0.5">
+                    <span className="font-bold text-heading text-xs">
+                      {isLiberado ? 'Você (Liberado)' : isSoIda ? 'Você (Só Ida)' : 'Você'}
+                    </span>
+                    <span className="text-[11px] text-caption">
+                      {isLiberado
+                        ? 'Liberado · Pronto para embarque (visível ao motorista)'
+                        : isSoIda
+                        ? 'Viagem de Só Ida'
+                        : 'Sua localização (aguardando liberação)'}
+                    </span>
+                  </div>
                 </Popup>
               </Marker>
             );
           })()}
 
-          {/* Marcadores de Alunos — Alunos com status liberado ou só ida */}
+          {/* Marcadores dos DEMAIS Alunos — Apenas alunos liberados ou só ida (exclui o próprio usuário para evitar conflitos) */}
           {publicList.filter(a => {
-            // Em Modo Campus, o próprio aluno é renderizado pelo marcador pedestre do campus
-            if (isCampusModeActive && a.studentId === user?.uid) return false;
-            // Se o próprio aluno está transmitindo o GPS da van, a Van já representa sua posição na rota
-            if (isBroadcasting && a.studentId === user?.uid) return false;
-            // Se este aluno é o transmissor da viagem (a bordo), a Van já representa sua posição
-            if (trip?.locationProviderId && a.studentId === trip.locationProviderId) return false;
-            if (a.studentId === user?.uid && attendance?.status !== 'liberado') return false;
+            // O próprio aluno possui seu marcador dedicado acima
+            if (a.studentId === user?.uid) return false;
+            // Se outro aluno está transmitindo o GPS da van ativamente, a Van já representa sua posição
+            if (trip?.locationProviderId && a.studentId === trip.locationProviderId && trip?.locationProviderStatus === 'active') return false;
             if (a.status === 'cancelado' || a.status === 'embarcado') return false;
             if (!a.lat || !a.lng || isNaN(a.lat) || isNaN(a.lng)) return false;
             return a.status === 'liberado' || a.tripType === 'ida';
           }).map(att => {
-            const isMe = att.studentId === user?.uid;
             const isSoIda = att.tripType === 'ida';
-            const displayName = isMe ? 'Você' : (att.studentName ? att.studentName.split(' ')[0] : 'Aluno');
-            const icon = createStudentMapIcon(displayName, isMe, true, isSoIda, isDark);
+            const displayName = att.studentName ? att.studentName.split(' ')[0] : 'Aluno';
+            const icon = createStudentMapIcon(displayName, false, true, isSoIda, isDark);
             return (
-              <Marker key={`${att.id}_${att.status}`} position={[att.lat, att.lng]} icon={icon} zIndexOffset={isMe ? 850 : (isSoIda ? 750 : 800)}>
+              <Marker key={`${att.id}_${att.status}`} position={[att.lat, att.lng]} icon={icon} zIndexOffset={isSoIda ? 750 : 800}>
                 <Popup className="dark-popup">
-                  <span className="font-bold text-heading">{isMe ? `Você (${att.studentName})` : att.studentName} {isSoIda ? '(Só Ida)' : ''}</span>
+                  <span className="font-bold text-heading">{att.studentName} {isSoIda ? '(Só Ida)' : ''}</span>
                 </Popup>
               </Marker>
             );
