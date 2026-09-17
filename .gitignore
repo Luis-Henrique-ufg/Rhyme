@@ -28,6 +28,9 @@ Design System/
 skill.md
 skills-lock.json
 
+# Manual de Processos de Software (INF0449)
+docs/
+
 # Firebase cache
 .firebase/
 
