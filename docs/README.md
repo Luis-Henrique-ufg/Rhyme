@@ -19,6 +19,7 @@ A documentação da disciplina **INF0449 — Processos de Engenharia de Software
 | 🛠️ [**Etapa 4 - Processos Técnicos**](./UFG/etapa-4.md) | ISO 12207 §6.4: Requisitos funcionais/não funcionais, Arquitetura e Plano de Testes (V&V). |
 | 🔄 [**Etapa 5 - Processos de Sustentação**](./UFG/etapa-5.md) | ISO 12207 §6.4.10–6.4.14: Implantação, Operação, Manutenção e Descontinuação. |
 | 📋 [**Requisitos Gerais**](./UFG/Requisitos.md) | Especificação técnica inicial de requisitos. |
+| 🗺️ [**Diagrama de Casos de Uso (PlantUML)**](./diagrama.plantuml) | Especificação formal em PlantUML com os fluxos e atores do sistema. |
 
 ---
 

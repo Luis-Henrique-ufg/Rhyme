@@ -1,18 +1,8 @@
 import { doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { normalizeRoute } from './routeUtils.js';
 
-/**
- * Normaliza strings de rotas para lidar com dados inconsistentes no banco de dados.
- * Ex: 'professor_jamil' -> 'Professor Jamil'
- */
-export function normalizeRoute(route) {
-  if (!route) return '';
-  const r = route.trim();
-  if (r.toLowerCase().includes('jamil')) return 'Professor Jamil';
-  if (r.toLowerCase().includes('crom')) return 'Cromínia';
-  if (r.toLowerCase().includes('hidrol')) return 'Hidrolândia';
-  return r;
-}
+export { normalizeRoute };
 
 /**
  * Garante que a viagem do dia para uma rota específica exista.
