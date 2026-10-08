@@ -105,8 +105,8 @@ Adotado o **Modelo Iterativo e Incremental Ágil** estruturado em Sprints de 2 s
 ### 2.3 Atribuição de Competências (Matriz RACI)
 Os membros do Grupo 12 atuam de forma colaborativa e multidisciplinar:
 * **Matheus Marquez:** Engenharia de Requisitos, Arquitetura PWA e Integração Leaflet.
-* **Luis Henrique:** Configuração de Infraestrutura Firebase, Firestore Realtime Listeners e CI/CD.
-* **Heitor Gonçalves:** UI/UX Design System, Componentização React e Service Workers PWA.
+* **Luis Henrique:** UI/UX Design System, Componentização React e Service Workers PWA.
+* **Heitor Gonçalves:** Configuração de Infraestrutura Firebase, Firestore Realtime Listeners e CI/CD.
 * **Carlos Daniel:** Testes de Verificação e Validação (V&V), Geofencing e Protocolo de Emergência.
 
 ---
