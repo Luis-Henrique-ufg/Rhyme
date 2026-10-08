@@ -23,7 +23,7 @@ O **Manual de Processos de Software** é o artefato central da disciplina INF044
 
 ## 2. Estrutura Modular do Manual de Processos
 
-O manual é composto por 6 partes sequenciais, cada uma mapeada em um arquivo Markdown específico na pasta docs/UFG/:
+O manual é composto por partes sequenciais, cada uma mapeada em um arquivo Markdown específico na pasta docs/UFG/:
 
 ### Etapa 0: Apresentação do Software
 * **Arquivo:** [etapa-0.md](./etapa-0.md)
@@ -60,36 +60,66 @@ O manual é composto por 6 partes sequenciais, cada uma mapeada em um arquivo Ma
   - **Análise de Decisão (MDA):** Matrizes de decisão multicritério para escolha de stack frontend, banco de dados em tempo real e biblioteca de mapas.
   - **Gestão de Riscos (Risk Register):** Mapeamento de riscos técnicos, operacionais e de adoção, com probabilidade, impacto e planos de mitigação.
 
-### Parte 4: Processos Técnicos (ISO 12207 §6.4)
-* **Arquivo:** [etapa-4.md](./etapa-4.md)
-* **Objetivo:** Formalizar a engenharia de requisitos, arquitetura e verificação/validação.
-* **Conteúdo Mínimo:**
-  - **Definição de Requisitos:** Requisitos funcionais (RF01 a RF06) e não funcionais (RNF01 a RNF05) rastreáveis.
-  - **Arquitetura do Sistema:** Visão de componentes PWA, fluxo de sinal GPS e arquitetura de dados Firebase.
-  - **Plano de Verificação e Validação (V&V):** Protocolos de teste unitário, integração, usabilidade PWA em campo e aceite pelos usuários.
+---
 
-### Parte 5: Processos de Sustentação, Operação e Manutenção (ISO 12207 §6.4.10 – §6.4.14)
+## 3. PARTE 4 - Processos Técnicos (ISO/IEC/IEEE 12207:2017 §6.4)
+
+> **Cronograma de Aulas e Entregáveis Detalhados pela Professora:**
+
+### AULA 07/10: Requisitos, Arquitetura e Design
+* **Arquivo:** [etapa-4.md](./etapa-4.md) e [diagrama.plantuml](./diagrama.plantuml)
+* **1. Requisitos:**
+  - Documento de requisitos do sistema (Funcionais: RF01 a RF06, Não Funcionais: RNF01 a RNF05, Restrições operacionais).
+  - Rastreabilidade de requisitos (Matriz Requisito x Artefato/Módulo).
+  - Critérios de aceitação por funcionalidade.
+  - Registro de stakeholders e necessidades elicitadas (Alunos UFG, Motoristas, Gestão do Transporte).
+* **2. Arquitetura e Design:**
+  - Documento de arquitetura do sistema (Visão geral, componentes, interfaces).
+  - Decisões arquiteturais registradas em ADRs (Architecture Decision Records).
+  - Diagramas de design UML em PlantUML ([diagrama.plantuml](./diagrama.plantuml)):
+    - Diagrama de Casos de Uso
+    - Diagrama de Sequência (Sincronização GPS Realtime)
+    - Diagrama de Componentes (Cliente PWA, APIs e Firebase)
+  - Justificativa das escolhas tecnológicas (React 19, Vite, Tailwind CSS 4, Leaflet, Firebase Firestore, Service Workers PWA).
+
+### AULA 14/10: Implementação e Integração
+* **Arquivo:** [etapa-4.md](./etapa-4.md) (Seção de Implementação)
+* **3. Implementação e Integração:**
+  - Padrões de codificação adotados (Clean Code, React Functional Components, Hooks customizados, ESLint).
+  - Plano de integração entre componentes (PWA Client <-> Geolocation API <-> Leaflet <-> Firebase Firestore Realtime).
+  - Registro de testes unitários e de integração (Suíte de testes Vitest / React Testing Library).
+  - Rastreabilidade entre código-fonte e requisitos do sistema.
+
+### AULA 21/10: Verificação, Validação e Transição
+* **Arquivo:** [etapa-4.md](./etapa-4.md) e [etapa-5.md](./etapa-5.md)
+* **4. Verificação, Validação e Transição:**
+  - Plano de verificação e validação (V&V - ISO 12207 §6.4.9 e §6.4.10).
+  - Critérios de aceitação validados por stakeholder.
+  - Relatório de testes de aceitação (Testes práticos em campo na rota de transporte universitário).
+  - Plano de transição e implantação do sistema (Service Worker cache, Firebase Hosting / Vercel CI/CD, PWA Install Prompt).
+
+### AULA 28/10: Operação, Manutenção e Descontinuação
 * **Arquivo:** [etapa-5.md](./etapa-5.md)
-* **Objetivo:** Definir as diretrizes para implantação, sustentação contínua e encerramento do ciclo de vida.
-* **Conteúdo Mínimo:**
-  - **Processo de Implantação e Transição:** Pipeline CI/CD com GitHub Actions e Vercel/Firebase Hosting, estratégia PWA Service Worker.
-  - **Processo de Operação e Manutenção:** Monitoramento de erros, manutenção corretiva/evolutiva e suporte aos usuários.
-  - **Processo de Descontinuação e Encerramento:** Plano de encerramento, exportação de dados, revogação de chaves e arquivamento do projeto.
+* **5. Operação, Manutenção e Descontinuação:**
+  - Procedimentos de operação e monitoramento (Status da plataforma, tratamento de falhas de rede/GPS, monitoramento).
+  - Plano de manutenção (Manutenção corretiva, preventiva, adaptativa e evolutiva).
+  - Estratégia de descontinuação e migração de dados (Plano de encerramento do ciclo de vida, exportação de relatórios e backup Firestore).
 
 ---
 
-## 3. Matriz de Rastreabilidade da Documentação
+## 4. Matriz de Rastreabilidade da Documentação
 
-| Etapa | Norma ISO 12207 | Documento Correspondente | Status |
+| Etapa | Norma ISO 12207 | Documento Correspondente | Cronograma / Status |
 |---|---|---|---|
 | **Etapa 0** | Contexto / Visão Geral | [etapa-0.md](./etapa-0.md) | Concluído |
 | **Etapa 1** | §6.1 Processos de Acordo | [etapa-1.md](./etapa-1.md) | Concluído |
 | **Etapa 2** | §6.2 Processos Organizacionais Habilitadores | [etapa-2.md](./etapa-2.md) | Concluído |
 | **Etapa 3** | §6.3 Processos de Gerenciamento Técnico | [etapa-3.md](./etapa-3.md) | Concluído |
-| **Etapa 4** | §6.4 Processos Técnicos | [etapa-4.md](./etapa-4.md) | Concluído |
-| **Etapa 5** | §6.4.10–6.4.14 Processos de Sustentação | [etapa-5.md](./etapa-5.md) | Concluído |
+| **Parte 4 (07/10)** | §6.4.1 - §6.4.3 Requisitos, Arquitetura & Design UML | [etapa-4.md](./etapa-4.md) / [diagrama.plantuml](./diagrama.plantuml) | Concluído |
+| **Parte 4 (14/10)** | §6.4.7 - §6.4.8 Implementação & Integração | [etapa-4.md](./etapa-4.md) | Agendado (14/10) |
+| **Parte 4 (21/10)** | §6.4.9 - §6.4.10 Verificação, Validação & Transição | [etapa-4.md](./etapa-4.md) / [etapa-5.md](./etapa-5.md) | Agendado (21/10) |
+| **Parte 5 (28/10)** | §6.4.11 - §6.4.14 Operação, Manutenção & Encerramento | [etapa-5.md](./etapa-5.md) | Agendado (28/10) |
 | **Governança** | Gestão de Versões | [historico-versoes.md](./historico-versoes.md) | Atualizado |
-| **Requisitos** | Especificação Técnica | [Requisitos.md](./Requisitos.md) | Complementar |
 
 ---
 

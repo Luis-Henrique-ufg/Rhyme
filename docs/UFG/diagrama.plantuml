@@ -1,0 +1,227 @@
+@startuml Diagrama_Casos_de_Uso_Rhyme
+skinparam actorStyle awesome
+skinparam packageStyle rectangle
+skinparam backgroundColor #050505
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+skinparam defaultFontSize 12
+skinparam defaultFontColor #FFFFFF
+skinparam TitleFontColor #F97316
+skinparam TitleFontSize 16
+
+skinparam UseCaseBackgroundColor #1A1A1A
+skinparam UseCaseBorderColor #F97316
+skinparam UseCaseFontColor #FFFFFF
+
+skinparam ActorBackgroundColor #F97316
+skinparam ActorBorderColor #FB923C
+skinparam ActorFontColor #FFFFFF
+
+skinparam RectangleBackgroundColor #0A0A0A
+skinparam RectangleBorderColor #262626
+skinparam RectangleFontColor #F97316
+
+skinparam PackageBackgroundColor #121212
+skinparam PackageBorderColor #262626
+skinparam PackageFontColor #FB923C
+
+skinparam ArrowColor #F97316
+skinparam ArrowFontColor #A3A3A3
+
+title Diagrama de Casos de Uso - Sistema Rhyme (PWA)
+
+left to right direction
+
+actor "Estudante" as aluno
+actor "Motorista" as motorista
+actor "Servico de GPS\n(Dispositivo)" as gps << System >>
+actor "Firebase Firestore\n(Backend Realtime)" as firebase << System >>
+
+rectangle "Sistema Rhyme (PWA)" {
+
+    package "Autenticacao e Perfil" {
+        usecase "UC01 - Autenticar no PWA" as UC01
+        usecase "UC02 - Selecionar Rota e Faculdade" as UC02
+    }
+
+    package "Gestao de Presenca e Status" {
+        usecase "UC03 - Informar Status de Liberacao\n(Em sala / Liberado / No ponto)" as UC03
+        usecase "UC04 - Confirmar Embarque / Desembarque" as UC04
+    }
+
+    package "Rastreamento e Mapeamento Interativo" {
+        usecase "UC05 - Visualizar Mapa em Tempo Real\n(Onibus e Alunos)" as UC05
+        usecase "UC06 - Transmitir Localizacao GPS\n(Broadcast a bordo)" as UC06
+        usecase "UC07 - Consultar Estimativa de Chegada (ETA)" as UC07
+    }
+
+    package "Painel e Operacao do Motorista" {
+        usecase "UC08 - Visualizar Concentracao de Alunos\npor Campus/Ponto" as UC08
+        usecase "UC09 - Alternar Modos de Rota\n(Modo Campus vs. Rota Direta)" as UC09
+        usecase "UC10 - Receber Alertas de Liberacao" as UC10
+    }
+}
+
+' Relacionamentos do Aluno
+aluno --> UC01
+aluno --> UC02
+aluno --> UC03
+aluno --> UC04
+aluno --> UC05
+aluno --> UC06
+aluno --> UC07
+
+' Relacionamentos do Motorista
+motorista --> UC01
+motorista --> UC05
+motorista --> UC08
+motorista --> UC09
+motorista --> UC10
+
+' Inclusoes e Extensoes
+UC03 ..> UC05 : <<include>>
+UC06 ..> UC05 : <<extend>>
+UC07 ..> UC05 : <<include>>
+
+' Integracoes com Sistemas Externos
+UC01 --> firebase
+UC03 --> firebase
+UC06 --> gps
+UC06 --> firebase
+UC08 <-- firebase
+UC10 <-- firebase
+
+@enduml
+
+@startuml Diagrama_Sequencia_Rhyme
+skinparam backgroundColor #050505
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+skinparam defaultFontSize 12
+skinparam defaultFontColor #FFFFFF
+skinparam TitleFontColor #F97316
+skinparam TitleFontSize 16
+
+skinparam ParticipantBackgroundColor #1A1A1A
+skinparam ParticipantBorderColor #F97316
+skinparam ParticipantFontColor #FFFFFF
+
+skinparam DatabaseBackgroundColor #1A1A1A
+skinparam DatabaseBorderColor #F97316
+skinparam DatabaseFontColor #FFFFFF
+
+skinparam ActorBackgroundColor #F97316
+skinparam ActorBorderColor #FB923C
+skinparam ActorFontColor #FFFFFF
+
+skinparam SequenceLifeLineBorderColor #262626
+skinparam SequenceGroupBackgroundColor #0A0A0A
+skinparam SequenceGroupBorderColor #F97316
+skinparam SequenceGroupHeaderFontColor #FB923C
+
+skinparam ArrowColor #F97316
+skinparam ArrowFontColor #A3A3A3
+
+title Diagrama de Sequencia - Atualizacao de Status e Rastreamento GPS em Tempo Real
+
+actor "Estudante" as E
+participant "PWA Rhyme\n(Interface Aluno)" as AppA
+participant "API Geolocation\n(Navegador)" as GPS
+database "Firebase Firestore\n(Realtime DB)" as DB
+participant "PWA Rhyme\n(Interface Motorista)" as AppM
+actor "Motorista" as M
+
+autonumber
+
+== Alteracao de Status pelo Estudante ==
+E -> AppA: Clica em "Liberado da Aula"
+activate AppA
+
+AppA -> GPS: getCurrentPosition()
+activate GPS
+GPS --> AppA: Coordenadas (lat, lng, precisao)
+deactivate GPS
+
+AppA -> DB: updateDoc("students/{id}", { status: "liberado", coords, timestamp })
+activate DB
+DB --> AppA: Confirmacao de escrita OK
+deactivate DB
+
+AppA --> E: Exibe confirmacao visual no mapa (Icone Verde)
+deactivate AppA
+
+== Sincronizacao em Tempo Real (Push Event) ==
+DB -> AppM: onSnapshot() - Notificacao de alteracao
+activate AppM
+
+AppM -> AppM: Recalcula contagem de alunos liberados por faculdade
+AppM -> AppM: Atualiza marcadores Leaflet no Mapa do Motorista
+
+AppM --> M: Notificacao sonora/visual + Atualizacao do Mapa
+deactivate AppM
+
+== Transmissao de GPS a Bordo (Broadcast Mode) ==
+group Transmissao Continua a Bordo [Estudante no Onibus]
+    E -> AppA: Ativa modo "Transmitir GPS da Van"
+    activate AppA
+    loop Cada 5 segundos
+        AppA -> GPS: watchPosition()
+        GPS --> AppA: Localizacao GPS em movimento
+        AppA -> DB: setDoc("bus_location/active", { lat, lng, speed, heading })
+        DB -> AppM: Broadcast em tempo real
+        AppM -> AppM: Atualiza posicao do Onibus no Mapa Leaflet
+    end
+    deactivate AppA
+end
+
+@enduml
+
+@startuml Diagrama_Componentes_Rhyme
+skinparam backgroundColor #050505
+skinparam defaultFontName "Segoe UI", Arial, sans-serif
+skinparam defaultFontSize 12
+skinparam defaultFontColor #FFFFFF
+skinparam TitleFontColor #F97316
+skinparam TitleFontSize 16
+
+skinparam componentStyle uml2
+skinparam ComponentBackgroundColor #1A1A1A
+skinparam ComponentBorderColor #F97316
+skinparam ComponentFontColor #FFFFFF
+
+skinparam InterfaceBackgroundColor #FB923C
+skinparam InterfaceBorderColor #F97316
+
+skinparam PackageBackgroundColor #0A0A0A
+skinparam PackageBorderColor #262626
+skinparam PackageFontColor #FB923C
+
+skinparam ArrowColor #F97316
+skinparam ArrowFontColor #A3A3A3
+
+title Diagrama de Componentes - Arquitetura do PWA Rhyme
+
+package "Cliente PWA (Browser / Mobile Device)" {
+    [React 19 Core App] as UI
+    [Leaflet Map Engine] as Leaflet
+    [Geolocation Controller] as GeoCtrl
+    [Service Worker (Offline e PWA)] as SW
+    
+    UI --> Leaflet : Renderiza mapa interativo
+    UI --> GeoCtrl : Solicita coordenadas do GPS
+    UI --> SW : Cache de assets e funcionamento offline
+}
+
+package "APIs e Servicos Externos" {
+    [OpenStreetMap Tile Server] as OSM
+    Leaflet --> OSM : Requisicoes HTTP (Map Tiles)
+}
+
+package "Backend e Cloud Services (Firebase Services)" {
+    [Firebase Authentication] as Auth
+    [Cloud Firestore (Real-time DB)] as Firestore
+}
+
+UI ..> Auth : HTTPS / Auth Tokens (Login Aluno/Motorista)
+UI ..> Firestore : WebSockets / Realtime Listeners (onSnapshot)
+GeoCtrl ..> Firestore : Transmissao de GPS e Status
+
+@enduml
