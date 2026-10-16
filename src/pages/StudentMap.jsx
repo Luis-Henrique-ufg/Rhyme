@@ -38,7 +38,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { joinTrip, normalizeRoute } from '../utils/tripManager';
-import { useCurrentTrip, useTripAttendances, useOsrmEta } from '../utils/useTripData';
+import { useCurrentTrip, useTripAttendances, useOsrmEta } from '../hooks/useTripData';
 import { useBusBroadcaster } from '../hooks/useBusBroadcaster';
 import { useStudentLocation } from '../hooks/useStudentLocation';
 import { useNearbyStudents } from '../hooks/useNearbyStudents';

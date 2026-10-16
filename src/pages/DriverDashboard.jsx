@@ -5,7 +5,7 @@ import 'leaflet-rotate';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { ensureDailyTripExists, normalizeRoute } from '../utils/tripManager';
-import { useCurrentTrip, useDriverAttendanceMap } from '../utils/useTripData';
+import { useCurrentTrip, useDriverAttendanceMap } from '../hooks/useTripData';
 import Header from '../components/Header';
 import PublicListModal from '../components/PublicListModal';
 import DriverCockpitHUD from '../components/DriverCockpitHUD';
