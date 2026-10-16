@@ -11,7 +11,7 @@ export default function WakeUpAlarmModal({
   distanceMeters = 0,
   stopName = 'Sua Parada / Casa',
   onDismiss,
-  onSnooze
+  onSnooze,
 }) {
   useEffect(() => {
     if (!isOpen) {
@@ -50,7 +50,9 @@ export default function WakeUpAlarmModal({
   const handleDismiss = () => {
     stopWakeUpAlarmSound();
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      try { navigator.vibrate(0); } catch (e) {}
+      try {
+        navigator.vibrate(0);
+      } catch (e) {}
     }
     onDismiss?.();
   };
@@ -68,7 +70,9 @@ export default function WakeUpAlarmModal({
           </div>
           <span className="absolute -top-1 -right-1 flex h-5 w-5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 text-[10px] text-white font-bold items-center justify-center">!</span>
+            <span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 text-[10px] text-white font-bold items-center justify-center">
+              !
+            </span>
           </span>
         </div>
 
@@ -81,7 +85,9 @@ export default function WakeUpAlarmModal({
             ACORDA! SUA PARADA ESTÁ CHEGANDO!
           </h2>
           <p className="text-sm text-caption mt-2">
-            A Van está a aproximadamente <strong className="text-orange-400 font-black">{Math.round(distanceMeters)}m</strong> do seu ponto de descida.
+            A Van está a aproximadamente{' '}
+            <strong className="text-orange-400 font-black">{Math.round(distanceMeters)}m</strong> do
+            seu ponto de descida.
           </p>
         </div>
 
@@ -91,7 +97,9 @@ export default function WakeUpAlarmModal({
             <MapPin size={20} />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] text-caption font-bold uppercase tracking-wider">Destino de descida</p>
+            <p className="text-[10px] text-caption font-bold uppercase tracking-wider">
+              Destino de descida
+            </p>
             <p className="text-sm font-bold text-heading truncate">{stopName}</p>
           </div>
         </div>

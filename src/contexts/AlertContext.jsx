@@ -26,11 +26,23 @@ export function AlertProvider({ children }) {
             <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-[50px] rounded-full pointer-events-none"></div>
             <div className="flex flex-col items-center text-center z-10 relative">
               <div className="w-12 h-12 bg-orange-500/10 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <svg
+                  className="w-6 h-6 text-orange-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
               </div>
               <h3 className="text-lg font-bold text-heading mb-2">Atenção</h3>
               <p className="text-body text-sm mb-6 whitespace-pre-line">{alertData.message}</p>
-              <button 
+              <button
                 onClick={closeAlert}
                 className="w-full bg-orange-500 hover:bg-orange-600 text-black font-bold py-3 px-6 rounded-xl transition-colors"
               >

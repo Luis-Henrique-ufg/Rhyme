@@ -1,5 +1,6 @@
 ﻿# Plano de Adequacao a Norma ISO/IEC/IEEE 12207:2017
-## Processo 6.4.7: Construcao de Software (*Software Construction Process*)
+
+## Processo 6.4.7: Construcao de Software (_Software Construction Process_)
 
 > **Projeto**: Rhyme (PWA de Rastreamento e Logistica Academica Inteligente do Transporte Universitario)  
 > **Instituicao / Disciplina**: Universidade Federal de Goias (UFG) - Instituto de Informatica (INF) / INF0449 - Processos de Engenharia de Software (2026/2)  
@@ -40,6 +41,7 @@ graph TD
 ## 2. Padrao de Commits Atomicos e Rastreabilidade
 
 Cada commit executado durante o plano deve satisfazer estritamente:
+
 1. **Unicidade de Proposito**: Resolver uma unica preocupacao logica (nao misturar refatoracao com estilizacao ou correcao de testes).
 2. **Integridade da Build**: A aplicacao deve compilar com sucesso (`npm run build`) e os testes existentes devem passar em cada commit individual.
 3. **Sintaxe Padronizada**: Mensagem aderente ao **Conventional Commits 1.0.0** com identificador de requisito normativo:
@@ -53,12 +55,13 @@ Cada commit executado durante o plano deve satisfazer estritamente:
 ```
 
 ### Prefixos Normativos Mapeados:
-* `[ISO-6.3.5-CMxx]`: Gerencia de Configuracao (Configuracoes de build, gitignore, pacotes).
-* `[ISO-6.4.7-CRITxx]`: Criterios e Padroes de Codificacao (Linters, formatacao, regras estaticas).
-* `[ISO-6.4.7-SRPxx]`: Principio da Responsabilidade Unica e Decomposicao Arquitetural.
-* `[ISO-6.4.7-VERIFxx]`: Verificacao de Software (Testes unitarios e de integracao).
-* `[ISO-6.4.7-CIxx]`: Integracao Continua e Automacao de Qualidade.
-* `[ISO-6.4.7-DOCxx]`: Documentacao Formal e Relatorios de Auditoria.
+
+- `[ISO-6.3.5-CMxx]`: Gerencia de Configuracao (Configuracoes de build, gitignore, pacotes).
+- `[ISO-6.4.7-CRITxx]`: Criterios e Padroes de Codificacao (Linters, formatacao, regras estaticas).
+- `[ISO-6.4.7-SRPxx]`: Principio da Responsabilidade Unica e Decomposicao Arquitetural.
+- `[ISO-6.4.7-VERIFxx]`: Verificacao de Software (Testes unitarios e de integracao).
+- `[ISO-6.4.7-CIxx]`: Integracao Continua e Automacao de Qualidade.
+- `[ISO-6.4.7-DOCxx]`: Documentacao Formal e Relatorios de Auditoria.
 
 ---
 
@@ -66,21 +69,22 @@ Cada commit executado durante o plano deve satisfazer estritamente:
 
 Apos auditoria estrutural do repositorio `Rhyme`, foram identificados os seguintes gargalos arquiteturais:
 
-| Componente / Modulo | Linhas | Tamanho | Diagnostico Tecnico |
-| :--- | :---: | :---: | :--- |
-| `src/pages/StudentMap.jsx` | 2.635 | 125 KB | **God Component**: Aglutina mapa Leaflet, listeners do Firestore para dezenas de alunos/onibus, calculos de Haversine, broadcast de GPS, sintetizador de audio, modais de alarme/wake-up e logica de rede. |
-| `src/pages/DriverDashboard.jsx` | 1.812 | 89.8 KB | **God Component**: Mistura telemetria de conducao, envio continuo de GPS, contadores agrupados por campus, fila de passageiros, chamadas de embarque e modal de socorro. |
-| `src/components/Header.jsx` | 717 | 34.6 KB | Acoplamento excessivo de navegacao, status de conexao, alternadores de som/tema e gavetas de menu. |
-| `src/utils/useTripData.js` | 170 | 8.9 KB | Custom hook posicionado erroneamente dentro da pasta `src/utils/` em vez de `src/hooks/`. |
-| `package.json` | 38 | 0.9 KB | Nome do pacote como `"temp-vite"` e ausencia de framework de testes automatizados (`vitest`). |
-| `dev-dist/` | 108 avisos | - | Diretorio de build temporario do PWA sendo inspecionado pelo linter `oxlint`. |
-| Ausencia de CI/CD | - | - | Inexistencia de pipeline de validacao automatica para commits e Pull Requests. |
+| Componente / Modulo             |   Linhas   | Tamanho | Diagnostico Tecnico                                                                                                                                                                                        |
+| :------------------------------ | :--------: | :-----: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/pages/StudentMap.jsx`      |   2.635    | 125 KB  | **God Component**: Aglutina mapa Leaflet, listeners do Firestore para dezenas de alunos/onibus, calculos de Haversine, broadcast de GPS, sintetizador de audio, modais de alarme/wake-up e logica de rede. |
+| `src/pages/DriverDashboard.jsx` |   1.812    | 89.8 KB | **God Component**: Mistura telemetria de conducao, envio continuo de GPS, contadores agrupados por campus, fila de passageiros, chamadas de embarque e modal de socorro.                                   |
+| `src/components/Header.jsx`     |    717     | 34.6 KB | Acoplamento excessivo de navegacao, status de conexao, alternadores de som/tema e gavetas de menu.                                                                                                         |
+| `src/utils/useTripData.js`      |    170     | 8.9 KB  | Custom hook posicionado erroneamente dentro da pasta `src/utils/` em vez de `src/hooks/`.                                                                                                                  |
+| `package.json`                  |     38     | 0.9 KB  | Nome do pacote como `"temp-vite"` e ausencia de framework de testes automatizados (`vitest`).                                                                                                              |
+| `dev-dist/`                     | 108 avisos |    -    | Diretorio de build temporario do PWA sendo inspecionado pelo linter `oxlint`.                                                                                                                              |
+| Ausencia de CI/CD               |     -      |    -    | Inexistencia de pipeline de validacao automatica para commits e Pull Requests.                                                                                                                             |
 
 ---
 
 ## 4. Cronograma de Execucao por Fases
 
 ### Fase 0: Baseline, Higienizacao e Governanca de Configuracao (Semana 1)
+
 > **Foco**: ISO 12207 - 6.3.5 (Processo de Gerencia de Configuracao) e 6.4.7.2.a.
 
 1. **Normalizacao do Projeto**:
@@ -90,6 +94,7 @@ Apos auditoria estrutural do repositorio `Rhyme`, foram identificados os seguint
    - Configurar `.oxlintignore` para impedir que arquivos gerados de service worker poluam a analise de codigo.
 
 #### Commits Atomicos da Fase 0:
+
 ```bash
 git commit -m "build(config): [ISO-6.3.5-CM01] normalize package metadata and add root editorconfig"
 git commit -m "build(config): [ISO-6.3.5-CM02] refine gitignore and oxlintignore to exclude dev-dist artifacts"
@@ -98,6 +103,7 @@ git commit -m "build(config): [ISO-6.3.5-CM02] refine gitignore and oxlintignore
 ---
 
 ### Fase 1: Padroes de Codificacao, Linters e Tipagem (Semana 2)
+
 > **Foco**: ISO 12207 - 6.4.7.2.a (Criterios de Construcao Definidos).
 
 1. **Padronizacao e Formatacao Estatica**:
@@ -107,6 +113,7 @@ git commit -m "build(config): [ISO-6.3.5-CM02] refine gitignore and oxlintignore
    - Executar varredura completa da base de codigo para zerar avisos e erros sintaticos.
 
 #### Commits Atomicos da Fase 1:
+
 ```bash
 git commit -m "style(frontend): [ISO-6.4.7-CRIT01] configure strict linter rules and prettier formatting"
 git commit -m "build(git): [ISO-6.4.7-CRIT02] setup pre-commit hooks for automated code quality checks"
@@ -116,6 +123,7 @@ git commit -m "style(frontend): [ISO-6.4.7-CRIT03] format entire codebase to com
 ---
 
 ### Fase 2: Decomposicao Arquitetural da Camada de Servicos e StudentMap (Semanas 3 e 4)
+
 > **Foco**: ISO 12207 - 6.4.7.2.b (Unidades de Software Construidas - SOLID/SRP).
 
 1. **Criacao da Camada de Servicos (`src/services/`)**:
@@ -129,6 +137,7 @@ git commit -m "style(frontend): [ISO-6.4.7-CRIT03] format entire codebase to com
    - Modularizar subcomponentes de interface: `CampusModeHUD.jsx`, `StudentControls.jsx`, `WakeUpAlarmController.jsx`.
 
 #### Commits Atomicos da Fase 2:
+
 ```bash
 git commit -m "refactor(services): [ISO-6.4.7-SRP01] extract pure geographic and haversine calculations into geoService"
 git commit -m "refactor(services): [ISO-6.4.7-SRP02] extract firestore student realtime operations into studentService"
@@ -140,6 +149,7 @@ git commit -m "refactor(student-map): [ISO-6.4.7-SRP05] decompose StudentMap int
 ---
 
 ### Fase 3: Refatoracao do DriverDashboard e Centralizacao de Estado (Semanas 5 e 6)
+
 > **Foco**: ISO 12207 - 6.4.7.2.b (Modularizacao e Alta Coesao).
 
 1. **Decomposicao do Monolito `DriverDashboard.jsx` (1.812 linhas)**:
@@ -152,6 +162,7 @@ git commit -m "refactor(student-map): [ISO-6.4.7-SRP05] decompose StudentMap int
    - Decompor `src/components/Header.jsx` (717 linhas) separando barra de navegacao, status de conexao e gaveta de menu.
 
 #### Commits Atomicos da Fase 3:
+
 ```bash
 git commit -m "refactor(services): [ISO-6.4.7-SRP06] extract trip management and telemetry into driverService"
 git commit -m "refactor(driver): [ISO-6.4.7-SRP07] decompose DriverDashboard into modular HUD and campus summary cards"
@@ -161,6 +172,7 @@ git commit -m "refactor(components): [ISO-6.4.7-SRP08] move useTripData to hooks
 ---
 
 ### Fase 4: Verificacao de Unidades e Testes Automatizados (Semanas 7 e 8)
+
 > **Foco**: ISO 12207 - 6.4.7.2.c (Unidades de Software Verificadas) e 6.4.9 (Processo de Verificacao).
 
 1. **Ambiente de Testes (Vitest + React Testing Library)**:
@@ -176,6 +188,7 @@ git commit -m "refactor(components): [ISO-6.4.7-SRP08] move useTripData to hooks
    - Testar protecao de rotas autenticadas em `AuthContext`.
 
 #### Commits Atomicos da Fase 4:
+
 ```bash
 git commit -m "test(setup): [ISO-6.4.7-VERIF01] setup vitest and react testing library environment"
 git commit -m "test(services): [ISO-6.4.7-VERIF02] add unit tests covering haversine geofencing and trip state machine"
@@ -185,6 +198,7 @@ git commit -m "test(components): [ISO-6.4.7-VERIF03] add component tests for gps
 ---
 
 ### Fase 5: Esteira de Integracao Continua (CI/CD) e Auditoria de Rastreabilidade (Semana 9)
+
 > **Foco**: ISO 12207 - 6.4.7.2.d (Rastreabilidade e Fechamento do Ciclo).
 
 1. **Pipeline de Integracao Continua (GitHub Actions)**:
@@ -197,6 +211,7 @@ git commit -m "test(components): [ISO-6.4.7-VERIF03] add component tests for gps
    - Elaboracao do Relatorio Formal de Auditoria (`docs/AUDIT_REPORT_ISO_12207.md`) mapeando todos os commits, requisitos (RF01 a RF06) e testes (CT-01 a CT-06) da Etapa 4 do Manual.
 
 #### Commits Atomicos da Fase 5:
+
 ```bash
 git commit -m "ci(github): [ISO-6.4.7-CI01] add multi-job workflow for automated lint, test and pwa build verification"
 git commit -m "docs(compliance): [ISO-6.4.7-DOC01] document software construction compliance and traceability audit"
@@ -206,15 +221,15 @@ git commit -m "docs(compliance): [ISO-6.4.7-DOC01] document software constructio
 
 ## 5. Criterios de Aceite para Conformidade com a ISO 12207 (6.4.7)
 
-Para que a transicao arquitetural do **Rhyme** seja aprovada formalmente em auditoria de qualidade de software, todos os seguintes criterios objetivos (*quality gates*) devem ser atingidos:
+Para que a transicao arquitetural do **Rhyme** seja aprovada formalmente em auditoria de qualidade de software, todos os seguintes criterios objetivos (_quality gates_) devem ser atingidos:
 
-* [ ] **Zero Violacoes de Linter**: Execucao de `npm run lint` com codigo de saida `0` sem avisos em arquivos de producao.
-* [ ] **Decomposicao de God Components**: Reducao do tamanho de `StudentMap.jsx` e `DriverDashboard.jsx` para componentes modulares coesos com menos de 500 linhas cada.
-* [ ] **Isolamento de Infraestrutura**: Zero chamadas diretas a APIs do Firebase ou Web Audio soltas dentro de renderizadores de tela; 100% encapsuladas na camada `src/services/`.
-* [ ] **Cobertura Minima de Testes**: Suite automatizada no Vitest cobrindo 100% das funcoes puras de georreferenciamento (Haversine/Geofencing) e regras de transicao de status de viagem.
-* [ ] **Rastreabilidade Bidirecional nos Commits**: 100% dos commits da transicao seguindo o padrao atomico `[ISO-6.4.7-XXX]`.
-* [ ] **Build e CI Verde**: Pipeline do GitHub Actions executando e aprovando todos os estagios (lint, test, build) a cada push e Pull Request na branch principal.
+- [ ] **Zero Violacoes de Linter**: Execucao de `npm run lint` com codigo de saida `0` sem avisos em arquivos de producao.
+- [ ] **Decomposicao de God Components**: Reducao do tamanho de `StudentMap.jsx` e `DriverDashboard.jsx` para componentes modulares coesos com menos de 500 linhas cada.
+- [ ] **Isolamento de Infraestrutura**: Zero chamadas diretas a APIs do Firebase ou Web Audio soltas dentro de renderizadores de tela; 100% encapsuladas na camada `src/services/`.
+- [ ] **Cobertura Minima de Testes**: Suite automatizada no Vitest cobrindo 100% das funcoes puras de georreferenciamento (Haversine/Geofencing) e regras de transicao de status de viagem.
+- [ ] **Rastreabilidade Bidirecional nos Commits**: 100% dos commits da transicao seguindo o padrao atomico `[ISO-6.4.7-XXX]`.
+- [ ] **Build e CI Verde**: Pipeline do GitHub Actions executando e aprovando todos os estagios (lint, test, build) a cada push e Pull Request na branch principal.
 
 ---
 
-*Plano elaborado para o projeto Rhyme conforme as diretrizes do Instituto de Informatica (INF/UFG) e a norma internacional ISO/IEC/IEEE 12207:2017.*
+_Plano elaborado para o projeto Rhyme conforme as diretrizes do Instituto de Informatica (INF/UFG) e a norma internacional ISO/IEC/IEEE 12207:2017._

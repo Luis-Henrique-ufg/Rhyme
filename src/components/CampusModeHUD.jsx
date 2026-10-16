@@ -1,44 +1,188 @@
 import { useMemo } from 'react';
-import { Footprints, MapPin, Navigation2, X, Compass, School, Utensils, BookOpen, Building2, Sparkles, Crosshair } from 'lucide-react';
+import {
+  Footprints,
+  MapPin,
+  Navigation2,
+  X,
+  Compass,
+  School,
+  Utensils,
+  BookOpen,
+  Building2,
+  Sparkles,
+  Crosshair,
+} from 'lucide-react';
 import { playTapSound, playToggleSound } from '../utils/audioEffects';
 
 /**
  * Campus POIs com coordenadas exatas (Mapbox / OpenStreetMap)
  */
 export const CAMPUS_POIS = {
-  'UFG': [
-    { id: 'bc', name: 'Biblioteca Central (BC)', type: 'biblio', icon: BookOpen, coords: [-16.605554, -49.261135] },
-    { id: 'ru', name: 'Restaurante Universitário (RU)', type: 'food', icon: Utensils, coords: [-16.602050, -49.262147] },
-    { id: 'inf', name: 'Instituto de Informática (INF)', type: 'building', icon: Building2, coords: [-16.603557, -49.266572] },
-    { id: 'reitoria', name: 'Prédio da Reitoria', type: 'admin', icon: School, coords: [-16.606832, -49.259380] },
-    { id: 'baru', name: 'Centro de Aulas Baru (CAB)', type: 'building', icon: Building2, coords: [-16.603100, -49.265819] },
-    { id: 'aroeira', name: 'Centro de Aulas Aroeira', type: 'building', icon: Building2, coords: [-16.602705, -49.262764] },
-    { id: 'fav', name: 'Faculdade Artes Visuais (FAV)', type: 'building', icon: Building2, coords: [-16.605643, -49.262052] },
-    { id: 'letras', name: 'Faculdade de Letras', type: 'building', icon: Building2, coords: [-16.602754, -49.263820] },
-    { id: 'eventos', name: 'Centro de Eventos (Bufáiçal)', type: 'admin', icon: School, coords: [-16.604035, -49.258975] }
+  UFG: [
+    {
+      id: 'bc',
+      name: 'Biblioteca Central (BC)',
+      type: 'biblio',
+      icon: BookOpen,
+      coords: [-16.605554, -49.261135],
+    },
+    {
+      id: 'ru',
+      name: 'Restaurante Universitário (RU)',
+      type: 'food',
+      icon: Utensils,
+      coords: [-16.60205, -49.262147],
+    },
+    {
+      id: 'inf',
+      name: 'Instituto de Informática (INF)',
+      type: 'building',
+      icon: Building2,
+      coords: [-16.603557, -49.266572],
+    },
+    {
+      id: 'reitoria',
+      name: 'Prédio da Reitoria',
+      type: 'admin',
+      icon: School,
+      coords: [-16.606832, -49.25938],
+    },
+    {
+      id: 'baru',
+      name: 'Centro de Aulas Baru (CAB)',
+      type: 'building',
+      icon: Building2,
+      coords: [-16.6031, -49.265819],
+    },
+    {
+      id: 'aroeira',
+      name: 'Centro de Aulas Aroeira',
+      type: 'building',
+      icon: Building2,
+      coords: [-16.602705, -49.262764],
+    },
+    {
+      id: 'fav',
+      name: 'Faculdade Artes Visuais (FAV)',
+      type: 'building',
+      icon: Building2,
+      coords: [-16.605643, -49.262052],
+    },
+    {
+      id: 'letras',
+      name: 'Faculdade de Letras',
+      type: 'building',
+      icon: Building2,
+      coords: [-16.602754, -49.26382],
+    },
+    {
+      id: 'eventos',
+      name: 'Centro de Eventos (Bufáiçal)',
+      type: 'admin',
+      icon: School,
+      coords: [-16.604035, -49.258975],
+    },
   ],
   'UFG - CAMPUS COLEMAR': [
-    { id: 'direito', name: 'Faculdade de Direito', type: 'building', icon: Building2, coords: [-16.675499, -49.243582] },
-    { id: 'bc', name: 'Biblioteca Seccional Câmpus 1', type: 'biblio', icon: BookOpen, coords: [-16.675247, -49.243570] },
-    { id: 'ru', name: 'Restaurante Universitário', type: 'food', icon: Utensils, coords: [-16.675507, -49.242882] },
-    { id: 'medicina', name: 'Faculdade de Medicina', type: 'building', icon: Building2, coords: [-16.674096, -49.244128] },
-    { id: 'odonto', name: 'Faculdade de Odontologia', type: 'building', icon: Building2, coords: [-16.673250, -49.243500] }
+    {
+      id: 'direito',
+      name: 'Faculdade de Direito',
+      type: 'building',
+      icon: Building2,
+      coords: [-16.675499, -49.243582],
+    },
+    {
+      id: 'bc',
+      name: 'Biblioteca Seccional Câmpus 1',
+      type: 'biblio',
+      icon: BookOpen,
+      coords: [-16.675247, -49.24357],
+    },
+    {
+      id: 'ru',
+      name: 'Restaurante Universitário',
+      type: 'food',
+      icon: Utensils,
+      coords: [-16.675507, -49.242882],
+    },
+    {
+      id: 'medicina',
+      name: 'Faculdade de Medicina',
+      type: 'building',
+      icon: Building2,
+      coords: [-16.674096, -49.244128],
+    },
+    {
+      id: 'odonto',
+      name: 'Faculdade de Odontologia',
+      type: 'building',
+      icon: Building2,
+      coords: [-16.67325, -49.2435],
+    },
   ],
-  'PUC': [
-    { id: 'bc', name: 'Biblioteca Central PUC', type: 'biblio', icon: BookOpen, coords: [-16.673800, -49.242900] },
-    { id: 'area2', name: 'Área 2 (Engenharias)', type: 'building', icon: Building2, coords: [-16.676500, -49.243500] },
-    { id: 'area4', name: 'Área 4 (Saúde e Biológicas)', type: 'building', icon: Building2, coords: [-16.675500, -49.240500] },
-    { id: 'campus2', name: 'Câmpus 2 (Jardim Goiás)', type: 'building', icon: School, coords: [-16.697500, -49.232000] }
+  PUC: [
+    {
+      id: 'bc',
+      name: 'Biblioteca Central PUC',
+      type: 'biblio',
+      icon: BookOpen,
+      coords: [-16.6738, -49.2429],
+    },
+    {
+      id: 'area2',
+      name: 'Área 2 (Engenharias)',
+      type: 'building',
+      icon: Building2,
+      coords: [-16.6765, -49.2435],
+    },
+    {
+      id: 'area4',
+      name: 'Área 4 (Saúde e Biológicas)',
+      type: 'building',
+      icon: Building2,
+      coords: [-16.6755, -49.2405],
+    },
+    {
+      id: 'campus2',
+      name: 'Câmpus 2 (Jardim Goiás)',
+      type: 'building',
+      icon: School,
+      coords: [-16.6975, -49.232],
+    },
   ],
-  'UNIP': [
-    { id: 'bc', name: 'Biblioteca UNIP', type: 'biblio', icon: BookOpen, coords: [-16.718500, -49.237900] },
-    { id: 'food', name: 'Cantina / Pátio Central', type: 'food', icon: Utensils, coords: [-16.719600, -49.236900] },
-    { id: 'bloco', name: 'Bloco Acadêmico', type: 'building', icon: Building2, coords: [-16.719300, -49.238200] }
+  UNIP: [
+    {
+      id: 'bc',
+      name: 'Biblioteca UNIP',
+      type: 'biblio',
+      icon: BookOpen,
+      coords: [-16.7185, -49.2379],
+    },
+    {
+      id: 'food',
+      name: 'Cantina / Pátio Central',
+      type: 'food',
+      icon: Utensils,
+      coords: [-16.7196, -49.2369],
+    },
+    {
+      id: 'bloco',
+      name: 'Bloco Acadêmico',
+      type: 'building',
+      icon: Building2,
+      coords: [-16.7193, -49.2382],
+    },
   ],
-  'IFG': [
-    { id: 'bc', name: 'Biblioteca Central IFG', type: 'biblio', icon: BookOpen, coords: [-16.671600, -49.255900] },
-    { id: 'food', name: 'Cantina IFG', type: 'food', icon: Utensils, coords: [-16.671900, -49.255100] }
-  ]
+  IFG: [
+    {
+      id: 'bc',
+      name: 'Biblioteca Central IFG',
+      type: 'biblio',
+      icon: BookOpen,
+      coords: [-16.6716, -49.2559],
+    },
+    { id: 'food', name: 'Cantina IFG', type: 'food', icon: Utensils, coords: [-16.6719, -49.2551] },
+  ],
 };
 
 /**
@@ -59,15 +203,21 @@ export default function CampusModeHUD({
   onSelectPoi,
   onToggleCompass,
   isCompassActive,
-  onCenterUser
+  onCenterUser,
 }) {
   // POIs do campus atual ou fallback para genérico da faculdade
   const pois = useMemo(() => {
-    const key = Object.keys(CAMPUS_POIS).find(k => facultyName?.toUpperCase().includes(k));
+    const key = Object.keys(CAMPUS_POIS).find((k) => facultyName?.toUpperCase().includes(k));
     if (key && CAMPUS_POIS[key]) return CAMPUS_POIS[key];
 
     return [
-      { id: 'campus', name: `${facultyName} (Campus Principal)`, type: 'building', icon: School, coords: vanCoords }
+      {
+        id: 'campus',
+        name: `${facultyName} (Campus Principal)`,
+        type: 'building',
+        icon: School,
+        coords: vanCoords,
+      },
     ];
   }, [facultyName, vanCoords]);
 
@@ -82,8 +232,10 @@ export default function CampusModeHUD({
     const dLon = (lng2 - lng1) * (Math.PI / 180);
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      Math.cos(lat1 * (Math.PI / 180)) *
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     const meters = Math.round(R * c);
 
@@ -102,16 +254,21 @@ export default function CampusModeHUD({
             <Footprints size={18} strokeWidth={2.5} />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-xs font-black text-heading tracking-wide truncate leading-tight" title={facultyName}>
+            <h3
+              className="text-xs font-black text-heading tracking-wide truncate leading-tight"
+              title={facultyName}
+            >
               {facultyName}
             </h3>
 
             <div className="flex items-center gap-1.5 min-w-0 mt-0.5">
-              <span className={`text-[8.5px] font-extrabold uppercase px-1.5 py-0.5 rounded-md border shrink-0 ${
-                isUserNearby
-                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                  : 'bg-orange-500/20 text-orange-400 border-orange-500/30'
-              }`}>
+              <span
+                className={`text-[8.5px] font-extrabold uppercase px-1.5 py-0.5 rounded-md border shrink-0 ${
+                  isUserNearby
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                    : 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+                }`}
+              >
                 {isUserNearby ? 'No Campus' : 'Exploração'}
               </span>
 
@@ -120,8 +277,12 @@ export default function CampusModeHUD({
                   <strong className="text-heading font-semibold">{selectedPoi.name}</strong>:{' '}
                   {routeMetrics?.distanceMeters != null ? (
                     <span className="text-orange-400 font-bold">
-                      {routeMetrics.distanceMeters < 1000 ? `${routeMetrics.distanceMeters}m` : `${(routeMetrics.distanceMeters / 1000).toFixed(1)}km`}
-                      {routeMetrics.durationMinutes ? ` (~${routeMetrics.durationMinutes} min a pé)` : ''}
+                      {routeMetrics.distanceMeters < 1000
+                        ? `${routeMetrics.distanceMeters}m`
+                        : `${(routeMetrics.distanceMeters / 1000).toFixed(1)}km`}
+                      {routeMetrics.durationMinutes
+                        ? ` (~${routeMetrics.durationMinutes} min a pé)`
+                        : ''}
                     </span>
                   ) : (
                     <span className="text-orange-400 font-semibold">Traçando trajeto a pé...</span>
@@ -129,7 +290,9 @@ export default function CampusModeHUD({
                 </p>
               ) : isUserNearby && distanceInfo ? (
                 <p className="text-[11px] text-caption truncate min-w-0">
-                  Ponto da Van: <strong className="text-orange-400 font-bold">{distanceInfo.meters}m</strong> (~{distanceInfo.minutes} min a pé)
+                  Ponto da Van:{' '}
+                  <strong className="text-orange-400 font-bold">{distanceInfo.meters}m</strong> (~
+                  {distanceInfo.minutes} min a pé)
                 </p>
               ) : (
                 <p className="text-[11px] text-caption truncate min-w-0">

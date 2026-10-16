@@ -1,25 +1,23 @@
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
-export default function ErrorState({ 
-  message = "Ocorreu um erro inesperado.", 
+export default function ErrorState({
+  message = 'Ocorreu um erro inesperado.',
   onRetry,
-  fullScreen = true
+  fullScreen = true,
 }) {
   const containerClasses = fullScreen
-    ? "min-h-[60vh] w-full flex flex-col items-center justify-center p-6 text-center"
-    : "w-full flex flex-col items-center justify-center p-6 text-center rounded-xl badge-danger";
+    ? 'min-h-[60vh] w-full flex flex-col items-center justify-center p-6 text-center'
+    : 'w-full flex flex-col items-center justify-center p-6 text-center rounded-xl badge-danger';
 
   return (
     <div className={containerClasses}>
       <div className="w-16 h-16 rounded-full bg-danger-bg flex items-center justify-center mb-4 shadow-[0_0_24px_rgba(239,68,68,0.15)]">
         <AlertTriangle className="w-8 h-8 text-danger" />
       </div>
-      
+
       <h3 className="text-xl font-semibold text-heading mb-2">Ops! Algo deu errado</h3>
-      
-      <p className="text-body max-w-sm mb-6 text-sm">
-        {message}
-      </p>
+
+      <p className="text-body max-w-sm mb-6 text-sm">{message}</p>
 
       {onRetry ? (
         <button

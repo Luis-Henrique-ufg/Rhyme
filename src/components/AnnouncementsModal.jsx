@@ -1,9 +1,38 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Bell, BellOff, Plus, Trash2, Shield, Bus, AlertCircle, AlertTriangle, Info, Send, Check, ChevronDown } from 'lucide-react';
-import { collection, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy, limit } from 'firebase/firestore';
+import {
+  X,
+  Bell,
+  BellOff,
+  Plus,
+  Trash2,
+  Shield,
+  Bus,
+  AlertCircle,
+  AlertTriangle,
+  Info,
+  Send,
+  Check,
+  ChevronDown,
+} from 'lucide-react';
+import {
+  collection,
+  onSnapshot,
+  addDoc,
+  deleteDoc,
+  doc,
+  serverTimestamp,
+  query,
+  orderBy,
+  limit,
+} from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useCustomAlert } from '../contexts/AlertContext';
-import { playSuccessSound, playErrorSound, playPopSound, playDeleteSound } from '../utils/audioEffects';
+import {
+  playSuccessSound,
+  playErrorSound,
+  playPopSound,
+  playDeleteSound,
+} from '../utils/audioEffects';
 
 const CustomRouteSelect = ({ value, onChange, options }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,7 +48,7 @@ const CustomRouteSelect = ({ value, onChange, options }) => {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const selected = options.find(o => o.value === value) || options[0];
+  const selected = options.find((o) => o.value === value) || options[0];
 
   return (
     <div ref={containerRef} className="relative w-full">
@@ -29,7 +58,10 @@ const CustomRouteSelect = ({ value, onChange, options }) => {
         className="w-full bg-subtle border border-subtle hover:border-primary/40 rounded-xl px-3 py-2 text-heading text-xs flex items-center justify-between transition-all cursor-pointer shadow-sm"
       >
         <span className="font-semibold truncate">{selected.label}</span>
-        <ChevronDown size={14} className={`text-caption transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180 text-primary' : ''}`} />
+        <ChevronDown
+          size={14}
+          className={`text-caption transition-transform duration-200 shrink-0 ${isOpen ? 'rotate-180 text-primary' : ''}`}
+        />
       </button>
 
       {isOpen && (
@@ -45,8 +77,8 @@ const CustomRouteSelect = ({ value, onChange, options }) => {
                   setIsOpen(false);
                 }}
                 className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
-                  isSelected 
-                    ? 'bg-primary/15 text-primary font-bold' 
+                  isSelected
+                    ? 'bg-primary/15 text-primary font-bold'
                     : 'text-body hover-bg-subtle hover:text-heading'
                 }`}
               >
@@ -72,7 +104,7 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
 
   // Form state
   const canPublish = userProfile?.role === 'admin' || userProfile?.role === 'driver';
-  const defaultRoute = userProfile?.role === 'admin' ? 'Todas' : (userProfile?.route || 'Todas');
+  const defaultRoute = userProfile?.role === 'admin' ? 'Todas' : userProfile?.route || 'Todas';
   const [targetRoute, setTargetRoute] = useState(defaultRoute);
   const [priority, setPriority] = useState('info'); // 'info' | 'warning' | 'urgent'
   const [message, setMessage] = useState('');
@@ -82,25 +114,37 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
     if (!isOpen) return;
 
     const q = query(collection(db, 'announcements'), limit(50));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const docs = snapshot.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        }));
 
-      // Ordena por createdAt desc no cliente para evitar obrigatoriedade de índice composto no Firestore
-      docs.sort((a, b) => {
-        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0);
-        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0);
-        return timeB - timeA;
-      });
+        // Ordena por createdAt desc no cliente para evitar obrigatoriedade de índice composto no Firestore
+        docs.sort((a, b) => {
+          const timeA = a.createdAt?.toMillis
+            ? a.createdAt.toMillis()
+            : a.createdAt?.seconds
+              ? a.createdAt.seconds * 1000
+              : 0;
+          const timeB = b.createdAt?.toMillis
+            ? b.createdAt.toMillis()
+            : b.createdAt?.seconds
+              ? b.createdAt.seconds * 1000
+              : 0;
+          return timeB - timeA;
+        });
 
-      setAnnouncements(docs);
-      setLoading(false);
-    }, (error) => {
-      console.error('Erro ao buscar comunicados:', error);
-      setLoading(false);
-    });
+        setAnnouncements(docs);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Erro ao buscar comunicados:', error);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, [isOpen]);
@@ -108,7 +152,7 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
   if (!isOpen) return null;
 
   // Filtragem de comunicados de acordo com o perfil do usuário
-  const filteredAnnouncements = announcements.filter(item => {
+  const filteredAnnouncements = announcements.filter((item) => {
     if (userProfile?.role === 'admin') return true; // Admin vê tudo
     if (item.route === 'Todas' || !item.route) return true;
     return item.route === userProfile?.route;
@@ -126,9 +170,10 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
     setIsSubmitting(true);
     try {
       // Regra de discrição: se for admin, publica SEMPRE como "Rhyme" (nunca nome pessoal)
-      const authorDisplayName = userProfile?.role === 'admin' 
-        ? 'Rhyme' 
-        : (userProfile?.name || `Motorista ${userProfile?.route || ''}`);
+      const authorDisplayName =
+        userProfile?.role === 'admin'
+          ? 'Rhyme'
+          : userProfile?.name || `Motorista ${userProfile?.route || ''}`;
 
       await addDoc(collection(db, 'announcements'), {
         message: message.trim(),
@@ -138,7 +183,7 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
         authorRole: userProfile?.role || 'driver',
         authorId: currentUserId,
         createdAt: serverTimestamp(),
-        active: true
+        active: true,
       });
 
       playSuccessSound();
@@ -170,11 +215,11 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
 
   const formatDate = (ts) => {
     if (!ts) return 'Agora mesmo';
-    const date = ts.toDate ? ts.toDate() : (ts.seconds ? new Date(ts.seconds * 1000) : new Date());
+    const date = ts.toDate ? ts.toDate() : ts.seconds ? new Date(ts.seconds * 1000) : new Date();
     const now = new Date();
     const isToday = date.toDateString() === now.toDateString();
     const timeStr = date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    
+
     if (isToday) {
       return `Hoje às ${timeStr}`;
     }
@@ -182,7 +227,7 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4 overscroll-none select-none"
       onWheel={(e) => {
         if (!e.target.closest('.custom-scrollbar')) {
@@ -198,16 +243,15 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
       }}
     >
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out] touch-none overscroll-none" 
+      <div
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out] touch-none overscroll-none"
         onClick={onClose}
       />
 
       {/* Modal Container */}
       <div className="relative w-full max-w-lg electric-card bg-card rounded-3xl border border-subtle shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-[fadeIn_0.2s_ease-out]">
-        
         {/* Header */}
-        <div 
+        <div
           className="p-5 border-b border-subtle bg-surface/50 flex justify-between items-center shrink-0 touch-none overscroll-none"
           onWheel={(e) => {
             e.preventDefault();
@@ -219,7 +263,9 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
               <Bell size={18} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-heading tracking-tight leading-tight">Mural de Avisos</h2>
+              <h2 className="text-lg font-bold text-heading tracking-tight leading-tight">
+                Mural de Avisos
+              </h2>
               <p className="text-xs text-caption">Comunicados oficiais e avisos das rotas</p>
             </div>
           </div>
@@ -235,7 +281,7 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
 
         {/* Sub-Header com Botão de Novo Comunicado para Admin / Motorista */}
         {canPublish && (
-          <div 
+          <div
             className="px-5 py-3 border-b border-subtle bg-subtle/40 flex items-center justify-between shrink-0 touch-none overscroll-none"
             onWheel={(e) => {
               e.preventDefault();
@@ -246,12 +292,16 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
               {userProfile?.role === 'admin' ? (
                 <>
                   <Shield size={14} className="text-emerald-500" />
-                  <span>Publicando como <strong className="text-heading">Rhyme (Oficial)</strong></span>
+                  <span>
+                    Publicando como <strong className="text-heading">Rhyme (Oficial)</strong>
+                  </span>
                 </>
               ) : (
                 <>
                   <Bus size={14} className="text-orange-500" />
-                  <span>Publicando como <strong className="text-heading">Motorista</strong></span>
+                  <span>
+                    Publicando como <strong className="text-heading">Motorista</strong>
+                  </span>
                 </>
               )}
             </div>
@@ -262,8 +312,8 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
                 setFormError('');
               }}
               className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer ${
-                isComposing 
-                  ? 'bg-subtle text-body hover:text-heading border border-subtle' 
+                isComposing
+                  ? 'bg-subtle text-body hover:text-heading border border-subtle'
                   : 'btn-primary'
               }`}
             >
@@ -280,7 +330,10 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
 
         {/* Formulário de Criação (Composer) */}
         {isComposing && canPublish && (
-          <form onSubmit={handlePublish} className="p-5 border-b border-subtle bg-card-elevated space-y-3.5 shrink-0 animate-[fadeIn_0.2s_ease-out]">
+          <form
+            onSubmit={handlePublish}
+            className="p-5 border-b border-subtle bg-card-elevated space-y-3.5 shrink-0 animate-[fadeIn_0.2s_ease-out]"
+          >
             {formError && (
               <div className="badge-danger p-2.5 rounded-xl flex items-center gap-2 text-xs animate-in fade-in-50 duration-150">
                 <AlertCircle size={14} className="shrink-0 text-danger" />
@@ -302,7 +355,7 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
                       { value: 'Todas', label: 'Todas as rotas (Geral)' },
                       { value: 'Professor Jamil', label: 'Rota: Professor Jamil' },
                       { value: 'Hidrolândia', label: 'Rota: Hidrolândia' },
-                      { value: 'Cromínia', label: 'Rota: Cromínia' }
+                      { value: 'Cromínia', label: 'Rota: Cromínia' },
                     ]}
                   />
                 ) : (
@@ -370,8 +423,8 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
                 rows={3}
                 placeholder="Ex: Cuidado ao fechar a porta da van, não aplique força desnecessária..."
                 className={`w-full bg-subtle border rounded-xl p-3 text-heading text-sm placeholder:text-caption focus:outline-none transition-colors resize-none ${
-                  formError 
-                    ? 'border-danger focus:border-danger focus:ring-1 focus:ring-danger' 
+                  formError
+                    ? 'border-danger focus:border-danger focus:ring-1 focus:ring-danger'
                     : 'border-subtle focus:border-primary'
                 }`}
               />
@@ -424,7 +477,8 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
               </div>
               <h3 className="text-sm font-bold text-heading mb-1">Nenhum aviso no momento</h3>
               <p className="text-xs text-caption max-w-xs leading-relaxed">
-                Tudo tranquilo por aqui! Quando houver comunicados sobre o veículo ou trajetos, eles aparecerão neste mural.
+                Tudo tranquilo por aqui! Quando houver comunicados sobre o veículo ou trajetos, eles
+                aparecerão neste mural.
               </p>
             </div>
           ) : (
@@ -433,24 +487,26 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
               const canDelete = userProfile?.role === 'admin' || item.authorId === currentUserId;
 
               return (
-                <div 
+                <div
                   key={item.id}
                   className={`p-4 rounded-2xl border transition-all relative overflow-hidden ${
                     item.priority === 'urgent'
                       ? 'bg-danger/5 border-danger/30'
                       : item.priority === 'warning'
-                      ? 'bg-amber-500/5 border-amber-500/30'
-                      : 'bg-subtle/80 border-subtle'
+                        ? 'bg-amber-500/5 border-amber-500/30'
+                        : 'bg-subtle/80 border-subtle'
                   }`}
                 >
                   {/* Faixa lateral colorida de prioridade */}
-                  <div className={`absolute top-0 left-0 bottom-0 w-1 ${
-                    item.priority === 'urgent'
-                      ? 'bg-danger'
-                      : item.priority === 'warning'
-                      ? 'bg-amber-500'
-                      : 'bg-primary'
-                  }`} />
+                  <div
+                    className={`absolute top-0 left-0 bottom-0 w-1 ${
+                      item.priority === 'urgent'
+                        ? 'bg-danger'
+                        : item.priority === 'warning'
+                          ? 'bg-amber-500'
+                          : 'bg-primary'
+                    }`}
+                  />
 
                   {/* Topo do Card */}
                   <div className="flex items-center justify-between gap-2 mb-2 pl-2">
@@ -521,7 +577,6 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
             })
           )}
         </div>
-
       </div>
 
       {/* Modal Customizado de Confirmação de Exclusão */}
@@ -533,7 +588,8 @@ export default function AnnouncementsModal({ isOpen, onClose, userProfile, curre
             </div>
             <h3 className="text-base font-bold text-heading mb-1.5">Excluir comunicado?</h3>
             <p className="text-xs text-caption mb-5 leading-relaxed">
-              Esta ação não pode ser desfeita e o comunicado será removido permanentemente para todos os alunos.
+              Esta ação não pode ser desfeita e o comunicado será removido permanentemente para
+              todos os alunos.
             </p>
             <div className="flex gap-2">
               <button

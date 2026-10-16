@@ -14,7 +14,7 @@ export default function WakeUpSettingsModal({
   onClose,
   settings,
   onSaveSettings,
-  onChangeStopLocation
+  onChangeStopLocation,
 }) {
   const [enabled, setEnabled] = useState(settings?.enabled ?? true);
   const [distance, setDistance] = useState(settings?.distance ?? 1000);
@@ -40,7 +40,7 @@ export default function WakeUpSettingsModal({
     stopWakeUpAlarmSound();
     onSaveSettings?.({
       enabled,
-      distance
+      distance,
     });
     onClose?.();
   };
@@ -76,7 +76,9 @@ export default function WakeUpSettingsModal({
         {/* Toggle principal */}
         <div className="flex items-center justify-between p-3.5 rounded-2xl bg-subtle border border-subtle">
           <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${enabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-subtle text-caption'}`}>
+            <div
+              className={`w-8 h-8 rounded-xl flex items-center justify-center ${enabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-subtle text-caption'}`}
+            >
               <Bell size={18} />
             </div>
             <div>
@@ -104,7 +106,7 @@ export default function WakeUpSettingsModal({
             {[
               { val: 500, label: '500 metros', sub: '~1-2 min' },
               { val: 1000, label: '1 km', sub: '~3-4 min' },
-              { val: 2000, label: '2 km', sub: '~6-8 min' }
+              { val: 2000, label: '2 km', sub: '~6-8 min' },
             ].map((item) => (
               <button
                 key={item.val}

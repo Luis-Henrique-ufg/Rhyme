@@ -9,7 +9,7 @@ export default function BoardingCallModal({
   secondsLeft = 0,
   durationMinutes = 3,
   onClose,
-  onResponse
+  onResponse,
 }) {
   if (!isOpen) return null;
 
@@ -22,15 +22,10 @@ export default function BoardingCallModal({
     secondsLeft <= 30
       ? 'text-danger animate-pulse'
       : secondsLeft <= 60
-      ? 'text-warning'
-      : 'text-success';
+        ? 'text-warning'
+        : 'text-success';
 
-  const barColor =
-    secondsLeft <= 30
-      ? '#ef4444'
-      : secondsLeft <= 60
-      ? '#d97706'
-      : '#22c55e';
+  const barColor = secondsLeft <= 30 ? '#ef4444' : secondsLeft <= 60 ? '#d97706' : '#22c55e';
 
   return (
     <div className="absolute inset-0 z-[2000] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -42,7 +37,9 @@ export default function BoardingCallModal({
               <Bus size={18} className="text-success" />
             </div>
             <div>
-              <p className="text-xs font-extrabold uppercase tracking-widest text-success">Van na portaria!</p>
+              <p className="text-xs font-extrabold uppercase tracking-widest text-success">
+                Van na portaria!
+              </p>
               <p className="text-[11px] text-caption">{faculty || 'Sua faculdade'}</p>
             </div>
           </div>
@@ -62,7 +59,9 @@ export default function BoardingCallModal({
 
         {/* Countdown */}
         <div className="flex flex-col items-center gap-2">
-          <span className={`font-black font-mono text-6xl leading-none tracking-tight ${timerColorClass}`}>
+          <span
+            className={`font-black font-mono text-6xl leading-none tracking-tight ${timerColorClass}`}
+          >
             {minutesStr}:{secondsStr}
           </span>
           <p className="text-xs text-caption">de tolerância para embarque</p>
@@ -72,7 +71,7 @@ export default function BoardingCallModal({
               className="h-full rounded-full transition-all duration-1000"
               style={{
                 width: `${progressPercent}%`,
-                background: barColor
+                background: barColor,
               }}
             />
           </div>

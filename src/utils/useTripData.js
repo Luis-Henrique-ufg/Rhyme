@@ -33,32 +33,38 @@ export function useCurrentTrip(route) {
 
     let unsub = () => {};
 
-    ensureDailyTripExists(route).then((id) => {
-      if (!id) {
-        setLoading(false);
-        return;
-      }
-
-      setTripId(id);
-
-      unsub = onSnapshot(doc(db, 'trips', id), (snap) => {
-        if (snap.exists()) {
-          setTrip({ id: snap.id, ...snap.data() });
-          setError(null);
-        } else {
-          setTrip(null);
+    ensureDailyTripExists(route)
+      .then((id) => {
+        if (!id) {
+          setLoading(false);
+          return;
         }
-        setLoading(false);
-      }, (err) => {
-        console.error("useCurrentTrip snapshot error:", err);
+
+        setTripId(id);
+
+        unsub = onSnapshot(
+          doc(db, 'trips', id),
+          (snap) => {
+            if (snap.exists()) {
+              setTrip({ id: snap.id, ...snap.data() });
+              setError(null);
+            } else {
+              setTrip(null);
+            }
+            setLoading(false);
+          },
+          (err) => {
+            console.error('useCurrentTrip snapshot error:', err);
+            setError(err);
+            setLoading(false);
+          }
+        );
+      })
+      .catch((err) => {
+        console.error('useCurrentTrip init error:', err);
         setError(err);
         setLoading(false);
       });
-    }).catch(err => {
-      console.error("useCurrentTrip init error:", err);
-      setError(err);
-      setLoading(false);
-    });
 
     return () => unsub();
   }, [route]);
@@ -84,18 +90,20 @@ export function useTripAttendances(tripId) {
     }
 
     const q = query(collection(db, 'attendance'), where('tripId', '==', tripId));
-    const unsub = onSnapshot(q, (snap) => {
-      const list = snap.docs
-        .map((d) => ({ id: d.id, ...d.data() }))
-        .filter((a) => a.studentName); // exclude anonymous/partial docs
-      setAttendances(list);
-      setError(null);
-      setLoading(false);
-    }, (err) => {
-      console.error("useTripAttendances snapshot error:", err);
-      setError(err);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((a) => a.studentName); // exclude anonymous/partial docs
+        setAttendances(list);
+        setError(null);
+        setLoading(false);
+      },
+      (err) => {
+        console.error('useTripAttendances snapshot error:', err);
+        setError(err);
+        setLoading(false);
+      }
+    );
 
     return () => unsub();
   }, [tripId]);
@@ -120,20 +128,24 @@ export function useDriverAttendanceMap(tripId) {
     }
 
     const q = query(collection(db, 'attendance'), where('tripId', '==', tripId));
-    const unsub = onSnapshot(q, (snap) => {
-      const map = {};
-      snap.forEach((d) => {
-        const data = d.data();
-        map[data.studentId] = data;
-      });
-      setAttendanceMap(map);
-      setError(null);
-      setLoading(false);
-    }, (err) => {
-      console.error("useDriverAttendanceMap snapshot error:", err);
-      setError(err);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const map = {};
+        snap.forEach((d) => {
+          const data = d.data();
+          map[data.studentId] = data;
+        });
+        setAttendanceMap(map);
+        setError(null);
+        setLoading(false);
+      },
+      (err) => {
+        console.error('useDriverAttendanceMap snapshot error:', err);
+        setError(err);
+        setLoading(false);
+      }
+    );
 
     return () => unsub();
   }, [tripId]);
@@ -228,8 +240,10 @@ function haversineKm(lat1, lon1, lat2, lon2) {
   const dLon = (lon2 - lon1) * (Math.PI / 180);
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -242,10 +256,7 @@ export function useOsrmEta(busLat, busLng, studentLat, studentLng) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (
-      busLat == null || busLng == null ||
-      studentLat == null || studentLng == null
-    ) {
+    if (busLat == null || busLng == null || studentLat == null || studentLng == null) {
       setEtaMinutes(null);
       return;
     }
@@ -300,7 +311,9 @@ export function useOsrmEta(busLat, busLng, studentLat, studentLng) {
         if (!cancelled) setLoading(false);
       });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [busLat, busLng, studentLat, studentLng]);
 
   return { etaMinutes, loading, error };

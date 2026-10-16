@@ -5,14 +5,15 @@ export default function SearchedPlaceCard({
   onClose,
   onStartCampusMode,
   onSetAsDropOff,
-  onFlyTo
+  onFlyTo,
 }) {
   if (!place) return null;
 
-  const isFaculty = place.category?.toLowerCase().includes('universidade') ||
-                    place.category?.toLowerCase().includes('faculdade') ||
-                    place.category?.toLowerCase().includes('instituto') ||
-                    place.category?.toLowerCase().includes('colégio');
+  const isFaculty =
+    place.category?.toLowerCase().includes('universidade') ||
+    place.category?.toLowerCase().includes('faculdade') ||
+    place.category?.toLowerCase().includes('instituto') ||
+    place.category?.toLowerCase().includes('colégio');
 
   return (
     <div className="absolute bottom-20 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm z-[1500] animate-in slide-in-from-bottom-5 duration-200">

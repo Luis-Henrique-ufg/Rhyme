@@ -1,11 +1,47 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, Polyline } from 'react-leaflet';
-import { Users, Check, RefreshCcw, Navigation, Play, StopCircle, MapPin, MapPinOff, BarChart2, LocateFixed, ChevronUp, ChevronDown, X, BellRing, Clock, UserCheck, UserX, Timer } from 'lucide-react';
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMap,
+  useMapEvents,
+  Polyline,
+} from 'react-leaflet';
+import {
+  Users,
+  Check,
+  RefreshCcw,
+  Navigation,
+  Play,
+  StopCircle,
+  MapPin,
+  MapPinOff,
+  BarChart2,
+  LocateFixed,
+  ChevronUp,
+  ChevronDown,
+  X,
+  BellRing,
+  Clock,
+  UserCheck,
+  UserX,
+  Timer,
+} from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-rotate';
-import { doc, collection, query, where, getDocs, updateDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import {
+  doc,
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  setDoc,
+  onSnapshot,
+} from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { db } from '../config/firebase';
@@ -21,17 +57,17 @@ import { playSuccessSound, playBoardingAlarmSound } from '../utils/audioEffects'
 import { useCustomAlert } from '../contexts/AlertContext';
 
 const MOCK_FACULTIES = {
-  'UFG': [-16.603568359752572, -49.26557447462434],
+  UFG: [-16.603568359752572, -49.26557447462434],
   'UFG - Campus Colemar': [-16.676109190074012, -49.24516058049558],
-  'PUC': [-16.67475162780121, -49.24209015441784],
-  'IFG': [-16.665844796098604, -49.25484595828902],
-  'UNIP': [-16.71913305820549, -49.23738118914336],
-  'FASAM': [-16.72238689347141, -49.23657627622922],
-  'Estácio': [-16.661400045241248, -49.261822432566476],
-  'Unicamps': [-16.675166089095736, -49.28430043030609],
-  'Eseffego': [-16.667398357525514, -49.242543618586815],
+  PUC: [-16.67475162780121, -49.24209015441784],
+  IFG: [-16.665844796098604, -49.25484595828902],
+  UNIP: [-16.71913305820549, -49.23738118914336],
+  FASAM: [-16.72238689347141, -49.23657627622922],
+  Estácio: [-16.661400045241248, -49.261822432566476],
+  Unicamps: [-16.675166089095736, -49.28430043030609],
+  Eseffego: [-16.667398357525514, -49.242543618586815],
   'Colégio Vitória': [-16.672587769018502, -49.252661376350915],
-  'Outra': [-16.675707046574686, -49.24547515495722] // Praça Universitária
+  Outra: [-16.675707046574686, -49.24547515495722], // Praça Universitária
 };
 const CENTER = [-16.6869, -49.2643]; // Goiânia
 
@@ -39,22 +75,24 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2); 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
 
 const RecenterButton = ({ lat, lng }) => {
   const map = useMap();
   const [portalTarget, setPortalTarget] = useState(null);
-  
+
   useEffect(() => {
     const interval = setInterval(() => {
       const el = document.getElementById('navbar-recenter-slot');
-      setPortalTarget(current => current === el ? current : el);
+      setPortalTarget((current) => (current === el ? current : el));
     }, 500);
     return () => clearInterval(interval);
   }, []);
@@ -68,7 +106,9 @@ const RecenterButton = ({ lat, lng }) => {
       className="flex flex-col items-center justify-center text-body hover:text-primary transition-colors"
       title="Centralizar"
     >
-      <div className="p-2"><LocateFixed size={24} strokeWidth={2.5} /></div>
+      <div className="p-2">
+        <LocateFixed size={24} strokeWidth={2.5} />
+      </div>
       <span className="text-[11px] font-medium mt-0.5">Focar</span>
     </button>
   );
@@ -97,7 +137,7 @@ const ZoomTracker = ({ onZoomChange }) => {
 
 // Cria cluster marker estilo Uber: círculo branco com contagem e label acima
 const createCustomIcon = (liberados, total, label, isCrominia, isDark = true) => {
-  const isComplete = total === undefined ? false : (liberados === total && total > 0);
+  const isComplete = total === undefined ? false : liberados === total && total > 0;
   const accentColor = isCrominia ? (isDark ? '#27272a' : '#475569') : '#f97316';
   const badgeColor = isComplete ? '#16a34a' : accentColor;
   const night = isDark;
@@ -110,7 +150,8 @@ const createCustomIcon = (liberados, total, label, isCrominia, isDark = true) =>
     pointer-events: none;
   `;
 
-  const labelHtml = label ? `
+  const labelHtml = label
+    ? `
     <div style="
       background: ${night ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.96)'};
       color: ${night ? '#f4f4f5' : '#18181b'};
@@ -125,7 +166,8 @@ const createCustomIcon = (liberados, total, label, isCrominia, isDark = true) =>
       margin-bottom: 4px;
       letter-spacing: -0.01em;
     ">${label}</div>
-  ` : '';
+  `
+    : '';
 
   const circleStyle = `
     width: 40px;
@@ -153,7 +195,7 @@ const createCustomIcon = (liberados, total, label, isCrominia, isDark = true) =>
     `,
     className: 'custom-leaflet-icon',
     iconSize: [40, label ? 66 : 40],
-    iconAnchor: [20, label ? 66 : 40]
+    iconAnchor: [20, label ? 66 : 40],
   });
 };
 
@@ -196,12 +238,20 @@ const createFacultyIcon = (name, isCrominia, isDark = true) => {
     `,
     className: 'bg-transparent border-none',
     iconSize: [140, poleH + 32],
-    iconAnchor: [3, poleH + 32]
+    iconAnchor: [3, poleH + 32],
   });
 };
 
 // Marcador de Aluno/Passageiro na visão do Motorista — avatar circular com halo/sonar único por status (sem duplicação de anéis)
-const createDriverStudentIcon = (name, isLiberado, isSoIda, response = null, totalInCluster = 1, isDark = true, isNextStop = false) => {
+const createDriverStudentIcon = (
+  name,
+  isLiberado,
+  isSoIda,
+  response = null,
+  totalInCluster = 1,
+  isDark = true,
+  isNextStop = false
+) => {
   const night = isDark;
   const isComing = response === 'coming';
 
@@ -240,7 +290,8 @@ const createDriverStudentIcon = (name, isLiberado, isSoIda, response = null, tot
   const labelText = night ? '#f4f4f5' : '#18181b';
 
   // Halo / Sonar unificado: renderizado SEMPRE no mesmo elemento e na mesma cor do status
-  const haloHtml = showHalo ? `
+  const haloHtml = showHalo
+    ? `
     <div style="
       position: absolute;
       inset: -5px;
@@ -252,7 +303,9 @@ const createDriverStudentIcon = (name, isLiberado, isSoIda, response = null, tot
       pointer-events: none;
       z-index: 1;
     "></div>
-    ${isNextStop ? `
+    ${
+      isNextStop
+        ? `
       <div style="
         position: absolute;
         inset: -5px;
@@ -263,22 +316,29 @@ const createDriverStudentIcon = (name, isLiberado, isSoIda, response = null, tot
         pointer-events: none;
         z-index: 1;
       "></div>
-    ` : ''}
-  ` : '';
+    `
+        : ''
+    }
+  `
+    : '';
 
   // Silhueta de pessoa / estudante (Avatar 👤) ou ícone de check se a caminho
-  const userSvg = isComing ? `
+  const userSvg = isComing
+    ? `
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
       <polyline points="20 6 9 17 4 12"></polyline>
     </svg>
-  ` : `
+  `
+    : `
     <svg width="14" height="14" viewBox="0 0 24 24" fill="white" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
       <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
     </svg>
   `;
 
   // Badge indicador de múltiplos alunos no cluster (+1, +2...)
-  const countBadge = totalInCluster > 1 ? `
+  const countBadge =
+    totalInCluster > 1
+      ? `
     <span style="
       position: absolute;
       top: -4px;
@@ -293,9 +353,11 @@ const createDriverStudentIcon = (name, isLiberado, isSoIda, response = null, tot
       box-shadow: 0 2px 4px rgba(0,0,0,0.3);
       z-index: 4;
     ">+${totalInCluster - 1}</span>
-  ` : '';
+  `
+      : '';
 
-  const labelHtml = name ? `
+  const labelHtml = name
+    ? `
     <div style="
       background: ${labelBg};
       color: ${labelText};
@@ -313,7 +375,8 @@ const createDriverStudentIcon = (name, isLiberado, isSoIda, response = null, tot
       text-overflow: ellipsis;
       z-index: 3;
     ">${name}</div>
-  ` : '';
+  `
+    : '';
 
   return L.divIcon({
     html: `
@@ -342,7 +405,7 @@ const createDriverStudentIcon = (name, isLiberado, isSoIda, response = null, tot
     `,
     className: 'bg-transparent border-none',
     iconSize: [28, name ? 50 : 28],
-    iconAnchor: [14, name ? 36 : 14]
+    iconAnchor: [14, name ? 36 : 14],
   });
 };
 
@@ -354,18 +417,10 @@ const createStudentPinIcon = (name, isCrominia, isDark = true, isSoIda = false) 
 const createBusIcon = (isCrominia, isDark = true) => {
   const night = isDark;
   const label = isCrominia ? 'Ônibus' : 'VAN';
-  const bgColor = isCrominia
-    ? (night ? '#ffffff' : '#18181b')
-    : '#f97316';
-  const borderColor = isCrominia
-    ? (night ? '#111' : '#f4f4f5')
-    : (night ? '#111' : '#fff7ed');
-  const iconColor = isCrominia
-    ? (night ? '#111' : '#f4f4f5')
-    : '#ffffff';
-  const wheelColor = isCrominia
-    ? (night ? '#f4f4f5' : '#111')
-    : '#111';
+  const bgColor = isCrominia ? (night ? '#ffffff' : '#18181b') : '#f97316';
+  const borderColor = isCrominia ? (night ? '#111' : '#f4f4f5') : night ? '#111' : '#fff7ed';
+  const iconColor = isCrominia ? (night ? '#111' : '#f4f4f5') : '#ffffff';
+  const wheelColor = isCrominia ? (night ? '#f4f4f5' : '#111') : '#111';
 
   return L.divIcon({
     html: `
@@ -414,7 +469,7 @@ const createBusIcon = (isCrominia, isDark = true) => {
     `,
     className: 'bg-transparent border-none',
     iconSize: [48, 80],
-    iconAnchor: [24, 80]
+    iconAnchor: [24, 80],
   });
 };
 
@@ -431,7 +486,7 @@ const createHaloIcon = (isCrominia, customColor = null) => {
     `,
     className: 'bg-transparent border-none',
     iconSize: [90, 90],
-    iconAnchor: [45, 45]
+    iconAnchor: [45, 45],
   });
 };
 
@@ -453,9 +508,9 @@ export default function DriverDashboard() {
   const [isPublicListOpen, setIsPublicListOpen] = useState(false);
   const [activeLocalRoute, setActiveLocalRoute] = useState(null);
   const activeLocalRouteRef = useRef(null); // ref para acesso no GPS callback sem re-render
-  const nextStopRef = useRef(null);          // ref do nextStop para acesso no GPS callback
-  const isRecalculatingRef = useRef(false);  // evita chamadas OSRM duplas durante recalculo
-  const hasArrivedAlertRef = useRef(false);  // evita alerta de chegada repetido
+  const nextStopRef = useRef(null); // ref do nextStop para acesso no GPS callback
+  const isRecalculatingRef = useRef(false); // evita chamadas OSRM duplas durante recalculo
+  const hasArrivedAlertRef = useRef(false); // evita alerta de chegada repetido
   const pressTimerRef = useRef(null);
   const [isUpdatingTrip, setIsUpdatingTrip] = useState(false);
   const [pendingStudentsConfirm, setPendingStudentsConfirm] = useState(null);
@@ -468,7 +523,7 @@ export default function DriverDashboard() {
   const [arrivedAtStudent, setArrivedAtStudent] = useState(false); // toast de chegada ao aluno
 
   // --- Chamada de Embarque ---
-  const [boardingCall, setBoardingCall] = useState(null);          // objeto da chamada ativa
+  const [boardingCall, setBoardingCall] = useState(null); // objeto da chamada ativa
   const [boardingCallSecondsLeft, setBoardingCallSecondsLeft] = useState(0);
   const [showDurationPicker, setShowDurationPicker] = useState(false);
   const boardingCallIntervalRef = useRef(null);
@@ -486,26 +541,30 @@ export default function DriverDashboard() {
 
     let unsubDriver = () => {};
 
-    unsubDriver = onSnapshot(doc(db, 'students', user.uid), (driverSnap) => {
-      if (!driverSnap.exists()) {
+    unsubDriver = onSnapshot(
+      doc(db, 'students', user.uid),
+      (driverSnap) => {
+        if (!driverSnap.exists()) {
+          setLoading(false);
+          navigate('/cadastro', { replace: true });
+          return;
+        }
+        const driverData = driverSnap.data();
+
+        if (driverData.role === 'student') {
+          navigate('/aluno/mapa', { replace: true });
+          return;
+        }
+
+        setDriver(driverData);
         setLoading(false);
-        navigate('/cadastro', { replace: true });
-        return;
+      },
+      (err) => {
+        console.error('Erro ao carregar perfil do motorista:', err);
+        setDriverError(err);
+        setLoading(false);
       }
-      const driverData = driverSnap.data();
-
-      if (driverData.role === 'student') {
-        navigate('/aluno/mapa', { replace: true });
-        return;
-      }
-
-      setDriver(driverData);
-      setLoading(false);
-    }, (err) => {
-      console.error('Erro ao carregar perfil do motorista:', err);
-      setDriverError(err);
-      setLoading(false);
-    });
+    );
 
     return () => unsubDriver();
   }, [user]);
@@ -517,14 +576,22 @@ export default function DriverDashboard() {
     const normalizedRoute = normalizeRoute(driver.route);
     const studentsRef = collection(db, 'students');
     // Escuta em tempo real qualquer mudança de rota, cadastro ou atualização de alunos
-    const qStudents = query(studentsRef, where('route', '==', normalizedRoute), where('role', '==', 'student'));
+    const qStudents = query(
+      studentsRef,
+      where('route', '==', normalizedRoute),
+      where('role', '==', 'student')
+    );
 
-    const unsubStudents = onSnapshot(qStudents, (snap) => {
-      const studentsData = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
-      setStudents(studentsData);
-    }, (err) => {
-      console.error('Erro ao escutar alunos da rota:', err);
-    });
+    const unsubStudents = onSnapshot(
+      qStudents,
+      (snap) => {
+        const studentsData = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
+        setStudents(studentsData);
+      },
+      (err) => {
+        console.error('Erro ao escutar alunos da rota:', err);
+      }
+    );
 
     return () => unsubStudents();
   }, [driver?.route]);
@@ -550,7 +617,7 @@ export default function DriverDashboard() {
       if (left <= 0) {
         clearInterval(boardingCallIntervalRef.current);
         // Auto-encerra quando o tempo esgota
-        setBoardingCall(prev => prev ? { ...prev, status: 'expired' } : null);
+        setBoardingCall((prev) => (prev ? { ...prev, status: 'expired' } : null));
       }
     };
     tick();
@@ -562,40 +629,43 @@ export default function DriverDashboard() {
   const boardingResponseMap = useMemo(() => {
     if (!boardingCall?.targetStudentIds) return {};
     const map = {};
-    boardingCall.targetStudentIds.forEach(uid => {
+    boardingCall.targetStudentIds.forEach((uid) => {
       const att = attendanceMap[uid];
       if (att?.boardingResponse) {
-        map[uid] = { response: att.boardingResponse, name: att.studentName || 'Aluno', respondedAt: att.boardingResponseAt };
+        map[uid] = {
+          response: att.boardingResponse,
+          name: att.studentName || 'Aluno',
+          respondedAt: att.boardingResponseAt,
+        };
       }
     });
     return map;
   }, [boardingCall?.targetStudentIds, attendanceMap]);
 
-
   // Wake Lock: Mantém a tela ligada enquanto a rota está ativa
   useEffect(() => {
     let wakeLock = null;
-    
+
     const requestWakeLock = async () => {
       if ('wakeLock' in navigator && trip?.status === 'in_progress') {
         try {
           wakeLock = await navigator.wakeLock.request('screen');
         } catch (err) {
-          console.error("Erro ao solicitar wake lock:", err);
+          console.error('Erro ao solicitar wake lock:', err);
         }
       }
     };
-    
+
     requestWakeLock();
-    
+
     const handleVisibilityChange = () => {
       if (wakeLock !== null && document.visibilityState === 'visible') {
         requestWakeLock();
       }
     };
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
+
     return () => {
       if (wakeLock) {
         wakeLock.release().catch(() => {});
@@ -613,7 +683,7 @@ export default function DriverDashboard() {
     }
 
     if (!navigator.geolocation) {
-      showAlert("Seu navegador não suporta geolocalização. O rastreamento não funcionará.");
+      showAlert('Seu navegador não suporta geolocalização. O rastreamento não funcionará.');
       setGpsStatus('error');
       return;
     }
@@ -633,13 +703,19 @@ export default function DriverDashboard() {
       if (localRoute && localRoute.length > 1) {
         // Bug 4: Verifica proximidade ao DESTINO (último ponto da rota) — < 50m → chegou
         const dest = localRoute[localRoute.length - 1];
-        const dLatD = (latitude - dest[0]) * Math.PI / 180;
-        const dLngD = (longitude - dest[1]) * Math.PI / 180;
-        const aD = Math.sin(dLatD/2)**2 + Math.cos(latitude * Math.PI/180) * Math.cos(dest[0] * Math.PI/180) * Math.sin(dLngD/2)**2;
-        const distToDest = 6371000 * 2 * Math.atan2(Math.sqrt(aD), Math.sqrt(1-aD)); // metros
+        const dLatD = ((latitude - dest[0]) * Math.PI) / 180;
+        const dLngD = ((longitude - dest[1]) * Math.PI) / 180;
+        const aD =
+          Math.sin(dLatD / 2) ** 2 +
+          Math.cos((latitude * Math.PI) / 180) *
+            Math.cos((dest[0] * Math.PI) / 180) *
+            Math.sin(dLngD / 2) ** 2;
+        const distToDest = 6371000 * 2 * Math.atan2(Math.sqrt(aD), Math.sqrt(1 - aD)); // metros
 
         if (distToDest < 50) {
-          console.log(`[Rota] Chegou ao ponto de embarque (${Math.round(distToDest)}m). Limpando rota.`);
+          console.log(
+            `[Rota] Chegou ao ponto de embarque (${Math.round(distToDest)}m). Limpando rota.`
+          );
           activeLocalRouteRef.current = null;
           setActiveLocalRoute(null);
           if (!hasArrivedAlertRef.current) {
@@ -650,14 +726,20 @@ export default function DriverDashboard() {
           // Bug 3: Desvio de rota (> 200m do traçado) → limpa e recalcula pro próximo aluno
           let minDist = Infinity;
           for (const point of localRoute) {
-            const dLat = (latitude - point[0]) * Math.PI / 180;
-            const dLng = (longitude - point[1]) * Math.PI / 180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(latitude * Math.PI/180) * Math.cos(point[0] * Math.PI/180) * Math.sin(dLng/2)**2;
-            const dist = 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const dLat = ((latitude - point[0]) * Math.PI) / 180;
+            const dLng = ((longitude - point[1]) * Math.PI) / 180;
+            const a =
+              Math.sin(dLat / 2) ** 2 +
+              Math.cos((latitude * Math.PI) / 180) *
+                Math.cos((point[0] * Math.PI) / 180) *
+                Math.sin(dLng / 2) ** 2;
+            const dist = 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             if (dist < minDist) minDist = dist;
           }
           if (minDist > 200) {
-            console.log(`[Rota] Desvio detectado (${Math.round(minDist)}m). Limpando rota local e recalculando.`);
+            console.log(
+              `[Rota] Desvio detectado (${Math.round(minDist)}m). Limpando rota local e recalculando.`
+            );
             activeLocalRouteRef.current = null;
             setActiveLocalRoute(null);
 
@@ -665,17 +747,21 @@ export default function DriverDashboard() {
             const ns = nextStopRef.current;
             if (ns && !isRecalculatingRef.current) {
               isRecalculatingRef.current = true;
-              fetch(`https://router.project-osrm.org/route/v1/driving/${longitude},${latitude};${ns.lng},${ns.lat}?overview=full&geometries=geojson`)
-                .then(r => r.json())
-                .then(data => {
+              fetch(
+                `https://router.project-osrm.org/route/v1/driving/${longitude},${latitude};${ns.lng},${ns.lat}?overview=full&geometries=geojson`
+              )
+                .then((r) => r.json())
+                .then((data) => {
                   if (data.routes?.[0]) {
-                    const path = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                    const path = data.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
                     activeLocalRouteRef.current = path;
                     setActiveLocalRoute(path);
                   }
                 })
-                .catch(e => console.warn('[Rota] Falha ao recalcular após desvio:', e))
-                .finally(() => { isRecalculatingRef.current = false; });
+                .catch((e) => console.warn('[Rota] Falha ao recalcular após desvio:', e))
+                .finally(() => {
+                  isRecalculatingRef.current = false;
+                });
             }
           }
         }
@@ -689,35 +775,37 @@ export default function DriverDashboard() {
           locationProviderId: user.uid,
           locationProviderRole: 'driver',
           locationProviderStatus: 'active',
-          locationUpdatedAt: Date.now()
+          locationUpdatedAt: Date.now(),
         });
         setGpsStatus('active');
         setLastGpsUpdate(new Date());
         setGpsAccuracy(Math.round(accuracy));
       } catch (e) {
-        console.error("Erro ao enviar coordenadas do GPS para o Firebase", e);
+        console.error('Erro ao enviar coordenadas do GPS para o Firebase', e);
         setGpsStatus('error');
       }
     };
 
     const handleError = (error) => {
-      console.error("Erro de GPS:", error.message);
+      console.error('Erro de GPS:', error.message);
       setGpsStatus('error');
       if (error.code === 1) {
-        showAlert("Permissão de GPS negada. Por favor, autorize nas configurações do navegador para transmitir sua localização.");
+        showAlert(
+          'Permissão de GPS negada. Por favor, autorize nas configurações do navegador para transmitir sua localização.'
+        );
       } else if (error.code === 2) {
-        showAlert("Sinal de GPS indisponível no momento. Buscando...");
+        showAlert('Sinal de GPS indisponível no momento. Buscando...');
       } else if (error.code === 3) {
-        showAlert("O sinal do GPS caiu por instabilidade na rede. Tentando reconectar...");
+        showAlert('O sinal do GPS caiu por instabilidade na rede. Tentando reconectar...');
       } else {
-        showAlert("Ocorreu um erro ao obter o GPS. Tente reiniciar o trajeto.");
+        showAlert('Ocorreu um erro ao obter o GPS. Tente reiniciar o trajeto.');
       }
     };
 
     // watchPosition: evento nativo de mudança de posição
     watchId = navigator.geolocation.watchPosition(sendLocation, handleError, {
       enableHighAccuracy: true,
-      maximumAge: 0
+      maximumAge: 0,
       // Sem timeout — evita que o browser desista em áreas de sinal fraco
     });
 
@@ -725,7 +813,7 @@ export default function DriverDashboard() {
     fallbackInterval = setInterval(() => {
       navigator.geolocation.getCurrentPosition(sendLocation, () => {}, {
         enableHighAccuracy: true,
-        maximumAge: 5000
+        maximumAge: 5000,
       });
     }, 10000);
 
@@ -738,7 +826,7 @@ export default function DriverDashboard() {
 
   const facultySummary = useMemo(() => {
     const map = {};
-    Object.values(attendanceMap).forEach(att => {
+    Object.values(attendanceMap).forEach((att) => {
       if (att.status !== 'liberado' && att.status !== 'aguardando') return;
       const faculty = att.faculty || 'Outra';
       if (!map[faculty]) {
@@ -751,60 +839,78 @@ export default function DriverDashboard() {
 
   const customClusters = useMemo(() => {
     const clusters = [];
-    
+
     Object.entries(attendanceMap).forEach(([studentId, att]) => {
-      if ((att.status === 'liberado' || att.status === 'aguardando' || att.tripType === 'ida') && att.status !== 'cancelado' && att.status !== 'embarcado' && att.lat && att.lng) {
+      if (
+        (att.status === 'liberado' || att.status === 'aguardando' || att.tripType === 'ida') &&
+        att.status !== 'cancelado' &&
+        att.status !== 'embarcado' &&
+        att.lat &&
+        att.lng
+      ) {
         // Usa os dados do próprio attendance, incluindo tripType e resposta de chamada
-        const student = { 
+        const student = {
           id: studentId,
-          name: att.studentName || 'Aluno', 
-          faculty: att.faculty, 
-          status: att.status, 
+          name: att.studentName || 'Aluno',
+          faculty: att.faculty,
+          status: att.status,
           tripType: att.tripType,
           response: att.response || null,
-          responseAt: att.responseAt || null
+          responseAt: att.responseAt || null,
         };
 
         // Tentar adicionar a um cluster custom existente
         let addedToCluster = false;
         for (let cluster of clusters) {
-          const distToCluster = getDistanceFromLatLonInKm(att.lat, att.lng, cluster.lat, cluster.lng);
+          const distToCluster = getDistanceFromLatLonInKm(
+            att.lat,
+            att.lng,
+            cluster.lat,
+            cluster.lng
+          );
           if (distToCluster < 0.15) {
             cluster.students.push(student);
             addedToCluster = true;
             break;
           }
         }
-        
+
         if (!addedToCluster) {
           clusters.push({
             id: `cluster_${studentId}`,
             lat: att.lat,
             lng: att.lng,
-            students: [student]
+            students: [student],
           });
         }
       }
     });
-    
+
     return clusters;
   }, [attendanceMap]);
 
   // Cálculo da Próxima Parada (Mais próxima do ônibus com passageiros pendentes)
   const nextStop = useMemo(() => {
     if (!trip?.busLocation?.lat || !trip?.busLocation?.lng) return null;
-    
+
     const activeStops = [];
-    
+
     // 1. A partir dos customClusters
-    customClusters.forEach(cluster => {
-      const pendingStudents = cluster.students.filter(s => s.status !== 'embarcado' && s.status !== 'cancelado');
+    customClusters.forEach((cluster) => {
+      const pendingStudents = cluster.students.filter(
+        (s) => s.status !== 'embarcado' && s.status !== 'cancelado'
+      );
       if (pendingStudents.length > 0) {
-        const distKm = getDistanceFromLatLonInKm(trip.busLocation.lat, trip.busLocation.lng, cluster.lat, cluster.lng);
-        const liberadosCount = pendingStudents.filter(s => s.status === 'liberado').length;
+        const distKm = getDistanceFromLatLonInKm(
+          trip.busLocation.lat,
+          trip.busLocation.lng,
+          cluster.lat,
+          cluster.lng
+        );
+        const liberadosCount = pendingStudents.filter((s) => s.status === 'liberado').length;
         const primaryFaculty = pendingStudents[0]?.faculty || 'Ponto de Embarque';
         const title = pendingStudents.length === 1 ? pendingStudents[0].name : primaryFaculty;
-        
+
         activeStops.push({
           id: cluster.id,
           title,
@@ -814,38 +920,51 @@ export default function DriverDashboard() {
           students: pendingStudents,
           totalCount: pendingStudents.length,
           liberadosCount,
-          distKm
+          distKm,
         });
       }
     });
-    
+
     // 2. A partir das Faculdades MOCK_FACULTIES caso não agrupadas em customClusters
     Object.entries(MOCK_FACULTIES).forEach(([facName, coords]) => {
-      const facAttendances = Object.values(attendanceMap).filter(att => 
-        att.faculty === facName && att.status !== 'embarcado' && att.status !== 'cancelado' && att.tripType !== 'ida'
+      const facAttendances = Object.values(attendanceMap).filter(
+        (att) =>
+          att.faculty === facName &&
+          att.status !== 'embarcado' &&
+          att.status !== 'cancelado' &&
+          att.tripType !== 'ida'
       );
-      
-      const alreadyInStops = activeStops.some(s => s.faculty === facName);
+
+      const alreadyInStops = activeStops.some((s) => s.faculty === facName);
       if (facAttendances.length > 0 && !alreadyInStops) {
-        const distKm = getDistanceFromLatLonInKm(trip.busLocation.lat, trip.busLocation.lng, coords[0], coords[1]);
-        const liberadosCount = facAttendances.filter(a => a.status === 'liberado').length;
-        
+        const distKm = getDistanceFromLatLonInKm(
+          trip.busLocation.lat,
+          trip.busLocation.lng,
+          coords[0],
+          coords[1]
+        );
+        const liberadosCount = facAttendances.filter((a) => a.status === 'liberado').length;
+
         activeStops.push({
           id: `fac_${facName}`,
           title: facName,
           faculty: facName,
           lat: coords[0],
           lng: coords[1],
-          students: facAttendances.map(a => ({ name: a.studentName || 'Aluno', faculty: a.faculty, status: a.status })),
+          students: facAttendances.map((a) => ({
+            name: a.studentName || 'Aluno',
+            faculty: a.faculty,
+            status: a.status,
+          })),
           totalCount: facAttendances.length,
           liberadosCount,
-          distKm
+          distKm,
         });
       }
     });
-    
+
     if (activeStops.length === 0) return null;
-    
+
     // Ordena pela menor distância em relação ao ônibus
     activeStops.sort((a, b) => a.distKm - b.distKm);
     return activeStops[0];
@@ -860,25 +979,29 @@ export default function DriverDashboard() {
 
   const openNavigationTo = async (lat, lng) => {
     if (!trip?.busLocation && gpsStatus !== 'active') {
-      showAlert("Sua localização GPS não está disponível ainda.");
+      showAlert('Sua localização GPS não está disponível ainda.');
       return;
     }
-    
+
     try {
       const origin = `${trip.busLocation.lng},${trip.busLocation.lat}`;
       const dest = `${lng},${lat}`;
-      const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${origin};${dest}?overview=full&geometries=geojson`);
+      const res = await fetch(
+        `https://router.project-osrm.org/route/v1/driving/${origin};${dest}?overview=full&geometries=geojson`
+      );
       const data = await res.json();
       if (data.routes && data.routes[0]) {
         const coords = data.routes[0].geometry.coordinates;
-        const path = coords.map(c => [c[1], c[0]]);
+        const path = coords.map((c) => [c[1], c[0]]);
         activeLocalRouteRef.current = path;
         setActiveLocalRoute(path);
-        try { playSuccessSound(); } catch (e) {}
+        try {
+          playSuccessSound();
+        } catch (e) {}
       }
     } catch (e) {
       console.error(e);
-      showAlert("Falha ao traçar rota local. Verifique sua conexão.");
+      showAlert('Falha ao traçar rota local. Verifique sua conexão.');
     }
   };
 
@@ -887,27 +1010,32 @@ export default function DriverDashboard() {
     try {
       const attendanceId = `${trip.id}_${studentId}`;
       const newStatus = currentStatus === targetStatus ? 'aguardando' : targetStatus;
-      
+
       // Use attendanceMap as primary source (already synced from Firestore)
       // Fall back to the static students list
       const attData = attendanceMap[studentId];
-      const studentObj = students.find(s => s.uid === studentId);
+      const studentObj = students.find((s) => s.uid === studentId);
       const resolvedName = attData?.studentName || studentObj?.name || 'Aluno';
       const resolvedFaculty = attData?.faculty || studentObj?.faculty || 'Outra';
-      const resolvedRoute = attData?.route || studentObj?.route || driver?.route || 'Professor Jamil';
-      
-      await setDoc(doc(db, 'attendance', attendanceId), { 
-        status: newStatus,
-        tripId: trip.id,
-        studentId: studentId,
-        studentName: resolvedName,
-        faculty: resolvedFaculty,
-        route: resolvedRoute,
-        photoURL: attData?.photoURL || studentObj?.photoURL || null
-      }, { merge: true });
-    } catch(e) {
+      const resolvedRoute =
+        attData?.route || studentObj?.route || driver?.route || 'Professor Jamil';
+
+      await setDoc(
+        doc(db, 'attendance', attendanceId),
+        {
+          status: newStatus,
+          tripId: trip.id,
+          studentId: studentId,
+          studentName: resolvedName,
+          faculty: resolvedFaculty,
+          route: resolvedRoute,
+          photoURL: attData?.photoURL || studentObj?.photoURL || null,
+        },
+        { merge: true }
+      );
+    } catch (e) {
       console.error(e);
-      showAlert("Erro ao atualizar status do aluno");
+      showAlert('Erro ao atualizar status do aluno');
     }
   };
 
@@ -918,9 +1046,11 @@ export default function DriverDashboard() {
 
     // Extrai UIDs dos alunos pendentes nesta parada a partir do attendanceMap
     const targetStudents = Object.entries(attendanceMap)
-      .filter(([_, att]) =>
-        att.status !== 'embarcado' && att.status !== 'cancelado' &&
-        att.faculty === nextStop.faculty
+      .filter(
+        ([_, att]) =>
+          att.status !== 'embarcado' &&
+          att.status !== 'cancelado' &&
+          att.faculty === nextStop.faculty
       )
       .map(([uid, att]) => ({ uid, name: att.studentName || 'Aluno' }));
 
@@ -933,19 +1063,21 @@ export default function DriverDashboard() {
     const callData = {
       faculty: nextStop.faculty,
       stopId: nextStop.id,
-      targetStudentIds: targetStudents.map(s => s.uid),
+      targetStudentIds: targetStudents.map((s) => s.uid),
       targetStudentNames: targetStudents,
       startedAt: now,
       durationMinutes,
       expiresAt: now + durationMinutes * 60_000,
-      status: 'active'
+      status: 'active',
     };
 
     try {
       await updateDoc(doc(db, 'trips', trip.id), { boardingCall: callData });
       setBoardingCall(callData);
       setBoardingCallSecondsLeft(durationMinutes * 60);
-      try { playSuccessSound(); } catch (e) {}
+      try {
+        playSuccessSound();
+      } catch (e) {}
     } catch (e) {
       console.error('Erro ao iniciar chamada de embarque:', e);
       showAlert('Erro ao iniciar chamada de embarque.');
@@ -981,7 +1113,7 @@ export default function DriverDashboard() {
 
   const handleMarkerPressStart = (lat, lng) => {
     if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
-    
+
     const cancelPress = () => {
       if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
       pressTimerRef.current = null;
@@ -1015,20 +1147,24 @@ export default function DriverDashboard() {
           if (navigator.geolocation) {
             await Promise.race([
               new Promise((resolve) => {
-                navigator.geolocation.getCurrentPosition((pos) => {
-                  currentLat = pos.coords.latitude;
-                  currentLng = pos.coords.longitude;
-                  resolve();
-                }, () => resolve(), { timeout: 3000, maximumAge: 10000 });
+                navigator.geolocation.getCurrentPosition(
+                  (pos) => {
+                    currentLat = pos.coords.latitude;
+                    currentLng = pos.coords.longitude;
+                    resolve();
+                  },
+                  () => resolve(),
+                  { timeout: 3000, maximumAge: 10000 }
+                );
               }),
-              new Promise((resolve) => setTimeout(resolve, 3500))
+              new Promise((resolve) => setTimeout(resolve, 3500)),
             ]);
           }
         }
 
-        const waypoints = customClusters.map(c => `${c.lng},${c.lat}`);
+        const waypoints = customClusters.map((c) => `${c.lng},${c.lat}`);
         let routePath = [];
-        
+
         if (waypoints.length > 0) {
           if (currentLat && currentLng) {
             waypoints.unshift(`${currentLng},${currentLat}`);
@@ -1036,22 +1172,24 @@ export default function DriverDashboard() {
           if (waypoints.length >= 2) {
             try {
               const coordsString = waypoints.slice(0, 25).join(';');
-              const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`);
+              const res = await fetch(
+                `https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`
+              );
               const data = await res.json();
               if (data.routes && data.routes[0]) {
                 const coords = data.routes[0].geometry.coordinates;
-                routePath = coords.map(c => ({ lat: c[1], lng: c[0] }));
+                routePath = coords.map((c) => ({ lat: c[1], lng: c[0] }));
               }
             } catch (routeErr) {
-              console.error("Erro ao traçar rota inicial OSRM", routeErr);
+              console.error('Erro ao traçar rota inicial OSRM', routeErr);
             }
           }
         }
-        
+
         let updateData = { status: newStatus };
         if (routePath.length > 0) updateData.driverRoutePath = routePath;
         if (currentLat && currentLng) updateData.busLocation = { lat: currentLat, lng: currentLng };
-        
+
         await updateDoc(doc(db, 'trips', trip.id), updateData);
       } else {
         await updateDoc(doc(db, 'trips', trip.id), { status: newStatus });
@@ -1059,12 +1197,14 @@ export default function DriverDashboard() {
       // Nota: não chamar setTrip aqui — o trip é gerenciado pelo hook useCurrentTrip
       // via onSnapshot, que atualizará o estado automaticamente.
       if (newStatus === 'in_progress') {
-        try { playSuccessSound(); } catch(e){}
+        try {
+          playSuccessSound();
+        } catch (e) {}
         // O GPS real começará a atualizar o banco pelo useEffect acima
       }
     } catch (err) {
-      console.error("Erro ao atualizar status da viagem", err);
-      showAlert("Erro ao atualizar status da viagem: " + err.message);
+      console.error('Erro ao atualizar status da viagem', err);
+      showAlert('Erro ao atualizar status da viagem: ' + err.message);
     } finally {
       setIsUpdatingTrip(false);
     }
@@ -1076,20 +1216,22 @@ export default function DriverDashboard() {
     try {
       let currentLat = trip.busLocation?.lat;
       let currentLng = trip.busLocation?.lng;
-      const waypoints = customClusters.map(c => `${c.lng},${c.lat}`);
+      const waypoints = customClusters.map((c) => `${c.lng},${c.lat}`);
       let routePath = [];
-      
+
       if (waypoints.length > 0) {
         if (currentLat && currentLng) {
           waypoints.unshift(`${currentLng},${currentLat}`);
         }
         if (waypoints.length >= 2) {
           const coordsString = waypoints.slice(0, 25).join(';');
-          const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`);
+          const res = await fetch(
+            `https://router.project-osrm.org/route/v1/driving/${coordsString}?overview=full&geometries=geojson`
+          );
           const data = await res.json();
           if (data.routes && data.routes[0]) {
             const coords = data.routes[0].geometry.coordinates;
-            routePath = coords.map(c => ({ lat: c[1], lng: c[0] }));
+            routePath = coords.map((c) => ({ lat: c[1], lng: c[0] }));
           }
         }
       }
@@ -1100,13 +1242,15 @@ export default function DriverDashboard() {
         activeLocalRouteRef.current = null;
         setActiveLocalRoute(null);
         await updateDoc(doc(db, 'trips', trip.id), { driverRoutePath: routePath });
-        try { playSuccessSound(); } catch(e){}
+        try {
+          playSuccessSound();
+        } catch (e) {}
       } else {
-        showAlert("Não foi possível traçar rota global (poucos alunos com GPS).");
+        showAlert('Não foi possível traçar rota global (poucos alunos com GPS).');
       }
     } catch (e) {
       console.error(e);
-      showAlert("Erro ao recalcular rota.");
+      showAlert('Erro ao recalcular rota.');
     } finally {
       setIsUpdatingTrip(false);
     }
@@ -1120,17 +1264,19 @@ export default function DriverDashboard() {
         await updateDoc(doc(db, 'trips', trip.id), {
           driverRoutePath: [],
           globalRoute: [],
-          routePath: []
+          routePath: [],
         });
-        showAlert("Todas as rotas foram limpas do mapa.");
+        showAlert('Todas as rotas foram limpas do mapa.');
       } catch (e) {
-        console.error("Erro ao limpar rotas:", e);
+        console.error('Erro ao limpar rotas:', e);
       }
     }
   };
 
   const handleFinishClick = () => {
-    const pending = Object.values(attendanceMap).filter(att => att.status === 'aguardando' || att.status === 'liberado');
+    const pending = Object.values(attendanceMap).filter(
+      (att) => att.status === 'aguardando' || att.status === 'liberado'
+    );
     if (pending.length > 0) {
       setPendingStudentsConfirm(pending);
     } else {
@@ -1139,7 +1285,7 @@ export default function DriverDashboard() {
   };
 
   const getStudentName = (uid) => {
-    const s = students.find(s => s.uid === uid);
+    const s = students.find((s) => s.uid === uid);
     return s ? s.name : 'Aluno';
   };
 
@@ -1149,8 +1295,8 @@ export default function DriverDashboard() {
 
   if (driverError || tripError || attendanceError) {
     return (
-      <ErrorState 
-        message="Não foi possível se conectar aos servidores do Rhyme. Verifique sua conexão com a internet." 
+      <ErrorState
+        message="Não foi possível se conectar aos servidores do Rhyme. Verifique sua conexão com a internet."
         onRetry={() => window.location.reload()}
       />
     );
@@ -1165,7 +1311,7 @@ export default function DriverDashboard() {
       <Header userProfile={driver} />
 
       {driver?.role === 'admin' && (
-        <div 
+        <div
           className="bg-card-elevated border-b border-subtle px-4 py-2 flex items-center justify-between z-30 shrink-0 select-none touch-none overscroll-none"
           onWheel={(e) => e.preventDefault()}
         >
@@ -1173,7 +1319,9 @@ export default function DriverDashboard() {
             <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 border border-emerald-500/30 tracking-wider">
               ADMIN
             </span>
-            <span className="text-xs font-semibold text-heading hidden sm:inline">Monitorando Rota:</span>
+            <span className="text-xs font-semibold text-heading hidden sm:inline">
+              Monitorando Rota:
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
             {['Professor Jamil', 'Hidrolândia', 'Cromínia'].map((r) => (
@@ -1197,12 +1345,9 @@ export default function DriverDashboard() {
           </div>
         </div>
       )}
-      
-
 
       {/* Main Content Layout (Map + Table Overlay) */}
       <div className="flex-1 relative overflow-hidden flex flex-col md:flex-row">
-        
         {/* Mapa Leaflet (Fundo 100%) */}
         <div className="absolute inset-0 z-0">
           {/* Legenda de Rotas (Ocultável) */}
@@ -1210,9 +1355,11 @@ export default function DriverDashboard() {
             {isLegendOpen ? (
               <div className="bg-card/95 backdrop-blur-md border border-subtle rounded-xl p-3 flex flex-col gap-2 shadow-2xl animate-[fadeIn_0.2s_ease-out]">
                 <div className="flex items-center justify-between gap-3 border-b border-subtle pb-1">
-                  <h4 className="text-heading text-[10px] font-bold uppercase tracking-wider opacity-80">Legenda de Rotas</h4>
-                  <button 
-                    onClick={() => setIsLegendOpen(false)} 
+                  <h4 className="text-heading text-[10px] font-bold uppercase tracking-wider opacity-80">
+                    Legenda de Rotas
+                  </h4>
+                  <button
+                    onClick={() => setIsLegendOpen(false)}
                     className="text-caption hover:text-heading p-0.5 rounded hover-bg-subtle transition-colors"
                     title="Ocultar legenda"
                   >
@@ -1249,7 +1396,9 @@ export default function DriverDashboard() {
               <MapPin size={20} className="text-success shrink-0" />
               <div className="flex flex-col">
                 <span className="text-heading text-sm font-bold">Ponto de embarque alcançado</span>
-                <span className="text-success text-xs opacity-90">Confirme o embarque na lista de alunos</span>
+                <span className="text-success text-xs opacity-90">
+                  Confirme o embarque na lista de alunos
+                </span>
               </div>
               <button
                 onClick={() => setArrivedAtStudent(false)}
@@ -1264,7 +1413,7 @@ export default function DriverDashboard() {
           {trip?.status === 'in_progress' && nextStop && (
             <div className="absolute top-4 left-4 z-[1001] max-w-[calc(100vw-130px)] sm:max-w-md pointer-events-auto">
               {isHudCollapsed ? (
-                <button 
+                <button
                   onClick={() => setIsHudCollapsed(false)}
                   className="flex items-center gap-2.5 bg-card/90 backdrop-blur-xl border border-primary/40 hover:border-primary text-heading rounded-full px-3.5 py-2 shadow-2xl transition-all group active:scale-95"
                   title="Expandir detalhes da próxima parada"
@@ -1280,9 +1429,14 @@ export default function DriverDashboard() {
                     {nextStop.totalCount} {nextStop.totalCount === 1 ? 'aluno' : 'alunos'}
                   </span>
                   <span className="text-xs font-mono text-caption shrink-0 ml-0.5">
-                    {nextStop.distKm < 1 ? `${Math.round(nextStop.distKm * 1000)}m` : `${nextStop.distKm.toFixed(1)}km`}
+                    {nextStop.distKm < 1
+                      ? `${Math.round(nextStop.distKm * 1000)}m`
+                      : `${nextStop.distKm.toFixed(1)}km`}
                   </span>
-                  <ChevronDown size={14} className="text-caption group-hover:text-heading shrink-0" />
+                  <ChevronDown
+                    size={14}
+                    className="text-caption group-hover:text-heading shrink-0"
+                  />
                 </button>
               ) : (
                 <div className="bg-card/95 backdrop-blur-2xl border border-primary/30 rounded-2xl p-3.5 sm:p-4 shadow-2xl flex flex-col gap-2.5 transition-all animate-[fadeIn_0.2s_ease-out]">
@@ -1297,7 +1451,7 @@ export default function DriverDashboard() {
                         PRÓXIMA PARADA
                       </span>
                     </div>
-                    <button 
+                    <button
                       onClick={() => setIsHudCollapsed(true)}
                       className="text-caption hover:text-heading p-1 rounded-lg hover-bg-subtle transition-colors"
                       title="Minimizar painel"
@@ -1314,23 +1468,29 @@ export default function DriverDashboard() {
                       </h3>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <span className="text-xs text-caption">
-                          {nextStop.totalCount} {nextStop.totalCount === 1 ? 'passageiro' : 'passageiros'}
+                          {nextStop.totalCount}{' '}
+                          {nextStop.totalCount === 1 ? 'passageiro' : 'passageiros'}
                         </span>
                         {nextStop.liberadosCount > 0 && (
                           <span className="text-success font-semibold bg-success-bg px-1.5 py-0.5 rounded text-[10px] border border-success-border">
-                            {nextStop.liberadosCount} liberado{nextStop.liberadosCount > 1 ? 's' : ''}
+                            {nextStop.liberadosCount} liberado
+                            {nextStop.liberadosCount > 1 ? 's' : ''}
                           </span>
                         )}
                       </div>
                     </div>
                     <div className="text-right shrink-0 bg-subtle border border-subtle rounded-xl px-2.5 py-1.5">
                       <div className="text-base sm:text-lg font-black text-heading font-mono tracking-tight leading-none">
-                        {nextStop.distKm < 1 ? `${Math.round(nextStop.distKm * 1000)}` : nextStop.distKm.toFixed(1)}
+                        {nextStop.distKm < 1
+                          ? `${Math.round(nextStop.distKm * 1000)}`
+                          : nextStop.distKm.toFixed(1)}
                         <span className="text-[10px] text-caption font-normal ml-0.5">
                           {nextStop.distKm < 1 ? 'm' : 'km'}
                         </span>
                       </div>
-                      <span className="text-[9px] text-caption font-medium block mt-0.5 uppercase tracking-wider">distância</span>
+                      <span className="text-[9px] text-caption font-medium block mt-0.5 uppercase tracking-wider">
+                        distância
+                      </span>
                     </div>
                   </div>
 
@@ -1348,7 +1508,7 @@ export default function DriverDashboard() {
                     {!boardingCall || boardingCall.status !== 'active' ? (
                       <div className="relative">
                         <button
-                          onClick={() => setShowDurationPicker(v => !v)}
+                          onClick={() => setShowDurationPicker((v) => !v)}
                           className="w-full flex items-center justify-center gap-2 bg-subtle hover:bg-success-bg border border-subtle hover:border-success/60 text-heading hover:text-success font-bold text-xs py-2 px-3 rounded-xl transition-all active:scale-[0.98]"
                         >
                           <BellRing size={13} className="shrink-0" />
@@ -1361,7 +1521,7 @@ export default function DriverDashboard() {
                               <Timer size={11} /> Tolerância de espera
                             </span>
                             <div className="flex gap-2">
-                              {[2, 3, 5].map(min => (
+                              {[2, 3, 5].map((min) => (
                                 <button
                                   key={min}
                                   onClick={() => handleStartBoardingCall(min)}
@@ -1384,7 +1544,9 @@ export default function DriverDashboard() {
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                             </span>
-                            <span className="text-[10px] font-extrabold uppercase tracking-widest text-success">Chamada Ativa</span>
+                            <span className="text-[10px] font-extrabold uppercase tracking-widest text-success">
+                              Chamada Ativa
+                            </span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <button
@@ -1396,7 +1558,9 @@ export default function DriverDashboard() {
                               }}
                               className="text-caption hover:text-heading text-xs font-bold px-2.5 py-1 rounded-lg border border-subtle transition-all active:scale-95 cursor-pointer bg-surface/80"
                               title="Adicionar 1 minuto"
-                            >+1 min</button>
+                            >
+                              +1 min
+                            </button>
                             <button
                               type="button"
                               onClick={(e) => {
@@ -1415,12 +1579,17 @@ export default function DriverDashboard() {
 
                         {/* Cronômetro */}
                         <div className="flex flex-col items-center gap-0.5">
-                          <span className={`font-black font-mono text-2xl leading-none ${
-                            boardingCallSecondsLeft <= 30 ? 'text-danger animate-pulse' :
-                            boardingCallSecondsLeft <= 60 ? 'text-warning' :
-                            'text-success'
-                          }`}>
-                            {String(Math.floor(boardingCallSecondsLeft / 60)).padStart(2,'0')}:{String(boardingCallSecondsLeft % 60).padStart(2,'0')}
+                          <span
+                            className={`font-black font-mono text-2xl leading-none ${
+                              boardingCallSecondsLeft <= 30
+                                ? 'text-danger animate-pulse'
+                                : boardingCallSecondsLeft <= 60
+                                  ? 'text-warning'
+                                  : 'text-success'
+                            }`}
+                          >
+                            {String(Math.floor(boardingCallSecondsLeft / 60)).padStart(2, '0')}:
+                            {String(boardingCallSecondsLeft % 60).padStart(2, '0')}
                           </span>
                           {/* Barra de progresso */}
                           <div className="w-full h-1 bg-subtle rounded-full overflow-hidden">
@@ -1428,7 +1597,12 @@ export default function DriverDashboard() {
                               className="h-full rounded-full transition-all duration-1000"
                               style={{
                                 width: `${(boardingCallSecondsLeft / (boardingCall.durationMinutes * 60)) * 100}%`,
-                                background: boardingCallSecondsLeft <= 30 ? '#f87171' : boardingCallSecondsLeft <= 60 ? '#fbbf24' : '#34d399'
+                                background:
+                                  boardingCallSecondsLeft <= 30
+                                    ? '#f87171'
+                                    : boardingCallSecondsLeft <= 60
+                                      ? '#fbbf24'
+                                      : '#34d399',
                               }}
                             />
                           </div>
@@ -1440,7 +1614,9 @@ export default function DriverDashboard() {
                             const resp = boardingResponseMap[uid];
                             return (
                               <div key={uid} className="flex items-center justify-between py-0.5">
-                                <span className="text-xs text-body font-medium truncate max-w-[120px]">{name}</span>
+                                <span className="text-xs text-body font-medium truncate max-w-[120px]">
+                                  {name}
+                                </span>
                                 {!resp ? (
                                   <span className="flex items-center gap-1 text-[10px] text-caption">
                                     <Clock size={10} /> Aguardando
@@ -1478,7 +1654,15 @@ export default function DriverDashboard() {
             </div>
           )}
 
-          <MapContainer center={CENTER} zoom={12} className="w-full h-full" zoomControl={false} attributionControl={false} rotate={true} touchRotate={true}>
+          <MapContainer
+            center={CENTER}
+            zoom={12}
+            className="w-full h-full"
+            zoomControl={false}
+            attributionControl={false}
+            rotate={true}
+            touchRotate={true}
+          >
             <MapInteractions />
             <ZoomTracker onZoomChange={setMapZoom} />
             <TileLayer
@@ -1487,226 +1671,312 @@ export default function DriverDashboard() {
               key={isDark ? 'night' : 'day'}
             />
             {/* Linha da Rota Geral OSRM (Original/Fixa) */}
-            {(trip?.driverRoutePath || trip?.routePath) && ((trip?.driverRoutePath?.length > 0) || (trip?.routePath?.length > 0)) && trip.status !== 'finished' && (
-              <Polyline positions={trip.driverRoutePath || trip.routePath} color={driver?.route === 'Cromínia' ? (isDark ? "#ffffff" : "#334155") : "#f97316"} weight={5} opacity={0.8} />
-            )}
+            {(trip?.driverRoutePath || trip?.routePath) &&
+              (trip?.driverRoutePath?.length > 0 || trip?.routePath?.length > 0) &&
+              trip.status !== 'finished' && (
+                <Polyline
+                  positions={trip.driverRoutePath || trip.routePath}
+                  color={
+                    driver?.route === 'Cromínia' ? (isDark ? '#ffffff' : '#334155') : '#f97316'
+                  }
+                  weight={5}
+                  opacity={0.8}
+                />
+              )}
 
             {/* Rota Global Dinâmica (Calculada pelo motorista) */}
             {trip?.globalRoute && trip.globalRoute.length > 0 && trip.status !== 'finished' && (
-              <Polyline positions={trip.globalRoute} color="#3b82f6" weight={6} opacity={0.9} dashArray="10, 10" />
+              <Polyline
+                positions={trip.globalRoute}
+                color="#3b82f6"
+                weight={6}
+                opacity={0.9}
+                dashArray="10, 10"
+              />
             )}
 
             {/* Linha da Rota Local OSRM */}
             {activeLocalRoute && activeLocalRoute.length > 0 && trip.status !== 'finished' && (
-              <Polyline positions={activeLocalRoute} color={driver?.route === 'Cromínia' ? (isDark ? "#ffffff" : "#334155") : "#f97316"} weight={6} opacity={0.9} dashArray="10, 10" />
+              <Polyline
+                positions={activeLocalRoute}
+                color={driver?.route === 'Cromínia' ? (isDark ? '#ffffff' : '#334155') : '#f97316'}
+                weight={6}
+                opacity={0.9}
+                dashArray="10, 10"
+              />
             )}
 
             {/* Faculdades com passageiros ativos (Apenas da rota do motorista) */}
             {Object.entries(MOCK_FACULTIES)
-              .filter(([facName]) => Object.values(attendanceMap).some(att => att.faculty === facName && att.status !== 'cancelado'))
+              .filter(([facName]) =>
+                Object.values(attendanceMap).some(
+                  (att) => att.faculty === facName && att.status !== 'cancelado'
+                )
+              )
               .map(([facName, coords]) => {
                 const isCrominia = driver?.route === 'Cromínia';
                 return (
-                  <Marker key={facName} position={coords} icon={createFacultyIcon(facName, isCrominia, isDark)}>
+                  <Marker
+                    key={facName}
+                    position={coords}
+                    icon={createFacultyIcon(facName, isCrominia, isDark)}
+                  >
                     <Popup className="dark-popup">
                       <span className="font-bold text-heading">{facName}</span>
                     </Popup>
                   </Marker>
                 );
-            })}
+              })}
 
             {/* Halo de Proximidade Dinâmico no Ponto Mais Próximo:
                 Apenas para faculdades (fac_) sem cluster individual de alunos.
                 Para alunos individuais, o próprio marcador já renderiza seu sonar exclusivo na cor correta de status, eliminando qualquer duplicação de sonares âmbar + esmeralda. */}
-            {nextStop && nextStop.distKm <= 2.5 && trip?.status === 'in_progress' && nextStop.id.startsWith('fac_') && (
-              <Marker 
-                key={`halo_${nextStop.id}_${nextStop.liberadosCount}`}
-                position={[nextStop.lat, nextStop.lng]} 
-                icon={createHaloIcon(driver?.route === 'Cromínia', nextStop.liberadosCount > 0 && nextStop.liberadosCount === nextStop.totalCount ? '#10b981' : null)} 
-                zIndexOffset={100}
-              />
-            )}
+            {nextStop &&
+              nextStop.distKm <= 2.5 &&
+              trip?.status === 'in_progress' &&
+              nextStop.id.startsWith('fac_') && (
+                <Marker
+                  key={`halo_${nextStop.id}_${nextStop.liberadosCount}`}
+                  position={[nextStop.lat, nextStop.lng]}
+                  icon={createHaloIcon(
+                    driver?.route === 'Cromínia',
+                    nextStop.liberadosCount > 0 && nextStop.liberadosCount === nextStop.totalCount
+                      ? '#10b981'
+                      : null
+                  )}
+                  zIndexOffset={100}
+                />
+              )}
 
             {/* Marcadores de Alunos e Grupos (Avatar de Aluno sem gota e sem duplicação de halo) */}
-            {trip?.status !== 'finished' && customClusters.map(cluster => {
-              const isCrominia = driver?.route === 'Cromínia';
-              const totalStudents = cluster.students.length;
-              // Se há apenas 1 aluno OU o zoom está próximo (>= 15), mostra o avatar do aluno
-              const showIndividual = mapZoom >= 15 || totalStudents === 1;
-              const isNextStop = Boolean(nextStop && nextStop.distKm <= 2.5 && nextStop.id === cluster.id);
+            {trip?.status !== 'finished' &&
+              customClusters.map((cluster) => {
+                const isCrominia = driver?.route === 'Cromínia';
+                const totalStudents = cluster.students.length;
+                // Se há apenas 1 aluno OU o zoom está próximo (>= 15), mostra o avatar do aluno
+                const showIndividual = mapZoom >= 15 || totalStudents === 1;
+                const isNextStop = Boolean(
+                  nextStop && nextStop.distKm <= 2.5 && nextStop.id === cluster.id
+                );
 
-              if (showIndividual) {
-                const isSoIda = cluster.students.every(s => s.tripType === 'ida');
-                const hasLiberado = cluster.students.some(s => s.status === 'liberado');
-                const hasComing = cluster.students.some(s => s.response === 'coming');
-                const primaryStudent = cluster.students[0];
-                const rawName = primaryStudent?.name || 'Aluno';
-                const firstName = rawName.split(' ')[0];
+                if (showIndividual) {
+                  const isSoIda = cluster.students.every((s) => s.tripType === 'ida');
+                  const hasLiberado = cluster.students.some((s) => s.status === 'liberado');
+                  const hasComing = cluster.students.some((s) => s.response === 'coming');
+                  const primaryStudent = cluster.students[0];
+                  const rawName = primaryStudent?.name || 'Aluno';
+                  const firstName = rawName.split(' ')[0];
 
-                let displayName = firstName;
-                if (isSoIda) {
-                  displayName = `${firstName} (Só Ida)`;
-                } else if (totalStudents > 1) {
-                  displayName = `${firstName} +${totalStudents - 1}`;
+                  let displayName = firstName;
+                  if (isSoIda) {
+                    displayName = `${firstName} (Só Ida)`;
+                  } else if (totalStudents > 1) {
+                    displayName = `${firstName} +${totalStudents - 1}`;
+                  }
+
+                  const icon = createDriverStudentIcon(
+                    displayName,
+                    hasLiberado,
+                    isSoIda,
+                    hasComing ? 'coming' : null,
+                    totalStudents,
+                    isDark,
+                    isNextStop
+                  );
+
+                  return (
+                    <Marker
+                      key={`${cluster.id}_${hasLiberado ? 'lib' : 'wait'}_${hasComing ? 'com' : ''}_${isNextStop ? 'next' : ''}`}
+                      position={[cluster.lat, cluster.lng]}
+                      icon={icon}
+                      zIndexOffset={isNextStop ? 700 : 600}
+                      eventHandlers={{
+                        mousedown: () => handleMarkerPressStart(cluster.lat, cluster.lng),
+                        mouseup: handleMarkerPressEnd,
+                        mouseout: handleMarkerPressEnd,
+                        touchstart: () => handleMarkerPressStart(cluster.lat, cluster.lng),
+                        touchend: handleMarkerPressEnd,
+                        touchcancel: handleMarkerPressEnd,
+                        contextmenu: (e) => {
+                          if (e.originalEvent) e.originalEvent.preventDefault();
+                          openNavigationTo(cluster.lat, cluster.lng);
+                        },
+                      }}
+                    >
+                      <Popup className="dark-popup">
+                        <div className="p-1 min-w-[140px] text-xs">
+                          <div className="font-bold text-sm mb-1 text-heading border-b border-subtle pb-1 flex items-center justify-between">
+                            <span>{totalStudents === 1 ? 'Aluno' : `${totalStudents} Alunos`}</span>
+                            {cluster.students[0]?.faculty && (
+                              <span className="text-[10px] font-normal text-orange-400">
+                                {cluster.students[0].faculty}
+                              </span>
+                            )}
+                          </div>
+                          <div className="space-y-1 my-1.5 max-h-36 overflow-y-auto">
+                            {cluster.students.map((s, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center justify-between gap-2 py-0.5"
+                              >
+                                <div className="flex items-center gap-1.5 truncate">
+                                  <span
+                                    className={`w-2 h-2 rounded-full flex-shrink-0 ${s.status === 'liberado' ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : s.tripType === 'ida' ? 'bg-zinc-400' : 'bg-amber-500'}`}
+                                  ></span>
+                                  <span className="text-heading font-medium truncate">
+                                    {s.name}
+                                  </span>
+                                </div>
+                                <div className="flex-shrink-0 text-[10px] flex items-center gap-1">
+                                  {s.tripType === 'ida' ? (
+                                    <span className="text-[9px] px-1 py-0.5 rounded bg-zinc-500/15 text-zinc-400 font-bold border border-zinc-500/30">
+                                      Só ida
+                                    </span>
+                                  ) : s.tripType === 'volta' ? (
+                                    <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-400 font-bold border border-amber-500/30">
+                                      Só volta
+                                    </span>
+                                  ) : (
+                                    <span className="text-[9px] px-1 py-0.5 rounded bg-orange-500/15 text-orange-400 font-bold border border-orange-500/30">
+                                      Ida/Volta
+                                    </span>
+                                  )}
+                                  {s.response === 'coming' ? (
+                                    <span className="text-sky-400 font-bold bg-sky-500/10 px-1 py-0.5 rounded">
+                                      A caminho
+                                    </span>
+                                  ) : s.status === 'liberado' ? (
+                                    <span className="text-emerald-400 font-semibold">Liberado</span>
+                                  ) : (
+                                    <span className="text-amber-400">Aguardando</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openNavigationTo(cluster.lat, cluster.lng);
+                            }}
+                            className="mt-2 w-full py-1 px-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-[11px] font-bold transition-all shadow flex items-center justify-center gap-1 cursor-pointer"
+                          >
+                            <Navigation size={12} />
+                            Navegar até aqui
+                          </button>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  );
+                } else {
+                  // Zoom out com múltiplos alunos: agrupa num ícone com contador
+                  const primaryFaculty = cluster.students[0]?.faculty || '';
+                  const liberados = cluster.students.filter((s) => s.status === 'liberado').length;
+                  const total = totalStudents;
+                  const icon = createCustomIcon(
+                    liberados,
+                    total,
+                    primaryFaculty,
+                    isCrominia,
+                    isDark
+                  );
+                  return (
+                    <Marker
+                      key={cluster.id}
+                      position={[cluster.lat, cluster.lng]}
+                      icon={icon}
+                      zIndexOffset={500}
+                      eventHandlers={{
+                        mousedown: () => handleMarkerPressStart(cluster.lat, cluster.lng),
+                        mouseup: handleMarkerPressEnd,
+                        mouseout: handleMarkerPressEnd,
+                        touchstart: () => handleMarkerPressStart(cluster.lat, cluster.lng),
+                        touchend: handleMarkerPressEnd,
+                        touchcancel: handleMarkerPressEnd,
+                        contextmenu: (e) => {
+                          if (e.originalEvent) e.originalEvent.preventDefault();
+                          openNavigationTo(cluster.lat, cluster.lng);
+                        },
+                      }}
+                    >
+                      <Popup className="dark-popup">
+                        <div className="p-1 min-w-[140px] text-xs">
+                          <div className="font-bold text-sm mb-1 text-heading border-b border-subtle pb-1 flex items-center justify-between">
+                            <span>{primaryFaculty || 'Grupo de Alunos'}</span>
+                            <span className="text-[10px] text-emerald-400 font-bold">
+                              {liberados}/{total}
+                            </span>
+                          </div>
+                          <div className="space-y-1 my-1.5 max-h-36 overflow-y-auto">
+                            {cluster.students.map((s, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center justify-between gap-2 py-0.5"
+                              >
+                                <div className="flex items-center gap-1.5 truncate">
+                                  <span
+                                    className={`w-2 h-2 rounded-full flex-shrink-0 ${s.status === 'liberado' ? 'bg-emerald-500' : s.tripType === 'ida' ? 'bg-zinc-400' : 'bg-amber-500'}`}
+                                  ></span>
+                                  <span className="text-heading font-medium truncate">
+                                    {s.name}
+                                  </span>
+                                </div>
+                                <div className="flex-shrink-0 text-[10px] flex items-center gap-1">
+                                  {s.tripType === 'ida' ? (
+                                    <span className="text-[9px] px-1 py-0.5 rounded bg-zinc-500/15 text-zinc-400 font-bold border border-zinc-500/30">
+                                      Só ida
+                                    </span>
+                                  ) : s.tripType === 'volta' ? (
+                                    <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-400 font-bold border border-amber-500/30">
+                                      Só volta
+                                    </span>
+                                  ) : (
+                                    <span className="text-[9px] px-1 py-0.5 rounded bg-orange-500/15 text-orange-400 font-bold border border-orange-500/30">
+                                      Ida/Volta
+                                    </span>
+                                  )}
+                                  {s.response === 'coming' ? (
+                                    <span className="text-sky-400 font-bold bg-sky-500/10 px-1 py-0.5 rounded">
+                                      A caminho
+                                    </span>
+                                  ) : s.status === 'liberado' ? (
+                                    <span className="text-emerald-400 font-semibold">Liberado</span>
+                                  ) : (
+                                    <span className="text-amber-400">Aguardando</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openNavigationTo(cluster.lat, cluster.lng);
+                            }}
+                            className="mt-2 w-full py-1 px-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-[11px] font-bold transition-all shadow flex items-center justify-center gap-1 cursor-pointer"
+                          >
+                            <Navigation size={12} />
+                            Navegar até aqui
+                          </button>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  );
                 }
-
-                const icon = createDriverStudentIcon(
-                  displayName,
-                  hasLiberado,
-                  isSoIda,
-                  hasComing ? 'coming' : null,
-                  totalStudents,
-                  isDark,
-                  isNextStop
-                );
-
-                return (
-                  <Marker 
-                    key={`${cluster.id}_${hasLiberado ? 'lib' : 'wait'}_${hasComing ? 'com' : ''}_${isNextStop ? 'next' : ''}`} 
-                    position={[cluster.lat, cluster.lng]} 
-                    icon={icon} 
-                    zIndexOffset={isNextStop ? 700 : 600}
-                    eventHandlers={{
-                      mousedown: () => handleMarkerPressStart(cluster.lat, cluster.lng),
-                      mouseup: handleMarkerPressEnd,
-                      mouseout: handleMarkerPressEnd,
-                      touchstart: () => handleMarkerPressStart(cluster.lat, cluster.lng),
-                      touchend: handleMarkerPressEnd,
-                      touchcancel: handleMarkerPressEnd,
-                      contextmenu: (e) => {
-                        if (e.originalEvent) e.originalEvent.preventDefault();
-                        openNavigationTo(cluster.lat, cluster.lng);
-                      }
-                    }}
-                  >
-                    <Popup className="dark-popup">
-                      <div className="p-1 min-w-[140px] text-xs">
-                        <div className="font-bold text-sm mb-1 text-heading border-b border-subtle pb-1 flex items-center justify-between">
-                          <span>{totalStudents === 1 ? 'Aluno' : `${totalStudents} Alunos`}</span>
-                          {cluster.students[0]?.faculty && (
-                            <span className="text-[10px] font-normal text-orange-400">{cluster.students[0].faculty}</span>
-                          )}
-                        </div>
-                        <div className="space-y-1 my-1.5 max-h-36 overflow-y-auto">
-                          {cluster.students.map((s, idx) => (
-                            <div key={idx} className="flex items-center justify-between gap-2 py-0.5">
-                              <div className="flex items-center gap-1.5 truncate">
-                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.status === 'liberado' ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : s.tripType === 'ida' ? 'bg-zinc-400' : 'bg-amber-500'}`}></span>
-                                <span className="text-heading font-medium truncate">{s.name}</span>
-                              </div>
-                              <div className="flex-shrink-0 text-[10px] flex items-center gap-1">
-                                {s.tripType === 'ida' ? (
-                                  <span className="text-[9px] px-1 py-0.5 rounded bg-zinc-500/15 text-zinc-400 font-bold border border-zinc-500/30">Só ida</span>
-                                ) : s.tripType === 'volta' ? (
-                                  <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-400 font-bold border border-amber-500/30">Só volta</span>
-                                ) : (
-                                  <span className="text-[9px] px-1 py-0.5 rounded bg-orange-500/15 text-orange-400 font-bold border border-orange-500/30">Ida/Volta</span>
-                                )}
-                                {s.response === 'coming' ? (
-                                  <span className="text-sky-400 font-bold bg-sky-500/10 px-1 py-0.5 rounded">A caminho</span>
-                                ) : s.status === 'liberado' ? (
-                                  <span className="text-emerald-400 font-semibold">Liberado</span>
-                                ) : (
-                                  <span className="text-amber-400">Aguardando</span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openNavigationTo(cluster.lat, cluster.lng);
-                          }}
-                          className="mt-2 w-full py-1 px-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-[11px] font-bold transition-all shadow flex items-center justify-center gap-1 cursor-pointer"
-                        >
-                          <Navigation size={12} />
-                          Navegar até aqui
-                        </button>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              } else {
-                // Zoom out com múltiplos alunos: agrupa num ícone com contador
-                const primaryFaculty = cluster.students[0]?.faculty || '';
-                const liberados = cluster.students.filter(s => s.status === 'liberado').length;
-                const total = totalStudents;
-                const icon = createCustomIcon(liberados, total, primaryFaculty, isCrominia, isDark);
-                return (
-                  <Marker 
-                    key={cluster.id} 
-                    position={[cluster.lat, cluster.lng]} 
-                    icon={icon} 
-                    zIndexOffset={500}
-                    eventHandlers={{
-                      mousedown: () => handleMarkerPressStart(cluster.lat, cluster.lng),
-                      mouseup: handleMarkerPressEnd,
-                      mouseout: handleMarkerPressEnd,
-                      touchstart: () => handleMarkerPressStart(cluster.lat, cluster.lng),
-                      touchend: handleMarkerPressEnd,
-                      touchcancel: handleMarkerPressEnd,
-                      contextmenu: (e) => {
-                        if (e.originalEvent) e.originalEvent.preventDefault();
-                        openNavigationTo(cluster.lat, cluster.lng);
-                      }
-                    }}
-                  >
-                    <Popup className="dark-popup">
-                      <div className="p-1 min-w-[140px] text-xs">
-                        <div className="font-bold text-sm mb-1 text-heading border-b border-subtle pb-1 flex items-center justify-between">
-                          <span>{primaryFaculty || 'Grupo de Alunos'}</span>
-                          <span className="text-[10px] text-emerald-400 font-bold">{liberados}/{total}</span>
-                        </div>
-                        <div className="space-y-1 my-1.5 max-h-36 overflow-y-auto">
-                          {cluster.students.map((s, idx) => (
-                            <div key={idx} className="flex items-center justify-between gap-2 py-0.5">
-                              <div className="flex items-center gap-1.5 truncate">
-                                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.status === 'liberado' ? 'bg-emerald-500' : s.tripType === 'ida' ? 'bg-zinc-400' : 'bg-amber-500'}`}></span>
-                                <span className="text-heading font-medium truncate">{s.name}</span>
-                              </div>
-                              <div className="flex-shrink-0 text-[10px] flex items-center gap-1">
-                                {s.tripType === 'ida' ? (
-                                  <span className="text-[9px] px-1 py-0.5 rounded bg-zinc-500/15 text-zinc-400 font-bold border border-zinc-500/30">Só ida</span>
-                                ) : s.tripType === 'volta' ? (
-                                  <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-400 font-bold border border-amber-500/30">Só volta</span>
-                                ) : (
-                                  <span className="text-[9px] px-1 py-0.5 rounded bg-orange-500/15 text-orange-400 font-bold border border-orange-500/30">Ida/Volta</span>
-                                )}
-                                {s.response === 'coming' ? (
-                                  <span className="text-sky-400 font-bold bg-sky-500/10 px-1 py-0.5 rounded">A caminho</span>
-                                ) : s.status === 'liberado' ? (
-                                  <span className="text-emerald-400 font-semibold">Liberado</span>
-                                ) : (
-                                  <span className="text-amber-400">Aguardando</span>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openNavigationTo(cluster.lat, cluster.lng);
-                          }}
-                          className="mt-2 w-full py-1 px-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-[11px] font-bold transition-all shadow flex items-center justify-center gap-1 cursor-pointer"
-                        >
-                          <Navigation size={12} />
-                          Navegar até aqui
-                        </button>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              }
-            })}
+              })}
 
             {/* Botão de Centralizar no GPS do Motorista */}
             {trip?.busLocation?.lat && trip?.busLocation?.lng && (
               <>
-                <Marker position={[trip.busLocation.lat, trip.busLocation.lng]} icon={driver?.route === 'Cromínia' ? busIconAlt : busIcon} zIndexOffset={1000}>
+                <Marker
+                  position={[trip.busLocation.lat, trip.busLocation.lng]}
+                  icon={driver?.route === 'Cromínia' ? busIconAlt : busIcon}
+                  zIndexOffset={1000}
+                >
                   <Popup className="dark-popup">
-                    <span className="font-bold text-orange-500">Você ({driver?.route === 'Cromínia' ? 'Ônibus' : 'VAN'})</span>
+                    <span className="font-bold text-orange-500">
+                      Você ({driver?.route === 'Cromínia' ? 'Ônibus' : 'VAN'})
+                    </span>
                   </Popup>
                 </Marker>
                 <RecenterButton lat={trip.busLocation.lat} lng={trip.busLocation.lng} />
@@ -1716,33 +1986,53 @@ export default function DriverDashboard() {
         </div>
 
         {/* Tabela Consolidada (Painel Flutuante) */}
-        <div className={`absolute md:relative z-10 w-full md:w-[400px] electric-card bg-card p-5 overflow-y-auto border-t md:border-t-0 md:border-r border-subtle shadow-2xl flex flex-col mt-auto md:mt-0 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isPanelOpen ? 'translate-y-0 md:translate-x-0 max-h-[55vh] md:max-h-full bottom-0' : 'translate-y-full md:translate-y-0 md:-translate-x-full max-h-[55vh] md:max-h-full bottom-0 md:left-0'} `}>
+        <div
+          className={`absolute md:relative z-10 w-full md:w-[400px] electric-card bg-card p-5 overflow-y-auto border-t md:border-t-0 md:border-r border-subtle shadow-2xl flex flex-col mt-auto md:mt-0 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isPanelOpen ? 'translate-y-0 md:translate-x-0 max-h-[55vh] md:max-h-full bottom-0' : 'translate-y-full md:translate-y-0 md:-translate-x-full max-h-[55vh] md:max-h-full bottom-0 md:left-0'} `}
+        >
           <div className="flex justify-between items-center mb-5">
-            <h2 className="text-2xl font-bricolage font-light text-heading tracking-tight">Resumo da Rota</h2>
-            <button 
-              onClick={() => setIsPanelOpen(false)} 
+            <h2 className="text-2xl font-bricolage font-light text-heading tracking-tight">
+              Resumo da Rota
+            </h2>
+            <button
+              onClick={() => setIsPanelOpen(false)}
               className="w-8 h-8 flex items-center justify-center bg-subtle hover-bg-subtle text-caption hover:text-heading rounded-full transition-colors border border-subtle"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
             </button>
           </div>
-          
+
           {!trip && (
-             <div className="bg-yellow-500/10 border border-yellow-500/50 text-yellow-500 p-4 rounded-xl mb-4 text-sm font-medium">
-               Nenhuma viagem aberta no momento. (Aguardando criação de rota).
-             </div>
+            <div className="bg-yellow-500/10 border border-yellow-500/50 text-yellow-500 p-4 rounded-xl mb-4 text-sm font-medium">
+              Nenhuma viagem aberta no momento. (Aguardando criação de rota).
+            </div>
           )}
-          
+
           <div className="flex-1 space-y-4 pr-2 custom-scrollbar">
-            {facultySummary.map(fac => (
-              <div key={fac.name} className="bg-subtle border border-subtle p-4 rounded-2xl flex items-center justify-between">
+            {facultySummary.map((fac) => (
+              <div
+                key={fac.name}
+                className="bg-subtle border border-subtle p-4 rounded-2xl flex items-center justify-between"
+              >
                 <div>
                   <h3 className="font-bold text-heading text-lg">{fac.name}</h3>
                   <p className="text-caption text-sm font-medium">Na lista de hoje</p>
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-black tracking-tight text-orange-500">
-                    {fac.count} <span className="text-sm font-medium text-caption">passageiros</span>
+                    {fac.count}{' '}
+                    <span className="text-sm font-medium text-caption">passageiros</span>
                   </div>
                 </div>
               </div>
@@ -1766,12 +2056,11 @@ export default function DriverDashboard() {
 
       {/* Bottom Navigation Bar (WhatsApp style) */}
       {trip && (
-        <div 
+        <div
           className="bottom-nav bg-surface border-t border-subtle flex items-center justify-around gap-1 py-2 px-2 md:justify-center md:gap-8 md:px-6 z-50 shrink-0 pb-safe shadow-lg w-full overflow-hidden select-none touch-none overscroll-none"
           onWheel={(e) => e.preventDefault()}
         >
-          
-          <button 
+          <button
             onClick={() => {
               const newState = !isPublicListOpen;
               setIsPublicListOpen(newState);
@@ -1782,18 +2071,28 @@ export default function DriverDashboard() {
             <div className="relative p-1.5 sm:p-2">
               <Users size={22} />
               <span className="absolute top-0 right-0 bg-orange-500 text-black px-1.5 py-0.5 rounded-full text-[9px] font-black translate-x-1/2 -translate-y-1/4 shadow-sm border border-black">
-                {Object.values(attendanceMap).filter(att => att.status === 'liberado' || att.status === 'aguardando').length}
+                {
+                  Object.values(attendanceMap).filter(
+                    (att) => att.status === 'liberado' || att.status === 'aguardando'
+                  ).length
+                }
               </span>
             </div>
-            <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Lista</span>
+            <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
+              Lista
+            </span>
           </button>
 
-          <button 
+          <button
             onClick={() => setIsPanelOpen(!isPanelOpen)}
             className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center transition-colors ${isPanelOpen ? 'text-primary' : 'text-body hover:text-primary'}`}
           >
-            <div className="p-1.5 sm:p-2"><BarChart2 size={22} /></div>
-            <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Resumo</span>
+            <div className="p-1.5 sm:p-2">
+              <BarChart2 size={22} />
+            </div>
+            <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
+              Resumo
+            </span>
           </button>
 
           {/* Indicador GPS — visível apenas em in_progress, alinhado ao design system */}
@@ -1801,8 +2100,11 @@ export default function DriverDashboard() {
             <div
               title={gpsAccuracy != null ? `Precisão: ±${gpsAccuracy}m` : 'Aguardando GPS...'}
               className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center shrink-0 select-none ${
-                gpsStatus === 'active' ? 'text-success' :
-                gpsStatus === 'error' ? 'text-danger' : 'text-caption'
+                gpsStatus === 'active'
+                  ? 'text-success'
+                  : gpsStatus === 'error'
+                    ? 'text-danger'
+                    : 'text-caption'
               }`}
             >
               <div className="relative p-1.5 sm:p-2">
@@ -1812,68 +2114,104 @@ export default function DriverDashboard() {
                 <LocateFixed size={22} className="relative" />
               </div>
               <span className="text-[10px] font-bold mt-0.5 leading-none truncate max-w-full">
-                {gpsStatus === 'active' ? (gpsAccuracy != null ? `±${gpsAccuracy}m` : 'AO VIVO') :
-                 gpsStatus === 'error' ? 'Erro' : 'GPS'}
+                {gpsStatus === 'active'
+                  ? gpsAccuracy != null
+                    ? `±${gpsAccuracy}m`
+                    : 'AO VIVO'
+                  : gpsStatus === 'error'
+                    ? 'Erro'
+                    : 'GPS'}
               </span>
             </div>
           )}
 
-          <div id="navbar-compass-slot" className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex items-center justify-center empty:hidden"></div>
-          <div id="navbar-recenter-slot" className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex items-center justify-center empty:hidden"></div>
+          <div
+            id="navbar-compass-slot"
+            className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex items-center justify-center empty:hidden"
+          ></div>
+          <div
+            id="navbar-recenter-slot"
+            className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex items-center justify-center empty:hidden"
+          ></div>
 
           {trip.status === 'open' && (
-            <button 
+            <button
               onClick={() => updateTripStatus('in_progress')}
               disabled={isUpdatingTrip}
               className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors ${isUpdatingTrip ? 'opacity-50' : ''}`}
             >
-              <div className="p-1.5 sm:p-2"><Play size={22} /></div>
-              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">{isUpdatingTrip ? 'Iniciando' : 'Iniciar'}</span>
+              <div className="p-1.5 sm:p-2">
+                <Play size={22} />
+              </div>
+              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
+                {isUpdatingTrip ? 'Iniciando' : 'Iniciar'}
+              </span>
             </button>
           )}
 
           {trip.status === 'in_progress' && (
-            <button 
+            <button
               onClick={recalculateGlobalRoute}
               disabled={isUpdatingTrip}
               className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors ${isUpdatingTrip ? 'opacity-50' : ''}`}
             >
-              <div className="p-1.5 sm:p-2"><RefreshCcw size={22} /></div>
-              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">{isUpdatingTrip ? 'Atz...' : 'Atualizar'}</span>
+              <div className="p-1.5 sm:p-2">
+                <RefreshCcw size={22} />
+              </div>
+              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
+                {isUpdatingTrip ? 'Atz...' : 'Atualizar'}
+              </span>
             </button>
           )}
 
           {trip.status === 'in_progress' && (
-            <button 
+            <button
               onClick={handleFinishClick}
               className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-danger transition-colors"
             >
-              <div className="p-1.5 sm:p-2"><StopCircle size={22} /></div>
-              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Finalizar</span>
+              <div className="p-1.5 sm:p-2">
+                <StopCircle size={22} />
+              </div>
+              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
+                Finalizar
+              </span>
             </button>
           )}
 
           {trip.status === 'finished' && (
-            <button 
+            <button
               onClick={() => updateTripStatus('open')}
               className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors"
             >
-              <div className="p-1.5 sm:p-2"><Play size={22} /></div>
-              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Reabrir</span>
+              <div className="p-1.5 sm:p-2">
+                <Play size={22} />
+              </div>
+              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
+                Reabrir
+              </span>
             </button>
           )}
 
-          {Boolean((activeLocalRoute && activeLocalRoute.length > 0) || (trip?.driverRoutePath && trip.driverRoutePath.length > 0) || (trip?.routePath && trip.routePath.length > 0) || (trip?.globalRoute && trip.globalRoute.length > 0)) && trip.status !== 'finished' && (
-             <button 
-               onClick={clearAllRoutes}
-               className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors"
-               title="Limpar todas as rotas do mapa"
-             >
-               <div className="p-1.5 sm:p-2"><MapPinOff size={22} /></div>
-               <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">Limpar</span>
-             </button>
-          )}
-
+          {Boolean(
+            (activeLocalRoute && activeLocalRoute.length > 0) ||
+            (trip?.driverRoutePath && trip.driverRoutePath.length > 0) ||
+            (trip?.routePath && trip.routePath.length > 0) ||
+            (trip?.globalRoute && trip.globalRoute.length > 0)
+          ) &&
+            trip.status !== 'finished' && (
+              <button
+                onClick={clearAllRoutes}
+                className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors"
+                title="Limpar todas as rotas do mapa"
+              >
+                <div className="p-1.5 sm:p-2">
+                  <MapPinOff size={22} />
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
+                  Limpar
+                </span>
+              </button>
+            )}
         </div>
       )}
 
@@ -1884,16 +2222,17 @@ export default function DriverDashboard() {
             <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 blur-[50px] rounded-full pointer-events-none"></div>
             <h3 className="text-lg font-bold text-heading mb-2 relative z-10">Finalizar viagem?</h3>
             <p className="text-body text-sm mb-4 relative z-10">
-              Ainda há <strong className="text-heading">{pendingStudentsConfirm.length}</strong> aluno(s) aguardando na lista:
-              <br/>
+              Ainda há <strong className="text-heading">{pendingStudentsConfirm.length}</strong>{' '}
+              aluno(s) aguardando na lista:
+              <br />
               <span className="text-orange-400 font-medium italic mt-1 block">
-                {pendingStudentsConfirm.map(s => s.studentName).join(', ')}
+                {pendingStudentsConfirm.map((s) => s.studentName).join(', ')}
               </span>
-              <br/>
+              <br />
               Eles embarcaram e você esqueceu de marcar, ou realmente ficaram para trás?
             </p>
             <div className="flex flex-col gap-2 relative z-10">
-              <button 
+              <button
                 onClick={async () => {
                   setPendingStudentsConfirm(null);
                   setIsUpdatingTrip(true);
@@ -1912,7 +2251,7 @@ export default function DriverDashboard() {
               >
                 Eles embarcaram (marcar e finalizar)
               </button>
-              <button 
+              <button
                 onClick={() => {
                   setPendingStudentsConfirm(null);
                   updateTripStatus('finished');
@@ -1921,7 +2260,7 @@ export default function DriverDashboard() {
               >
                 Ficaram para trás (apenas finalizar)
               </button>
-              <button 
+              <button
                 onClick={() => setPendingStudentsConfirm(null)}
                 className="w-full bg-subtle hover-bg-subtle text-heading font-bold py-3 px-4 rounded-xl transition-colors mt-2 border border-subtle"
               >

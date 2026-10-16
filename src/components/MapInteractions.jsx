@@ -27,14 +27,14 @@ function getScreenOrientationAngle() {
 /**
  * Calcula a direção da bússola com compensação de inclinação (tilt compensation)
  * usando a fórmula da matriz de rotação do W3C (ZXY order).
- * 
+ *
  * Esta abordagem é matematicamente superior ao uso simples de `alpha` porque:
  * - A variável `alpha` no W3C indica rotação no eixo Z (vertical), que é afetada
  *   pela inclinação do dispositivo (beta/gamma).
  * - A rotação de matriz ZXY decompõe corretamente a orientação e extrai o azimute
  *   real independente do tilt, evitando erros de direção quando o celular não está
  *   perfeitamente plano (situação 100% da prática).
- * 
+ *
  * @param {number} alpha - Rotação Z (0-360°)
  * @param {number} beta  - Inclinação frontal/traseira X (-180° a 180°)
  * @param {number} gamma - Inclinação lateral Y (-90° a 90°)
@@ -43,7 +43,7 @@ function getScreenOrientationAngle() {
 function computeTiltCompensatedHeading(alpha, beta, gamma) {
   const toRad = Math.PI / 180;
   const aR = alpha * toRad;
-  const bR = beta  * toRad;
+  const bR = beta * toRad;
   const gR = gamma * toRad;
 
   const cA = Math.cos(aR);
@@ -73,20 +73,20 @@ export default function MapInteractions() {
   const [compassMode, setCompassMode] = useState(false);
   const [portalTarget, setPortalTarget] = useState(null);
 
-  const targetBearingRef      = useRef(0);
-  const currentBearingRef     = useRef(0);
-  const smoothedSinRef        = useRef(0);
-  const smoothedCosRef        = useRef(1);
-  const hasInitialReadingRef  = useRef(false);
-  const animationFrameRef     = useRef(null);
-  const isCompassActiveRef    = useRef(false);
-  const activeListenerRef     = useRef(null);   // { eventName, fn }
+  const targetBearingRef = useRef(0);
+  const currentBearingRef = useRef(0);
+  const smoothedSinRef = useRef(0);
+  const smoothedCosRef = useRef(1);
+  const hasInitialReadingRef = useRef(false);
+  const animationFrameRef = useRef(null);
+  const isCompassActiveRef = useRef(false);
+  const activeListenerRef = useRef(null); // { eventName, fn }
 
   // Portal para o slot da navbar
   useEffect(() => {
     const interval = setInterval(() => {
       const el = document.getElementById('navbar-compass-slot');
-      setPortalTarget(current => current === el ? current : el);
+      setPortalTarget((current) => (current === el ? current : el));
     }, 500);
     return () => clearInterval(interval);
   }, []);
@@ -144,9 +144,12 @@ export default function MapInteractions() {
       const screenAngle = getScreenOrientationAngle();
       heading = (heading + screenAngle + 360) % 360;
     } else if (
-      e.alpha !== null && e.alpha !== undefined &&
-      e.beta  !== null && e.beta  !== undefined &&
-      e.gamma !== null && e.gamma !== undefined
+      e.alpha !== null &&
+      e.alpha !== undefined &&
+      e.beta !== null &&
+      e.beta !== undefined &&
+      e.gamma !== null &&
+      e.gamma !== undefined
     ) {
       // Android (Chrome/Firefox): usa fórmula de matriz de rotação W3C
       // com compensação de inclinação completa via beta e gamma.
@@ -167,7 +170,7 @@ export default function MapInteractions() {
       smoothedSinRef.current = sin;
       smoothedCosRef.current = cos;
       hasInitialReadingRef.current = true;
-      targetBearingRef.current  = heading;
+      targetBearingRef.current = heading;
       currentBearingRef.current = heading;
       if (map && typeof map.setBearing === 'function') {
         map.setBearing(heading);
@@ -214,18 +217,17 @@ export default function MapInteractions() {
       map.compassBearing.disable();
     }
 
-    hasInitialReadingRef.current  = false;
-    currentBearingRef.current     = map.getBearing ? map.getBearing() : 0;
-    targetBearingRef.current      = currentBearingRef.current;
-    isCompassActiveRef.current    = true;
+    hasInitialReadingRef.current = false;
+    currentBearingRef.current = map.getBearing ? map.getBearing() : 0;
+    targetBearingRef.current = currentBearingRef.current;
+    isCompassActiveRef.current = true;
     setCompassMode(true);
 
     // Usa 'deviceorientationabsolute' quando disponível (Android Chrome/Firefox ≥ 66).
     // É garantido que o 'alpha' seja relativo ao Norte magnético, eliminando a necessidade
     // de calibração manual. Cai para 'deviceorientation' como fallback (iOS).
-    const eventName = ('ondeviceorientationabsolute' in window)
-      ? 'deviceorientationabsolute'
-      : 'deviceorientation';
+    const eventName =
+      'ondeviceorientationabsolute' in window ? 'deviceorientationabsolute' : 'deviceorientation';
 
     const fn = handleOrientation;
     activeListenerRef.current = { eventName, fn };
@@ -241,7 +243,11 @@ export default function MapInteractions() {
     hasInitialReadingRef.current = false;
 
     if (activeListenerRef.current) {
-      window.removeEventListener(activeListenerRef.current.eventName, activeListenerRef.current.fn, { passive: true });
+      window.removeEventListener(
+        activeListenerRef.current.eventName,
+        activeListenerRef.current.fn,
+        { passive: true }
+      );
       activeListenerRef.current = null;
     }
     // Garantia de limpeza
@@ -272,17 +278,17 @@ export default function MapInteractions() {
   };
 
   useEffect(() => {
-    return () => { disableCompass(); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      disableCompass();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const content = (
     <button
       onClick={toggleCompass}
       className={`w-full min-w-0 flex flex-col items-center justify-center transition-all cursor-pointer ${
-        compassMode
-          ? 'text-orange-500 font-bold scale-105'
-          : 'text-body hover:text-primary'
+        compassMode ? 'text-orange-500 font-bold scale-105' : 'text-body hover:text-primary'
       }`}
       title={compassMode ? 'Desativar Bússola (Alinhar ao Norte)' : 'Ativar Bússola'}
     >

@@ -29,8 +29,17 @@ export default function ThemeToggle({ className = '' }) {
       <div className="absolute inset-0 flex items-center justify-between px-[9px] pointer-events-none">
         {/* Sun Icon */}
         <div className={`transition-opacity duration-300 ${isDark ? 'opacity-40' : 'opacity-100'}`}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="4" fill={isDark ? "none" : "#fef08a"} />
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#f59e0b"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="4" fill={isDark ? 'none' : '#fef08a'} />
             <path d="M12 2v2" />
             <path d="M12 20v2" />
             <path d="m4.93 4.93 1.41 1.41" />
@@ -59,7 +68,16 @@ export default function ThemeToggle({ className = '' }) {
         {isDark ? (
           <div className="w-[12px] h-[12px] rounded-full bg-[#fde68a]" />
         ) : (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#f59e0b"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <circle cx="12" cy="12" r="4" fill="#fef08a" />
             <path d="M12 2v2" />
             <path d="M12 20v2" />

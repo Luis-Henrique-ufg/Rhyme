@@ -13,7 +13,7 @@ test('getDistanceFromLatLonInKm calcula distância aproximada entre Goiânia e P
   const goiania = { lat: -16.6869, lng: -49.2643 };
   const profJamil = { lat: -17.2506, lng: -49.2486 };
   const dist = getDistanceFromLatLonInKm(goiania.lat, goiania.lng, profJamil.lat, profJamil.lng);
-  
+
   // Distância em linha reta fica em torno de 62-65km
   assert.ok(dist > 60 && dist < 70, `Distância calculada (${dist}km) fora do esperado`);
 });
@@ -21,15 +21,15 @@ test('getDistanceFromLatLonInKm calcula distância aproximada entre Goiânia e P
 test('isWithinRadius retorna true quando a distância é menor que 1km (geofencing ativo)', () => {
   const bus = { lat: -16.6869, lng: -49.2643 };
   // Ponto a ~500 metros de distância
-  const student = { lat: -16.6830, lng: -49.2643 };
-  
+  const student = { lat: -16.683, lng: -49.2643 };
+
   assert.equal(isWithinRadius(bus.lat, bus.lng, student.lat, student.lng, 1.0), true);
 });
 
 test('isWithinRadius retorna false quando o ônibus está longe (> 1km)', () => {
   const bus = { lat: -16.6869, lng: -49.2643 };
-  const student = { lat: -16.7500, lng: -49.2643 };
-  
+  const student = { lat: -16.75, lng: -49.2643 };
+
   assert.equal(isWithinRadius(bus.lat, bus.lng, student.lat, student.lng, 1.0), false);
 });
 

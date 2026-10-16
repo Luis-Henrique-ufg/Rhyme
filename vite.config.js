@@ -19,7 +19,13 @@ export default defineConfig({
 
       // === OFFLINE PAGE ===
       // The offline fallback page is included in the precache manifest.
-      includeAssets: ['offline.html', 'favicon-32x32.png', 'android-chrome-192x192.png', 'Logo.webp', 'Logo.png'],
+      includeAssets: [
+        'offline.html',
+        'favicon-32x32.png',
+        'android-chrome-192x192.png',
+        'Logo.webp',
+        'Logo.png',
+      ],
 
       manifest: {
         name: 'Rhyme',
@@ -33,20 +39,20 @@ export default defineConfig({
           {
             src: 'favicon-32x32.png',
             sizes: '32x32',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: 'android-chrome-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/png',
           },
           {
             src: 'android-chrome-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
-          }
-        ]
+            purpose: 'any maskable',
+          },
+        ],
       },
 
       workbox: {
@@ -58,7 +64,6 @@ export default defineConfig({
 
         // === CACHING STRATEGIES ===
         runtimeCaching: [
-
           // 1. OPENSTREETMAP / CARTO MAP TILES — CacheFirst (tiles rarely change)
           {
             urlPattern: /^https:\/\/.*\.basemaps\.cartocdn\.com\/.*/i,
@@ -160,7 +165,6 @@ export default defineConfig({
           },
         ],
       },
-    })
-  ]
+    }),
+  ],
 });
-

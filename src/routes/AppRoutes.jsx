@@ -31,7 +31,7 @@ export function AppRoutes() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/cadastro" element={<Register />} />
-          
+
           {/* Rotas Privadas */}
           <Route element={<PrivateRoute />}>
             <Route path="/" element={<Navigate to="/aluno/mapa" replace />} />

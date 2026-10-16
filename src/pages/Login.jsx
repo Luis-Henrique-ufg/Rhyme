@@ -21,7 +21,7 @@ export default function Login() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleLogin = async (e) => {
@@ -51,7 +51,11 @@ export default function Login() {
       await loginWithUsername(formData.username, formData.password);
     } catch (err) {
       console.error(err);
-      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+      if (
+        err.code === 'auth/invalid-credential' ||
+        err.code === 'auth/user-not-found' ||
+        err.code === 'auth/wrong-password'
+      ) {
         setError('Usuário ou senha incorretos.');
       } else {
         setError('Falha ao autenticar: ' + err.message);
@@ -70,44 +74,46 @@ export default function Login() {
       <div className="electric-card bg-card w-full max-w-md p-8 text-center rounded-3xl z-10 relative border border-subtle shadow-2xl">
         <div className="flex justify-center items-center gap-3 mb-4">
           <img src="/Logo.webp" alt="Rhyme Logo" className="h-16 object-contain" />
-          <h1 className="text-4xl lg:text-5xl font-bricolage font-bold text-heading tracking-tight">Rhyme.</h1>
+          <h1 className="text-4xl lg:text-5xl font-bricolage font-bold text-heading tracking-tight">
+            Rhyme.
+          </h1>
         </div>
         <p className="text-body mb-8 text-sm">Seu transporte universitário em tempo real</p>
-        
-        {error && (
-          <div className="badge-danger p-3 rounded-xl mb-6 text-sm text-left">
-            {error}
-          </div>
-        )}
+
+        {error && <div className="badge-danger p-3 rounded-xl mb-6 text-sm text-left">{error}</div>}
 
         <form onSubmit={handleLogin} className="flex flex-col gap-4 text-left mb-6">
           <div>
             <label className="block text-sm font-medium text-body mb-1.5">Nome de usuário</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               name="username"
               value={formData.username}
               onChange={handleChange}
               placeholder="ex: joaozinho"
               className={`w-full bg-subtle border ${validationErrors.username ? 'border-danger focus:border-danger' : 'border-subtle focus:border-primary'} rounded-xl px-4 py-3 text-heading placeholder:text-caption focus:outline-none transition-colors`}
             />
-            {validationErrors.username && <p className="text-danger text-xs mt-1">{validationErrors.username}</p>}
+            {validationErrors.username && (
+              <p className="text-danger text-xs mt-1">{validationErrors.username}</p>
+            )}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-body mb-1.5">Senha</label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
               placeholder="••••••••"
               className={`w-full bg-subtle border ${validationErrors.password ? 'border-danger focus:border-danger' : 'border-subtle focus:border-primary'} rounded-xl px-4 py-3 text-heading placeholder:text-caption focus:outline-none transition-colors`}
             />
-            {validationErrors.password && <p className="text-danger text-xs mt-1">{validationErrors.password}</p>}
+            {validationErrors.password && (
+              <p className="text-danger text-xs mt-1">{validationErrors.password}</p>
+            )}
           </div>
 
-          <button 
+          <button
             type="submit"
             disabled={isSubmitting}
             className="w-full btn-primary mt-2 flex justify-center items-center py-3.5 text-base font-bold"
@@ -123,7 +129,7 @@ export default function Login() {
             <div className="flex-grow border-t border-subtle"></div>
           </div>
 
-          <button 
+          <button
             onClick={async () => {
               try {
                 setError('');
@@ -138,19 +144,43 @@ export default function Login() {
             }}
             className="w-full bg-subtle hover-bg-subtle text-heading py-3 rounded-xl transition-colors font-medium flex items-center justify-center gap-3 border border-subtle"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M22.56 12.25C22.56 11.47 22.49 10.72 22.36 10H12V14.26H17.92C17.66 15.63 16.88 16.8 15.71 17.58V20.34H19.28C21.36 18.42 22.56 15.6 22.56 12.25Z" fill="#4285F4"/>
-              <path d="M12 23C14.97 23 17.46 22.02 19.28 20.34L15.71 17.58C14.73 18.24 13.48 18.64 12 18.64C9.13 18.64 6.7 16.7 5.84 14.09H2.18V16.94C3.99 20.53 7.7 23 12 23Z" fill="#34A853"/>
-              <path d="M5.84 14.09C5.62 13.43 5.49 12.73 5.49 12C5.49 11.27 5.62 10.57 5.84 9.91V7.06H2.18C1.43 8.55 1 10.22 1 12C1 13.78 1.43 15.45 2.18 16.94L5.84 14.09Z" fill="#FBBC05"/>
-              <path d="M12 5.38C13.62 5.38 15.06 5.94 16.2 7.02L19.36 3.86C17.46 2.09 14.97 1 12 1C7.7 1 3.99 3.47 2.18 7.06L5.84 9.91C6.7 7.3 9.13 5.38 12 5.38Z" fill="#EA4335"/>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M22.56 12.25C22.56 11.47 22.49 10.72 22.36 10H12V14.26H17.92C17.66 15.63 16.88 16.8 15.71 17.58V20.34H19.28C21.36 18.42 22.56 15.6 22.56 12.25Z"
+                fill="#4285F4"
+              />
+              <path
+                d="M12 23C14.97 23 17.46 22.02 19.28 20.34L15.71 17.58C14.73 18.24 13.48 18.64 12 18.64C9.13 18.64 6.7 16.7 5.84 14.09H2.18V16.94C3.99 20.53 7.7 23 12 23Z"
+                fill="#34A853"
+              />
+              <path
+                d="M5.84 14.09C5.62 13.43 5.49 12.73 5.49 12C5.49 11.27 5.62 10.57 5.84 9.91V7.06H2.18C1.43 8.55 1 10.22 1 12C1 13.78 1.43 15.45 2.18 16.94L5.84 14.09Z"
+                fill="#FBBC05"
+              />
+              <path
+                d="M12 5.38C13.62 5.38 15.06 5.94 16.2 7.02L19.36 3.86C17.46 2.09 14.97 1 12 1C7.7 1 3.99 3.47 2.18 7.06L5.84 9.91C6.7 7.3 9.13 5.38 12 5.38Z"
+                fill="#EA4335"
+              />
             </svg>
             Entrar com Google
           </button>
         </div>
-        
+
         <div className="mt-8 pt-6 border-t border-subtle text-sm">
           <p className="text-body">
-            Ainda não tem conta? <Link to="/cadastro" className="text-primary hover:text-primary-hover font-bold ml-1 transition-colors">Criar conta</Link>
+            Ainda não tem conta?{' '}
+            <Link
+              to="/cadastro"
+              className="text-primary hover:text-primary-hover font-bold ml-1 transition-colors"
+            >
+              Criar conta
+            </Link>
           </p>
         </div>
       </div>

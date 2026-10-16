@@ -9,8 +9,12 @@ export default function TripCalendarModal({ history, onClose, userProfile }) {
   const historyMap = useMemo(() => {
     const map = {};
     if (Array.isArray(history)) {
-      history.forEach(item => {
-        const date = item.updatedAt ? item.updatedAt.toDate() : (item.createdAt ? item.createdAt.toDate() : new Date());
+      history.forEach((item) => {
+        const date = item.updatedAt
+          ? item.updatedAt.toDate()
+          : item.createdAt
+            ? item.createdAt.toDate()
+            : new Date();
         const y = date.getFullYear();
         const m = String(date.getMonth() + 1).padStart(2, '0');
         const d = String(date.getDate()).padStart(2, '0');
@@ -32,15 +36,17 @@ export default function TripCalendarModal({ history, onClose, userProfile }) {
     let foundFirst = false;
 
     for (let i = 0; i < 365; i++) {
-      const dayOfWeek = checkDate.getDay(); 
+      const dayOfWeek = checkDate.getDay();
       const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
       const y = checkDate.getFullYear();
       const m = String(checkDate.getMonth() + 1).padStart(2, '0');
       const d = String(checkDate.getDate()).padStart(2, '0');
       const dateString = `${y}-${m}-${d}`;
-      
+
       const status = historyMap[dateString];
-      const isSuccess = isStudent ? status === 'confirmado' : (status === 'finished' || status === 'in_progress');
+      const isSuccess = isStudent
+        ? status === 'confirmado'
+        : status === 'finished' || status === 'in_progress';
 
       if (isSuccess) {
         currentStreak++;
@@ -49,12 +55,12 @@ export default function TripCalendarModal({ history, onClose, userProfile }) {
         if (i === 0 && !status) {
           // ignore today if no status yet
         } else {
-          if (foundFirst) break; 
+          if (foundFirst) break;
         }
       }
       checkDate.setDate(checkDate.getDate() - 1);
     }
-    
+
     return currentStreak;
   }, [historyMap, isStudent]);
 
@@ -74,7 +80,20 @@ export default function TripCalendarModal({ history, onClose, userProfile }) {
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfMonth(year, month);
 
-  const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  const monthNames = [
+    'Janeiro',
+    'Fevereiro',
+    'Março',
+    'Abril',
+    'Maio',
+    'Junho',
+    'Julho',
+    'Agosto',
+    'Setembro',
+    'Outubro',
+    'Novembro',
+    'Dezembro',
+  ];
 
   const days = [];
   for (let i = 0; i < firstDay; i++) {
@@ -90,40 +109,56 @@ export default function TripCalendarModal({ history, onClose, userProfile }) {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="bg-card border border-subtle rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        
         <div className="flex justify-between items-center p-4 border-b border-subtle bg-subtle">
           <h2 className="text-heading font-bold tracking-wide">Calendário de Viagens</h2>
-          <button onClick={onClose} className="text-caption hover:text-heading transition-colors bg-subtle hover-bg-subtle rounded-full p-1.5">
+          <button
+            onClick={onClose}
+            className="text-caption hover:text-heading transition-colors bg-subtle hover-bg-subtle rounded-full p-1.5"
+          >
             <X size={20} />
           </button>
         </div>
 
         <div className="p-5 overflow-y-auto">
           <div className="flex items-center justify-center gap-3 mb-6 bg-primary/10 border border-primary/20 py-3 rounded-xl">
-            <Flame className={`w-6 h-6 ${streak > 2 ? 'text-primary' : 'text-caption'}`} fill={streak > 2 ? "#f97316" : "none"} />
+            <Flame
+              className={`w-6 h-6 ${streak > 2 ? 'text-primary' : 'text-caption'}`}
+              fill={streak > 2 ? '#f97316' : 'none'}
+            />
             <div>
               <p className="text-sm text-body leading-tight">Sua Ofensiva</p>
               <p className="text-lg font-black text-heading leading-tight">
-                {streak} Dias {streak > 5 && <span className="text-xs text-primary font-bold ml-1 uppercase">Ativo!</span>}
+                {streak} Dias{' '}
+                {streak > 5 && (
+                  <span className="text-xs text-primary font-bold ml-1 uppercase">Ativo!</span>
+                )}
               </p>
             </div>
           </div>
 
           <div className="flex items-center justify-between mb-4 px-2">
-            <button onClick={prevMonth} className="p-1.5 text-caption hover:text-heading hover-bg-subtle rounded-lg transition-colors">
+            <button
+              onClick={prevMonth}
+              className="p-1.5 text-caption hover:text-heading hover-bg-subtle rounded-lg transition-colors"
+            >
               <ChevronLeft size={20} />
             </button>
             <span className="text-heading font-bold tracking-wider uppercase text-sm">
               {monthNames[month]} {year}
             </span>
-            <button onClick={nextMonth} className="p-1.5 text-caption hover:text-heading hover-bg-subtle rounded-lg transition-colors">
+            <button
+              onClick={nextMonth}
+              className="p-1.5 text-caption hover:text-heading hover-bg-subtle rounded-lg transition-colors"
+            >
               <ChevronRight size={20} />
             </button>
           </div>
 
           <div className="grid grid-cols-7 gap-2 text-center mb-2">
-            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
-              <div key={d} className="text-[10px] font-bold text-caption uppercase">{d}</div>
+            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((d) => (
+              <div key={d} className="text-[10px] font-bold text-caption uppercase">
+                {d}
+              </div>
             ))}
           </div>
 
@@ -153,8 +188,8 @@ export default function TripCalendarModal({ history, onClose, userProfile }) {
               }
 
               return (
-                <div 
-                  key={day} 
+                <div
+                  key={day}
                   className={`h-10 flex items-center justify-center rounded-lg border ${bgColor} ${borderColor} ${textColor} text-sm transition-all`}
                 >
                   {day}

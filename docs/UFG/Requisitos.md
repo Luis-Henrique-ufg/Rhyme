@@ -47,18 +47,18 @@ O sistema será desenvolvido como uma **Progressive Web App (PWA)** para facilit
 
 Os requisitos funcionais descrevem as ações que o sistema deve executar.
 
-| ID | Requisito | Prioridade | Observação |
-|:---|:---|:---|:---|
-| RF01 | O sistema deve permitir o cadastro de alunos com nome, faculdade e rota associada. | Alta | Cadastro simplificado via link. |
-| RF02 | O sistema deve permitir o cadastro de motoristas com nome e rota associada. | Alta | Motorista fixo para cada rota. |
-| RF03 | O sistema deve gerar automaticamente uma viagem para cada rota todos os dias úteis. | Alta | Horário: 16h e 16:30. |
-| RF04 | O sistema deve exibir um mapa interativo com os pontos de embarque (faculdades) e a posição do ônibus. | Alta | Leaflet com OpenStreetMap. |
-| RF05 | O sistema deve permitir que os alunos informem seu status: 'liberado' ou 'não liberado'. | Alta | Botão único em tela. |
-| RF06 | O sistema deve consolidar e exibir para o motorista a lista de alunos por faculdade, com contagem e status. | Alta | Dashboard específico. |
-| RF07 | O sistema deve atualizar em tempo real as informações no mapa e no dashboard usando Firestore listeners. | Alta | Sincronização automática. |
-| RF08 | O sistema deve permitir que os alunos visualizem a localização do ônibus e o tempo estimado de chegada. | Média | Simulação inicial. |
-| RF09 | O sistema deve enviar notificações push para alunos quando o ônibus estiver se aproximando. | Baixa | Pós-MVP. |
-| RF10 | O sistema deve permitir que o motorista inicie e encerre a viagem. | Média | Botão 'Sair'. |
+| ID   | Requisito                                                                                                   | Prioridade | Observação                      |
+| :--- | :---------------------------------------------------------------------------------------------------------- | :--------- | :------------------------------ |
+| RF01 | O sistema deve permitir o cadastro de alunos com nome, faculdade e rota associada.                          | Alta       | Cadastro simplificado via link. |
+| RF02 | O sistema deve permitir o cadastro de motoristas com nome e rota associada.                                 | Alta       | Motorista fixo para cada rota.  |
+| RF03 | O sistema deve gerar automaticamente uma viagem para cada rota todos os dias úteis.                         | Alta       | Horário: 16h e 16:30.           |
+| RF04 | O sistema deve exibir um mapa interativo com os pontos de embarque (faculdades) e a posição do ônibus.      | Alta       | Leaflet com OpenStreetMap.      |
+| RF05 | O sistema deve permitir que os alunos informem seu status: 'liberado' ou 'não liberado'.                    | Alta       | Botão único em tela.            |
+| RF06 | O sistema deve consolidar e exibir para o motorista a lista de alunos por faculdade, com contagem e status. | Alta       | Dashboard específico.           |
+| RF07 | O sistema deve atualizar em tempo real as informações no mapa e no dashboard usando Firestore listeners.    | Alta       | Sincronização automática.       |
+| RF08 | O sistema deve permitir que os alunos visualizem a localização do ônibus e o tempo estimado de chegada.     | Média      | Simulação inicial.              |
+| RF09 | O sistema deve enviar notificações push para alunos quando o ônibus estiver se aproximando.                 | Baixa      | Pós-MVP.                        |
+| RF10 | O sistema deve permitir que o motorista inicie e encerre a viagem.                                          | Média      | Botão 'Sair'.                   |
 
 ---
 
@@ -66,14 +66,14 @@ Os requisitos funcionais descrevem as ações que o sistema deve executar.
 
 Os requisitos não funcionais especificam atributos de qualidade do sistema.
 
-| ID | Requisito | Métrica |
-|:---|:---|:---|
-| RNF01 | Performance: O sistema deve carregar em menos de 3 segundos. | Tempo de carregamento. |
-| RNF02 | Concorrência: Suportar pelo menos 50 usuários simultâneos. | Teste de carga. |
-| RNF03 | Segurança: Apenas usuários autenticados. | Firebase Authentication. |
-| RNF04 | Usabilidade: Interface intuitiva, botões grandes. | Teste de usabilidade. |
-| RNF05 | Disponibilidade: 99% de uptime no horário de pico (15h-17h). | Monitoramento. |
-| RNF06 | Portabilidade: Funcionar como PWA em Chrome, Safari, Edge. | Teste em dispositivos. |
+| ID    | Requisito                                                    | Métrica                  |
+| :---- | :----------------------------------------------------------- | :----------------------- |
+| RNF01 | Performance: O sistema deve carregar em menos de 3 segundos. | Tempo de carregamento.   |
+| RNF02 | Concorrência: Suportar pelo menos 50 usuários simultâneos.   | Teste de carga.          |
+| RNF03 | Segurança: Apenas usuários autenticados.                     | Firebase Authentication. |
+| RNF04 | Usabilidade: Interface intuitiva, botões grandes.            | Teste de usabilidade.    |
+| RNF05 | Disponibilidade: 99% de uptime no horário de pico (15h-17h). | Monitoramento.           |
+| RNF06 | Portabilidade: Funcionar como PWA em Chrome, Safari, Edge.   | Teste em dispositivos.   |
 
 ---
 
@@ -104,6 +104,7 @@ Firestore coleções:
 #### 7.1 `students`
 
 Campos:
+
 - `id`: string (UID do Firebase Authentication)
 - `name`: string
 - `faculty`: string (ex: UFG, Unicamps)
@@ -114,6 +115,7 @@ Campos:
 #### 7.2 `trips`
 
 Campos:
+
 - `id`: string (auto)
 - `route`: string
 - `date`: timestamp
@@ -123,6 +125,7 @@ Campos:
 #### 7.3 `attendance`
 
 Campos:
+
 - `id`: string (auto)
 - `tripId`: string (referência)
 - `studentId`: string (referência)
@@ -151,27 +154,27 @@ Campos:
 
 ### 9. CRONOGRAMA SUGERIDO
 
-| Fase | Atividade | Duração |
-|:---|:---|:---|
-| 1 | Configuração ambiente (Firebase, React, Leaflet) | 1 semana |
-| 2 | Modelagem de dados e CRUD básico | 1 semana |
-| 3 | Implementação do mapa e marcação de liberação | 2 semanas |
-| 4 | Dashboard do motorista e consolidação | 2 semanas |
-| 5 | Notificações push e otimização de rota | 1 semana |
-| 6 | Testes, ajustes e deploy | 1 semana |
-| **Total** | **MVP completo** | **8 semanas** |
+| Fase      | Atividade                                        | Duração       |
+| :-------- | :----------------------------------------------- | :------------ |
+| 1         | Configuração ambiente (Firebase, React, Leaflet) | 1 semana      |
+| 2         | Modelagem de dados e CRUD básico                 | 1 semana      |
+| 3         | Implementação do mapa e marcação de liberação    | 2 semanas     |
+| 4         | Dashboard do motorista e consolidação            | 2 semanas     |
+| 5         | Notificações push e otimização de rota           | 1 semana      |
+| 6         | Testes, ajustes e deploy                         | 1 semana      |
+| **Total** | **MVP completo**                                 | **8 semanas** |
 
 ---
 
 ### 10. RISCOS E MITIGAÇÕES
 
-| Risco | Mitigação |
-|:---|:---|
-| Baixa adesão dos alunos | Campanha de lançamento com vídeo e incentivo inicial. |
-| Falha no GPS | MVP com mock; planejamento para API real. |
-| Sobrecarga no Firestore | Monitoramento e cache no frontend. |
-| Resistência do motorista | Envolver no design e treinamento. |
-| Dependência de internet | Service Worker para funcionalidades offline. |
+| Risco                    | Mitigação                                             |
+| :----------------------- | :---------------------------------------------------- |
+| Baixa adesão dos alunos  | Campanha de lançamento com vídeo e incentivo inicial. |
+| Falha no GPS             | MVP com mock; planejamento para API real.             |
+| Sobrecarga no Firestore  | Monitoramento e cache no frontend.                    |
+| Resistência do motorista | Envolver no design e treinamento.                     |
+| Dependência de internet  | Service Worker para funcionalidades offline.          |
 
 ---
 

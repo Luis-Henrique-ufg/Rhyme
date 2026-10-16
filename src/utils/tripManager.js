@@ -14,37 +14,37 @@ export async function ensureDailyTripExists(route) {
 
   // Usa o fuso horário local para pegar a data YYYY-MM-DD
   const today = new Date();
-  
+
   // Format YYYY-MM-DD manually to prevent locale inconsistencies across browsers
   const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const dd = String(today.getDate()).padStart(2, '0');
   const dateString = `${yyyy}-${mm}-${dd}`;
   const tripId = `trip_${normalizedRoute}_${dateString}`;
-  
+
   const tripRef = doc(db, 'trips', tripId);
 
   try {
     const tripSnap = await getDoc(tripRef);
-    
+
     // Se a viagem não existe, cria.
     if (!tripSnap.exists()) {
       const departureTime = normalizedRoute === 'Cromínia' ? '16:30' : '16:00';
-      
+
       await setDoc(tripRef, {
         route: normalizedRoute,
         date: serverTimestamp(),
         departureTime,
-        status: 'open'
+        status: 'open',
       });
-      
+
       console.log(`Viagem diária gerada para a rota ${route} (${dateString})`);
       return tripId;
     }
-    
+
     return tripId;
   } catch (error) {
-    console.error("Erro ao tentar gerar viagem diária:", error);
+    console.error('Erro ao tentar gerar viagem diária:', error);
     return null;
   }
 }
@@ -77,7 +77,7 @@ export async function joinTrip(tripId, student, coords) {
         lat: coords?.lat ?? -16.675707046574686,
         lng: coords?.lng ?? -49.24547515495722,
         tripType: defaultTripType,
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
       };
       await setDoc(attendanceRef, initialData);
     }
@@ -130,22 +130,25 @@ export async function migrateStudentAttendance(studentId, oldRoute, newRoute, st
 
     // Se o status não era cancelado, registra na nova rota
     if (previousStatus !== 'cancelado') {
-      await setDoc(newAttRef, {
-        tripId: newTripId,
-        studentId,
-        studentName: studentData.name || 'Aluno',
-        faculty: studentData.faculty || 'Outra',
-        route: normNew,
-        photoURL: studentData.photoURL || null,
-        status: previousStatus,
-        lat: previousLat,
-        lng: previousLng,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
+      await setDoc(
+        newAttRef,
+        {
+          tripId: newTripId,
+          studentId,
+          studentName: studentData.name || 'Aluno',
+          faculty: studentData.faculty || 'Outra',
+          route: normNew,
+          photoURL: studentData.photoURL || null,
+          status: previousStatus,
+          lat: previousLat,
+          lng: previousLng,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
       console.log(`[Rota] Presença migrada com sucesso para a rota ${normNew} (${previousStatus})`);
     }
   } catch (error) {
     console.error('Erro ao migrar presença do aluno entre rotas:', error);
   }
 }
-

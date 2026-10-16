@@ -9,14 +9,14 @@ export default function PublicListModal({
   list = [],
   title = 'Lista de Passageiros',
   emptyMessage = 'Ninguém na lista ainda.',
-  onStudentStatus
+  onStudentStatus,
 }) {
   if (!isOpen) return null;
 
   const items = Array.isArray(list) ? list : Object.values(list || {});
 
   const sortedList = [...items].sort((a, b) => {
-    const statusOrder = { 'aguardando': 0, 'liberado': 0, 'embarcado': 1, 'cancelado': 2 };
+    const statusOrder = { aguardando: 0, liberado: 0, embarcado: 1, cancelado: 2 };
     const orderA = statusOrder[a.status] ?? 0;
     const orderB = statusOrder[b.status] ?? 0;
     if (orderA !== orderB) return orderA - orderB;
@@ -79,21 +79,35 @@ export default function PublicListModal({
               }
 
               return (
-                <div key={att.studentId || att.id || idx} className={`p-3 rounded-2xl flex items-center justify-between gap-3 transition-all ${bgColor}`}>
+                <div
+                  key={att.studentId || att.id || idx}
+                  className={`p-3 rounded-2xl flex items-center justify-between gap-3 transition-all ${bgColor}`}
+                >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     {att.photoURL ? (
-                      <img src={att.photoURL} alt={att.studentName} className="w-10 h-10 rounded-full object-cover shrink-0 border border-subtle" />
+                      <img
+                        src={att.photoURL}
+                        alt={att.studentName}
+                        className="w-10 h-10 rounded-full object-cover shrink-0 border border-subtle"
+                      />
                     ) : (
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 shadow-inner ${avatarBg}`}>
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shrink-0 shadow-inner ${avatarBg}`}
+                      >
                         {(att.studentName || '?').charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div className="min-w-0 flex-1">
-                      <h4 className={`text-sm font-bold truncate leading-tight ${nameColor}`} title={att.studentName}>
+                      <h4
+                        className={`text-sm font-bold truncate leading-tight ${nameColor}`}
+                        title={att.studentName}
+                      >
                         {att.studentName || 'Aluno'}
                       </h4>
                       <div className="flex items-center gap-1.5 mt-1 min-w-0">
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded-md border uppercase tracking-wider font-black shrink-0 ${tripBadgeStyle}`}>
+                        <span
+                          className={`text-[9px] px-1.5 py-0.5 rounded-md border uppercase tracking-wider font-black shrink-0 ${tripBadgeStyle}`}
+                        >
                           {tripTypeLabel}
                         </span>
                         <span className="text-xs text-caption truncate">
@@ -108,7 +122,9 @@ export default function PublicListModal({
                       <button
                         onClick={() => onStudentStatus(att.studentId, att.status, 'cancelado')}
                         className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all shadow-sm ${
-                          isCancelado ? 'bg-subtle text-caption border border-subtle' : 'bg-subtle text-body border border-subtle hover:text-heading'
+                          isCancelado
+                            ? 'bg-subtle text-caption border border-subtle'
+                            : 'bg-subtle text-body border border-subtle hover:text-heading'
                         }`}
                         title={isCancelado ? 'Desfazer ausência' : 'Marcar como não vai'}
                       >
@@ -117,7 +133,9 @@ export default function PublicListModal({
                       <button
                         onClick={() => onStudentStatus(att.studentId, att.status, 'embarcado')}
                         className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all shadow-sm ${
-                          isEmbarcado ? 'bg-primary text-black border border-primary hover:bg-primary-hover' : 'bg-subtle text-body border border-subtle hover:bg-primary hover:text-black hover:border-primary'
+                          isEmbarcado
+                            ? 'bg-primary text-black border border-primary hover:bg-primary-hover'
+                            : 'bg-subtle text-body border border-subtle hover:bg-primary hover:text-black hover:border-primary'
                         }`}
                         title={isEmbarcado ? 'Desfazer embarque' : 'Marcar como embarcado'}
                       >

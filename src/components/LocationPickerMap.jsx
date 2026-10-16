@@ -51,7 +51,14 @@ function MapRecenter({ center }) {
   return null;
 }
 
-export default function LocationPickerMap({ initialCenter, initialPin, onConfirm, onClose, title, subtitle }) {
+export default function LocationPickerMap({
+  initialCenter,
+  initialPin,
+  onConfirm,
+  onClose,
+  title,
+  subtitle,
+}) {
   const { isDark } = useTheme();
   const [pin, setPin] = useState(initialPin || null);
   const [isLocating, setIsLocating] = useState(false);
@@ -87,9 +94,14 @@ export default function LocationPickerMap({ initialCenter, initialPin, onConfirm
               <MapPin size={18} className="text-primary" />
               {title || 'Selecionar Localização'}
             </h2>
-            <p className="text-xs text-caption mt-1">{subtitle || 'Toque no mapa para marcar o ponto.'}</p>
+            <p className="text-xs text-caption mt-1">
+              {subtitle || 'Toque no mapa para marcar o ponto.'}
+            </p>
           </div>
-          <button onClick={onClose} className="text-caption hover:text-heading p-1.5 rounded-full hover-bg-subtle transition-colors">
+          <button
+            onClick={onClose}
+            className="text-caption hover:text-heading p-1.5 rounded-full hover-bg-subtle transition-colors"
+          >
             <X size={20} />
           </button>
         </div>
@@ -97,7 +109,9 @@ export default function LocationPickerMap({ initialCenter, initialPin, onConfirm
         {/* Instrução */}
         <div className="px-6 py-3 bg-primary/5 border-b border-primary/15 shrink-0">
           <p className="text-xs text-primary text-center font-medium">
-            {pin ? 'Pino marcado! Confirme abaixo ou toque novamente para ajustar.' : 'Toque no mapa para soltar um pino'}
+            {pin
+              ? 'Pino marcado! Confirme abaixo ou toque novamente para ajustar.'
+              : 'Toque no mapa para soltar um pino'}
           </p>
         </div>
 
@@ -112,18 +126,17 @@ export default function LocationPickerMap({ initialCenter, initialPin, onConfirm
             attributionControl={false}
           >
             <TileLayer
-              url={isDark 
-                ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/256/{z}/{x}/{y}@2x?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`
-                : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`
+              url={
+                isDark
+                  ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/256/{z}/{x}/{y}@2x?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`
+                  : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`
               }
               attribution='&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>'
               key={isDark ? 'dark' : 'light'}
             />
             <MapClickHandler onPin={setPin} />
             <MapRecenter center={pin ? [pin.lat, pin.lng] : center} />
-            {pin && (
-              <Marker position={[pin.lat, pin.lng]} icon={PickerIcon} />
-            )}
+            {pin && <Marker position={[pin.lat, pin.lng]} icon={PickerIcon} />}
           </MapContainer>
         </div>
 

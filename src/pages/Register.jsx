@@ -17,12 +17,12 @@ const FACULTIES = [
   'Unicamps',
   'Eseffego',
   'Colégio Vitória',
-  'Outra'
+  'Outra',
 ];
 
 const CustomSelect = ({ value, onChange, options, name, className, placeholder }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const selectedOption = options.find(opt => opt.value === value) || null;
+  const selectedOption = options.find((opt) => opt.value === value) || null;
 
   return (
     <div className="relative group text-left">
@@ -33,11 +33,24 @@ const CustomSelect = ({ value, onChange, options, name, className, placeholder }
         <span className={!selectedOption && placeholder ? 'text-caption' : 'text-heading truncate'}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        <div className={`absolute right-3 text-caption group-hover:text-heading transition-transform ${isOpen ? 'rotate-180' : ''}`}>
-           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        <div
+          className={`absolute right-3 text-caption group-hover:text-heading transition-transform ${isOpen ? 'rotate-180' : ''}`}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
         </div>
       </div>
-      
+
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)}></div>
@@ -72,7 +85,7 @@ export default function Register() {
     role: 'student',
     faculty: FACULTIES[0],
     customFaculty: '',
-    route: 'Professor Jamil'
+    route: 'Professor Jamil',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -83,17 +96,17 @@ export default function Register() {
 
   // Mapa de coordenadas padrão por faculdade (para centralizar o mapa no picker)
   const FACULTY_COORDS = {
-    'UFG': [-16.603568359752572, -49.26557447462434],
+    UFG: [-16.603568359752572, -49.26557447462434],
     'UFG - Campus Colemar': [-16.676109190074012, -49.24516058049558],
-    'PUC': [-16.67475162780121, -49.24209015441784],
-    'IFG': [-16.665844796098604, -49.25484595828902],
-    'UNIP': [-16.71913305820549, -49.23738118914336],
-    'FASAM': [-16.72238689347141, -49.23657627622922],
-    'Estácio': [-16.661400045241248, -49.261822432566476],
-    'Unicamps': [-16.675166089095736, -49.28430043030609],
-    'Eseffego': [-16.667398357525514, -49.242543618586815],
+    PUC: [-16.67475162780121, -49.24209015441784],
+    IFG: [-16.665844796098604, -49.25484595828902],
+    UNIP: [-16.71913305820549, -49.23738118914336],
+    FASAM: [-16.72238689347141, -49.23657627622922],
+    Estácio: [-16.661400045241248, -49.261822432566476],
+    Unicamps: [-16.675166089095736, -49.28430043030609],
+    Eseffego: [-16.667398357525514, -49.242543618586815],
     'Colégio Vitória': [-16.672587769018502, -49.252661376350915],
-    'Outra': [-16.675707046574686, -49.24547515495722],
+    Outra: [-16.675707046574686, -49.24547515495722],
   };
 
   useEffect(() => {
@@ -105,7 +118,7 @@ export default function Register() {
       try {
         const docRef = doc(db, 'students', user.uid);
         const docSnap = await getDoc(docRef);
-        
+
         if (docSnap.exists()) {
           const data = docSnap.data();
           if (data.role === 'driver') {
@@ -117,7 +130,7 @@ export default function Register() {
           setCheckingProfile(false);
         }
       } catch (err) {
-        console.error("Erro ao verificar perfil", err);
+        console.error('Erro ao verificar perfil', err);
         setCheckingProfile(false);
       }
     }
@@ -130,27 +143,32 @@ export default function Register() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const doRegister = async (loc) => {
     setShowLocationPicker(false);
     try {
       setIsSubmitting(true);
-      
+
       let currentUserUid = user?.uid;
-      
+
       if (!user) {
         await registerWithUsername(formData.username, formData.password);
         const { auth } = await import('../config/firebase');
         currentUserUid = auth.currentUser.uid;
       }
-      
+
       const studentData = {
         uid: currentUserUid,
         name: formData.name,
         role: formData.role,
-        faculty: formData.role === 'student' ? (formData.faculty === 'Outra' ? formData.customFaculty.trim() : formData.faculty) : null,
+        faculty:
+          formData.role === 'student'
+            ? formData.faculty === 'Outra'
+              ? formData.customFaculty.trim()
+              : formData.faculty
+            : null,
         route: formData.route,
         photoURL: user?.photoURL || null,
         notificationsEnabled: true,
@@ -163,7 +181,6 @@ export default function Register() {
       await setDoc(doc(db, 'students', currentUserUid), studentData);
 
       navigate('/aluno/mapa', { replace: true });
-
     } catch (err) {
       console.error('Erro ao salvar cadastro:', err);
       setError('Erro do Firebase: ' + err.message);
@@ -175,7 +192,7 @@ export default function Register() {
     e.preventDefault();
     setError('');
     setValidationErrors({});
-    
+
     let hasError = false;
     let errors = {};
 
@@ -226,20 +243,22 @@ export default function Register() {
           <img src="/Logo.webp" alt="Rhyme Logo" className="h-10 object-contain" />
           <h1 className="text-3xl font-bricolage font-bold text-heading tracking-tight">Rhyme.</h1>
         </div>
-        <h2 className="text-2xl font-bricolage font-light tracking-tight text-heading mb-2 text-center">Complete seu cadastro</h2>
-        <p className="text-body mb-6 text-center text-sm">Precisamos de mais algumas informações.</p>
-        
-        {error && (
-          <div className="badge-danger p-3 rounded-xl mb-4 text-sm">
-            {error}
-          </div>
-        )}
+        <h2 className="text-2xl font-bricolage font-light tracking-tight text-heading mb-2 text-center">
+          Complete seu cadastro
+        </h2>
+        <p className="text-body mb-6 text-center text-sm">
+          Precisamos de mais algumas informações.
+        </p>
+
+        {error && <div className="badge-danger p-3 rounded-xl mb-4 text-sm">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {!user && (
             <>
               <div>
-                <label className="block text-sm font-medium text-body mb-1">Nome de usuário <span className="text-danger">*</span></label>
+                <label className="block text-sm font-medium text-body mb-1">
+                  Nome de usuário <span className="text-danger">*</span>
+                </label>
                 <input
                   type="text"
                   name="username"
@@ -249,11 +268,15 @@ export default function Register() {
                   className={`w-full bg-subtle border ${validationErrors.username ? 'border-danger focus:ring-danger' : 'border-subtle focus:border-primary focus:ring-primary'} rounded-xl px-4 py-2.5 text-heading placeholder:text-caption focus:outline-none focus:ring-1 transition-colors`}
                   required
                 />
-                {validationErrors.username && <p className="text-danger text-xs mt-1">{validationErrors.username}</p>}
+                {validationErrors.username && (
+                  <p className="text-danger text-xs mt-1">{validationErrors.username}</p>
+                )}
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium text-body mb-1">Senha <span className="text-danger">*</span></label>
+                <label className="block text-sm font-medium text-body mb-1">
+                  Senha <span className="text-danger">*</span>
+                </label>
                 <input
                   type="password"
                   name="password"
@@ -263,13 +286,17 @@ export default function Register() {
                   className={`w-full bg-subtle border ${validationErrors.password ? 'border-danger focus:ring-danger' : 'border-subtle focus:border-primary focus:ring-primary'} rounded-xl px-4 py-2.5 text-heading placeholder:text-caption focus:outline-none focus:ring-1 transition-colors`}
                   required
                 />
-                {validationErrors.password && <p className="text-danger text-xs mt-1">{validationErrors.password}</p>}
+                {validationErrors.password && (
+                  <p className="text-danger text-xs mt-1">{validationErrors.password}</p>
+                )}
               </div>
             </>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-body mb-1">Nome completo <span className="text-danger">*</span></label>
+            <label className="block text-sm font-medium text-body mb-1">
+              Nome completo <span className="text-danger">*</span>
+            </label>
             <input
               type="text"
               name="name"
@@ -279,13 +306,15 @@ export default function Register() {
               className={`w-full bg-subtle border ${validationErrors.name ? 'border-danger focus:ring-danger' : 'border-subtle focus:border-primary focus:ring-primary'} rounded-xl px-4 py-2.5 text-heading placeholder:text-caption focus:outline-none focus:ring-1 transition-colors`}
               required
             />
-            {validationErrors.name && <p className="text-danger text-xs mt-1">{validationErrors.name}</p>}
+            {validationErrors.name && (
+              <p className="text-danger text-xs mt-1">{validationErrors.name}</p>
+            )}
           </div>
 
-
-
           <div>
-            <label className="block text-sm font-medium text-body mb-1">Rota <span className="text-danger">*</span></label>
+            <label className="block text-sm font-medium text-body mb-1">
+              Rota <span className="text-danger">*</span>
+            </label>
             <CustomSelect
               name="route"
               value={formData.route}
@@ -293,23 +322,27 @@ export default function Register() {
               options={[
                 { value: 'Professor Jamil', label: 'Professor Jamil' },
                 { value: 'Cromínia', label: 'Cromínia' },
-                { value: 'Hidrolândia', label: 'Hidrolândia' }
+                { value: 'Hidrolândia', label: 'Hidrolândia' },
               ]}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-body mb-1">Faculdade <span className="text-danger">*</span></label>
+            <label className="block text-sm font-medium text-body mb-1">
+              Faculdade <span className="text-danger">*</span>
+            </label>
             <CustomSelect
               name="faculty"
               value={formData.faculty}
               onChange={handleChange}
               className={validationErrors.faculty ? 'border-danger focus:ring-danger' : ''}
               placeholder="Selecione sua faculdade"
-              options={FACULTIES.map(fac => ({ value: fac, label: fac }))}
+              options={FACULTIES.map((fac) => ({ value: fac, label: fac }))}
             />
-            {validationErrors.faculty && <p className="text-danger text-xs mt-1">{validationErrors.faculty}</p>}
-            
+            {validationErrors.faculty && (
+              <p className="text-danger text-xs mt-1">{validationErrors.faculty}</p>
+            )}
+
             {formData.faculty === 'Outra' && (
               <div className="mt-3 animate-[fadeIn_0.3s_ease-out]">
                 <input
@@ -320,7 +353,9 @@ export default function Register() {
                   placeholder="Digite o nome da instituição"
                   className={`w-full bg-subtle border ${validationErrors.customFaculty ? 'border-danger focus:ring-danger' : 'border-subtle focus:border-primary focus:ring-primary'} rounded-xl px-4 py-2.5 text-heading placeholder:text-caption focus:outline-none focus:ring-1 transition-colors`}
                 />
-                {validationErrors.customFaculty && <p className="text-danger text-xs mt-1">{validationErrors.customFaculty}</p>}
+                {validationErrors.customFaculty && (
+                  <p className="text-danger text-xs mt-1">{validationErrors.customFaculty}</p>
+                )}
               </div>
             )}
           </div>

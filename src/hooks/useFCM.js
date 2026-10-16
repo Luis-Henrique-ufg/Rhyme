@@ -20,15 +20,15 @@ export function useFCM(user) {
         if (permission === 'granted') {
           // You should add VITE_FIREBASE_VAPID_KEY to your .env file
           const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
-          const currentToken = await getToken(messaging, { 
-            vapidKey: vapidKey 
+          const currentToken = await getToken(messaging, {
+            vapidKey: vapidKey,
           });
 
           if (currentToken) {
             setFcmToken(currentToken);
             // Save token to user document
             await updateDoc(doc(db, 'students', user.uid), {
-              fcmToken: currentToken
+              fcmToken: currentToken,
             });
             console.log('FCM Token saved for user.');
           } else {
@@ -49,9 +49,9 @@ export function useFCM(user) {
       // Optional: show a toast notification here
       if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
         try {
-          new Notification(payload.notification?.title || "Aviso do Ônibus", {
-            body: payload.notification?.body || "Nova notificação",
-            icon: payload.notification?.icon || '/android-chrome-192x192.png'
+          new Notification(payload.notification?.title || 'Aviso do Ônibus', {
+            body: payload.notification?.body || 'Nova notificação',
+            icon: payload.notification?.icon || '/android-chrome-192x192.png',
           });
         } catch (e) {
           console.warn('Could not display system notification:', e);

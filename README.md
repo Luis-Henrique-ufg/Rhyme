@@ -37,6 +37,7 @@ A versão mais recente da aplicação está publicada e acessível como Progress
 O **Rhyme** é um sistema inteligente de gestão e acompanhamento do transporte universitário intermunicipal, criado para substituir as tradicionais listas de chamada manuais e mensagens desencontradas em grupos de WhatsApp.
 
 O sistema centraliza a comunicação em um mapa interativo e intuitivo em tempo real:
+
 - Os **estudantes** acompanham a rota da van/ônibus ao vivo, consultam a estimativa de chegada (ETA) e informam com um toque quando estão prontos para embarque (**"Liberado"**), podendo também transmitir o GPS a bordo caso o motorista precise de apoio.
 - Os **motoristas** visualizam um painel consolidado com a concentração de alunos liberados por faculdade ou ponto de parada, otimizando o itinerário sem necessidade de manusear o celular enquanto dirigem.
 
@@ -72,16 +73,16 @@ O sistema adota uma arquitetura Serverless reativa em tempo real:
 
 ### 🗺️ Mapa de Pastas do Frontend (`src/`)
 
-| Diretório | Responsabilidade |
-|---|---|
-| [`src/assets/`](./src/assets/) | Logotipos, ícones SVG e recursos visuais estáticos. |
-| [`src/components/`](./src/components/) | Componentes reutilizáveis (modais de embarque, lista pública, seletor de mapa, prompt de notificações). |
-| [`src/config/`](./src/config/) | Inicialização do Firebase SDK (`db`, `auth`, `messaging`). |
-| [`src/contexts/`](./src/contexts/) | Contextos globais do React (`AuthContext` para sessão e papéis; `ThemeContext` para modo escuro/claro). |
-| [`src/hooks/`](./src/hooks/) | Custom hooks auxiliares para áudio, vibração tátil e eventos da janela. |
-| [`src/pages/`](./src/pages/) | Telas principais da aplicação:<br>• `StudentMap.jsx`: Tela principal do estudante, mapa e Modo Campus.<br>• `DriverDashboard.jsx`: Painel de controle operacional do motorista.<br>• `Login.jsx` / `Register.jsx`: Fluxos de entrada e perfil.<br>• `Profile.jsx` / `Settings.jsx`: Configurações de alarme e paradas. |
-| [`src/routes/`](./src/routes/) | Configuração de rotas (`react-router-dom`) e rotas privadas protegidas. |
-| [`src/utils/`](./src/utils/) | Lógica de negócios e adaptadores:<br>• `useTripData.js`: Listeners em tempo real do Firestore.<br>• `tripManager.js`: Ciclo de vida e criação de viagens.<br>• `geo.js`: Cálculo de distância Haversine e checagem de raio de geofencing.<br>• `routeUtils.js`: Normalização consistente de nomes de rotas intermunicipais.<br>• `audioEffects.js`: Sons nativos Web Audio para feedback de toque. |
+| Diretório                              | Responsabilidade                                                                                                                                                                                                                                                                                                                                                                                   |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`src/assets/`](./src/assets/)         | Logotipos, ícones SVG e recursos visuais estáticos.                                                                                                                                                                                                                                                                                                                                                |
+| [`src/components/`](./src/components/) | Componentes reutilizáveis (modais de embarque, lista pública, seletor de mapa, prompt de notificações).                                                                                                                                                                                                                                                                                            |
+| [`src/config/`](./src/config/)         | Inicialização do Firebase SDK (`db`, `auth`, `messaging`).                                                                                                                                                                                                                                                                                                                                         |
+| [`src/contexts/`](./src/contexts/)     | Contextos globais do React (`AuthContext` para sessão e papéis; `ThemeContext` para modo escuro/claro).                                                                                                                                                                                                                                                                                            |
+| [`src/hooks/`](./src/hooks/)           | Custom hooks auxiliares para áudio, vibração tátil e eventos da janela.                                                                                                                                                                                                                                                                                                                            |
+| [`src/pages/`](./src/pages/)           | Telas principais da aplicação:<br>• `StudentMap.jsx`: Tela principal do estudante, mapa e Modo Campus.<br>• `DriverDashboard.jsx`: Painel de controle operacional do motorista.<br>• `Login.jsx` / `Register.jsx`: Fluxos de entrada e perfil.<br>• `Profile.jsx` / `Settings.jsx`: Configurações de alarme e paradas.                                                                             |
+| [`src/routes/`](./src/routes/)         | Configuração de rotas (`react-router-dom`) e rotas privadas protegidas.                                                                                                                                                                                                                                                                                                                            |
+| [`src/utils/`](./src/utils/)           | Lógica de negócios e adaptadores:<br>• `useTripData.js`: Listeners em tempo real do Firestore.<br>• `tripManager.js`: Ciclo de vida e criação de viagens.<br>• `geo.js`: Cálculo de distância Haversine e checagem de raio de geofencing.<br>• `routeUtils.js`: Normalização consistente de nomes de rotas intermunicipais.<br>• `audioEffects.js`: Sons nativos Web Audio para feedback de toque. |
 
 ---
 
@@ -103,6 +104,7 @@ O diretório [`functions/`](./functions/) contém o backend serverless do Fireba
 ## 🚀 Como Começar
 
 ### Pré-requisitos
+
 - [Node.js](https://nodejs.org/) versão 20 ou superior (Node 20+ LTS recomendado)
 - NPM versão 10 ou superior
 - Um projeto configurado no [Firebase Console](https://console.firebase.google.com/)
@@ -112,22 +114,27 @@ O diretório [`functions/`](./functions/) contém o backend serverless do Fireba
 ### 1. Instalação do Frontend
 
 1. **Clone o repositório:**
+
    ```bash
    git clone https://github.com/Luis-Henrique-ufg/Rhyme.git
    cd Rhyme
    ```
 
 2. **Instale as dependências:**
+
    ```bash
    npm install
    ```
 
 3. **Configure as variáveis de ambiente:**
    Crie um arquivo `.env` na raiz do projeto baseado no `.env.example`:
+
    ```bash
    cp .env.example .env
    ```
+
    Preencha com as credenciais do seu projeto Firebase:
+
    ```env
    VITE_FIREBASE_API_KEY=sua_api_key
    VITE_FIREBASE_AUTH_DOMAIN=seu_projeto.firebaseapp.com
@@ -178,12 +185,15 @@ npm run build
 Para realizar o deploy dos recursos no Firebase:
 
 ### 1. Autenticação na CLI do Firebase
+
 ```bash
 npx firebase-tools login
 ```
 
 ### 2. Deploy das Regras de Segurança do Firestore
+
 O arquivo [`firestore.rules`](./firestore.rules) define as permissões de leitura e escrita para alunos e motoristas autenticados:
+
 ```bash
 # Publica apenas as regras de segurança do Firestore
 npx firebase-tools deploy --only firestore:rules
@@ -193,11 +203,13 @@ npx firebase-tools deploy --only firestore:indexes
 ```
 
 ### 3. Deploy das Cloud Functions
+
 ```bash
 npx firebase-tools deploy --only functions
 ```
 
 ### 4. Deploy do Frontend (Hosting)
+
 ```bash
 # Primeiro gere o bundle de produção
 npm run build
@@ -207,6 +219,7 @@ npx firebase-tools deploy --only hosting
 ```
 
 ### 5. Deploy Completo de Todos os Recursos
+
 ```bash
 npm run build
 npx firebase-tools deploy

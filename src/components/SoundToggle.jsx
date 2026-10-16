@@ -41,12 +41,16 @@ export default function SoundToggle({ className = '' }) {
       {/* Background Icons (Mute on Left, Sound on Right) */}
       <div className="absolute inset-0 flex items-center justify-between px-[9px] pointer-events-none">
         {/* Mute Icon */}
-        <div className={`transition-opacity duration-300 ${!enabled ? 'opacity-100 text-caption' : 'opacity-30 text-caption'}`}>
+        <div
+          className={`transition-opacity duration-300 ${!enabled ? 'opacity-100 text-caption' : 'opacity-30 text-caption'}`}
+        >
           <VolumeX size={15} />
         </div>
 
         {/* Sound Icon */}
-        <div className={`transition-opacity duration-300 ${enabled ? 'opacity-100 text-primary' : 'opacity-30 text-caption'}`}>
+        <div
+          className={`transition-opacity duration-300 ${enabled ? 'opacity-100 text-primary' : 'opacity-30 text-caption'}`}
+        >
           <Volume2 size={15} />
         </div>
       </div>
@@ -59,11 +63,7 @@ export default function SoundToggle({ className = '' }) {
             : 'translate-x-0 bg-[#27272a] border-[2.5px] border-caption/50 shadow-[0_2px_8px_rgba(0,0,0,0.2)] text-caption'
         }`}
       >
-        {enabled ? (
-          <Volume2 size={13} />
-        ) : (
-          <VolumeX size={13} />
-        )}
+        {enabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
       </div>
     </button>
   );

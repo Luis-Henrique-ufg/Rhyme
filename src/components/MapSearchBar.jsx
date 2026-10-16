@@ -6,29 +6,111 @@ import { playSearchSound, playTapSound } from '../utils/audioEffects';
  * Base de dados local instantânea de faculdades e pontos estratégicos em Goiânia
  */
 export const LOCAL_POI_DATABASE = [
-  { name: 'UFG - Campus Samambaia (Campus II)', category: 'Universidade', keywords: 'ufg samambaia campus 2 reitoria bc inf ru', coords: [-16.603568, -49.265574] },
-  { name: 'UFG - Campus Colemar (Praça Universitária)', category: 'Universidade', keywords: 'ufg colemar natal silva praca universitaria direito odonto', coords: [-16.676109, -49.245160] },
-  { name: 'PUC Goiás - Área 1 (Praça Universitária)', category: 'Universidade', keywords: 'puc goias area 1 praca universitaria', coords: [-16.674751, -49.242090] },
-  { name: 'PUC Goiás - Área 2 (Engenharias / Arquitetura)', category: 'Universidade', keywords: 'puc goias area 2 engenharia arquitetura', coords: [-16.676500, -49.243500] },
-  { name: 'PUC Goiás - Área 3 (Saúde / Medicina)', category: 'Universidade', keywords: 'puc goias area 3 saude medicina enfermagem', coords: [-16.672000, -49.241000] },
-  { name: 'PUC Goiás - Área 4 (Direito / Relações Internacionais)', category: 'Universidade', keywords: 'puc goias area 4 direito ri', coords: [-16.673200, -49.245000] },
-  { name: 'PUC Goiás - Área 5 (Jardim Goiás / Flamboyant)', category: 'Universidade', keywords: 'puc goias area 5 jardim goias flamboyant', coords: [-16.705000, -49.235000] },
-  { name: 'IFG - Instituto Federal de Goiás (Centro)', category: 'Instituto', keywords: 'ifg centro rua 75 federal goiania', coords: [-16.665844, -49.254845] },
-  { name: 'UNIP - Universidade Paulista (BR-153)', category: 'Universidade', keywords: 'unip br 153 alto da gloria', coords: [-16.719133, -49.237381] },
-  { name: 'FASAM - Faculdade Sul-Americana (BR-153)', category: 'Faculdade', keywords: 'fasam br 153 jardim goias', coords: [-16.722386, -49.236576] },
-  { name: 'Estácio Goiás (Centro / Goiás)', category: 'Faculdade', keywords: 'estacio centro rua 67 goias', coords: [-16.661400, -49.261822] },
-  { name: 'Unicamps (Campinas)', category: 'Faculdade', keywords: 'unicamps campinas faculdade', coords: [-16.675166, -49.284300] },
-  { name: 'Eseffego - UEG (Educação Física)', category: 'Faculdade', keywords: 'eseffego ueg educacao fisica leste universitario', coords: [-16.667398, -49.242543] },
-  { name: 'Colégio Vitória (Centro)', category: 'Colégio', keywords: 'colegio vitoria centro', coords: [-16.672587, -49.252661] },
-  { name: 'Terminal Praça da Bíblia', category: 'Transporte', keywords: 'terminal praca da biblia universitário eixo anhanguera', coords: [-16.672000, -49.238000] },
-  { name: 'Praça Universitária', category: 'Ponto de Encontro', keywords: 'praca universitaria coreto palacio da cultura', coords: [-16.675707, -49.245475] },
-  { name: 'Shopping Flamboyant', category: 'Shopping', keywords: 'shopping flamboyant jardim goias', coords: [-16.712000, -49.234000] }
+  {
+    name: 'UFG - Campus Samambaia (Campus II)',
+    category: 'Universidade',
+    keywords: 'ufg samambaia campus 2 reitoria bc inf ru',
+    coords: [-16.603568, -49.265574],
+  },
+  {
+    name: 'UFG - Campus Colemar (Praça Universitária)',
+    category: 'Universidade',
+    keywords: 'ufg colemar natal silva praca universitaria direito odonto',
+    coords: [-16.676109, -49.24516],
+  },
+  {
+    name: 'PUC Goiás - Área 1 (Praça Universitária)',
+    category: 'Universidade',
+    keywords: 'puc goias area 1 praca universitaria',
+    coords: [-16.674751, -49.24209],
+  },
+  {
+    name: 'PUC Goiás - Área 2 (Engenharias / Arquitetura)',
+    category: 'Universidade',
+    keywords: 'puc goias area 2 engenharia arquitetura',
+    coords: [-16.6765, -49.2435],
+  },
+  {
+    name: 'PUC Goiás - Área 3 (Saúde / Medicina)',
+    category: 'Universidade',
+    keywords: 'puc goias area 3 saude medicina enfermagem',
+    coords: [-16.672, -49.241],
+  },
+  {
+    name: 'PUC Goiás - Área 4 (Direito / Relações Internacionais)',
+    category: 'Universidade',
+    keywords: 'puc goias area 4 direito ri',
+    coords: [-16.6732, -49.245],
+  },
+  {
+    name: 'PUC Goiás - Área 5 (Jardim Goiás / Flamboyant)',
+    category: 'Universidade',
+    keywords: 'puc goias area 5 jardim goias flamboyant',
+    coords: [-16.705, -49.235],
+  },
+  {
+    name: 'IFG - Instituto Federal de Goiás (Centro)',
+    category: 'Instituto',
+    keywords: 'ifg centro rua 75 federal goiania',
+    coords: [-16.665844, -49.254845],
+  },
+  {
+    name: 'UNIP - Universidade Paulista (BR-153)',
+    category: 'Universidade',
+    keywords: 'unip br 153 alto da gloria',
+    coords: [-16.719133, -49.237381],
+  },
+  {
+    name: 'FASAM - Faculdade Sul-Americana (BR-153)',
+    category: 'Faculdade',
+    keywords: 'fasam br 153 jardim goias',
+    coords: [-16.722386, -49.236576],
+  },
+  {
+    name: 'Estácio Goiás (Centro / Goiás)',
+    category: 'Faculdade',
+    keywords: 'estacio centro rua 67 goias',
+    coords: [-16.6614, -49.261822],
+  },
+  {
+    name: 'Unicamps (Campinas)',
+    category: 'Faculdade',
+    keywords: 'unicamps campinas faculdade',
+    coords: [-16.675166, -49.2843],
+  },
+  {
+    name: 'Eseffego - UEG (Educação Física)',
+    category: 'Faculdade',
+    keywords: 'eseffego ueg educacao fisica leste universitario',
+    coords: [-16.667398, -49.242543],
+  },
+  {
+    name: 'Colégio Vitória (Centro)',
+    category: 'Colégio',
+    keywords: 'colegio vitoria centro',
+    coords: [-16.672587, -49.252661],
+  },
+  {
+    name: 'Terminal Praça da Bíblia',
+    category: 'Transporte',
+    keywords: 'terminal praca da biblia universitário eixo anhanguera',
+    coords: [-16.672, -49.238],
+  },
+  {
+    name: 'Praça Universitária',
+    category: 'Ponto de Encontro',
+    keywords: 'praca universitaria coreto palacio da cultura',
+    coords: [-16.675707, -49.245475],
+  },
+  {
+    name: 'Shopping Flamboyant',
+    category: 'Shopping',
+    keywords: 'shopping flamboyant jardim goias',
+    coords: [-16.712, -49.234],
+  },
 ];
 
-export default function MapSearchBar({
-  onSelectPlace,
-  userCoords
-}) {
+export default function MapSearchBar({ onSelectPlace, userCoords }) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [isSearchingOnline, setIsSearchingOnline] = useState(false);
@@ -54,10 +136,17 @@ export default function MapSearchBar({
   // Busca instantânea local (Zero Latência)
   const localResults = useMemo(() => {
     if (!query.trim()) return LOCAL_POI_DATABASE.slice(0, 6);
-    const cleanQ = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const cleanQ = query
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
 
-    return LOCAL_POI_DATABASE.filter(item => {
-      const matchName = item.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(cleanQ);
+    return LOCAL_POI_DATABASE.filter((item) => {
+      const matchName = item.name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .includes(cleanQ);
       const matchKeywords = item.keywords.toLowerCase().includes(cleanQ);
       return matchName || matchKeywords;
     });
@@ -77,25 +166,29 @@ export default function MapSearchBar({
         // Bias na região metropolitana de Goiânia / Goiás
         const endpoint = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Goiânia')}&limit=5&addressdetails=1`;
         const res = await fetch(endpoint, {
-          headers: { 'Accept-Language': 'pt-BR,pt;q=0.9', 'User-Agent': 'RhymeApp/1.0' }
+          headers: { 'Accept-Language': 'pt-BR,pt;q=0.9', 'User-Agent': 'RhymeApp/1.0' },
         });
         if (res.ok) {
           const data = await res.json();
           const mapped = (data || [])
-            .map(item => {
+            .map((item) => {
               const lat = parseFloat(item.lat);
               const lon = parseFloat(item.lon ?? item.lng);
               if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
 
               const nameParts = (item.display_name || '').split(',');
               const primaryName = nameParts[0]?.trim() || 'Local';
-              const secondaryDesc = nameParts.slice(1, 3).map(p => p.trim()).filter(Boolean).join(', ');
+              const secondaryDesc = nameParts
+                .slice(1, 3)
+                .map((p) => p.trim())
+                .filter(Boolean)
+                .join(', ');
 
               return {
                 name: primaryName,
                 category: secondaryDesc || item.type || item.class || 'Endereço',
                 coords: [lat, lon],
-                isOnline: true
+                isOnline: true,
               };
             })
             .filter(Boolean);
@@ -126,9 +219,12 @@ export default function MapSearchBar({
   };
 
   return (
-    <div ref={containerRef} className="absolute top-3 left-3 right-3 sm:left-6 sm:right-auto sm:w-full sm:max-w-md z-[1600]">
+    <div
+      ref={containerRef}
+      className="absolute top-3 left-3 right-3 sm:left-6 sm:right-auto sm:w-full sm:max-w-md z-[1600]"
+    >
       {/* Campo de Busca Principal */}
-      <div 
+      <div
         className="relative flex items-center w-full bg-surface-elevated/95 backdrop-blur-md border border-subtle focus-within:border-orange-500 rounded-full shadow-xl transition-all overflow-hidden"
         style={{ borderRadius: '9999px' }}
       >
@@ -155,7 +251,7 @@ export default function MapSearchBar({
             borderWidth: 0,
             outline: 'none',
             boxShadow: 'none',
-            borderRadius: '9999px'
+            borderRadius: '9999px',
           }}
         />
         {query && (
@@ -197,7 +293,10 @@ export default function MapSearchBar({
                       <p className="text-[10px] text-caption">{place.category}</p>
                     </div>
                   </div>
-                  <ArrowRight size={13} className="text-caption group-hover:text-orange-400 opacity-0 group-hover:opacity-100 transition-all shrink-0" />
+                  <ArrowRight
+                    size={13}
+                    className="text-caption group-hover:text-orange-400 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                  />
                 </button>
               ))}
             </div>
@@ -211,7 +310,9 @@ export default function MapSearchBar({
                   <MapPin size={11} className="text-sky-400" />
                   <span>Endereços e Lugares</span>
                 </span>
-                {isSearchingOnline && <Loader2 size={11} className="animate-spin text-orange-500" />}
+                {isSearchingOnline && (
+                  <Loader2 size={11} className="animate-spin text-orange-500" />
+                )}
               </div>
               {onlineResults.map((place, idx) => (
                 <button
@@ -231,7 +332,10 @@ export default function MapSearchBar({
                       <p className="text-[10px] text-caption">{place.category}</p>
                     </div>
                   </div>
-                  <ArrowRight size={13} className="text-caption group-hover:text-sky-400 opacity-0 group-hover:opacity-100 transition-all shrink-0" />
+                  <ArrowRight
+                    size={13}
+                    className="text-caption group-hover:text-sky-400 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                  />
                 </button>
               ))}
               {!isSearchingOnline && onlineResults.length === 0 && localResults.length === 0 && (
