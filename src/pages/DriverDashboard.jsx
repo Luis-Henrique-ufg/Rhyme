@@ -32,19 +32,8 @@ import {
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-rotate';
-import {
-  doc,
-  collection,
-  query,
-  where,
-  getDocs,
-  updateDoc,
-  setDoc,
-  onSnapshot,
-} from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { db } from '../config/firebase';
 import { ensureDailyTripExists, normalizeRoute } from '../utils/tripManager';
 import { useCurrentTrip, useDriverAttendanceMap } from '../utils/useTripData';
 import Header from '../components/Header';
@@ -52,415 +41,38 @@ import PublicListModal from '../components/PublicListModal';
 import Loader from '../components/Loader';
 import ErrorState from '../components/ErrorState';
 import MapInteractions from '../components/MapInteractions';
-import ReactDOM from 'react-dom';
 import { playSuccessSound, playBoardingAlarmSound } from '../utils/audioEffects';
 import { useCustomAlert } from '../contexts/AlertContext';
 import { MOCK_FACULTIES, CENTER, getDistanceFromLatLonInKm } from '../services/geoService';
-
-const RecenterButton = ({ lat, lng }) => {
-  const map = useMap();
-  const [portalTarget, setPortalTarget] = useState(null);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const el = document.getElementById('navbar-recenter-slot');
-      setPortalTarget((current) => (current === el ? current : el));
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
-
-  const content = (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        if (lat && lng) map.flyTo([lat, lng], 15, { duration: 1.5 });
-      }}
-      className="flex flex-col items-center justify-center text-body hover:text-primary transition-colors"
-      title="Centralizar"
-    >
-      <div className="p-2">
-        <LocateFixed size={24} strokeWidth={2.5} />
-      </div>
-      <span className="text-[11px] font-medium mt-0.5">Focar</span>
-    </button>
-  );
-
-  return portalTarget ? ReactDOM.createPortal(content, portalTarget) : null;
-};
-
-// Detecta modo dia/noite para trocar tile do mapa automaticamente
-function isNightTime() {
-  const h = new Date().getHours();
-  return h >= 18 || h < 6;
-}
-
-// URLs dos tiles para dia (CartoDB Positron) e noite (CartoDB Dark)
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
-const TILE_DAY = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`;
-const TILE_NIGHT = `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`;
-const TILE_ATTR_DAY = '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>';
-const TILE_ATTR_NIGHT = '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>';
-
-// Zoom tracker: reporta nível de zoom de volta ao componente pai
-const ZoomTracker = ({ onZoomChange }) => {
-  useMapEvents({ zoomend: (e) => onZoomChange(e.target.getZoom()) });
-  return null;
-};
-
-// Cria cluster marker estilo Uber: círculo branco com contagem e label acima
-const createCustomIcon = (liberados, total, label, isCrominia, isDark = true) => {
-  const isComplete = total === undefined ? false : liberados === total && total > 0;
-  const accentColor = isCrominia ? (isDark ? '#27272a' : '#475569') : '#f97316';
-  const badgeColor = isComplete ? '#16a34a' : accentColor;
-  const night = isDark;
-
-  const containerStyle = `
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    pointer-events: none;
-  `;
-
-  const labelHtml = label
-    ? `
-    <div style="
-      background: ${night ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.96)'};
-      color: ${night ? '#f4f4f5' : '#18181b'};
-      font-size: 11px;
-      font-weight: 700;
-      font-family: Inter, system-ui, sans-serif;
-      padding: 3px 8px;
-      border-radius: 8px;
-      white-space: nowrap;
-      box-shadow: 0 2px 8px rgba(0,0,0,${night ? '0.5' : '0.15'});
-      border: 1px solid ${night ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'};
-      margin-bottom: 4px;
-      letter-spacing: -0.01em;
-    ">${label}</div>
-  `
-    : '';
-
-  const circleStyle = `
-    width: 40px;
-    height: 40px;
-    background: ${night ? '#111' : '#ffffff'};
-    border-radius: 50%;
-    border: 3px solid ${badgeColor};
-    box-shadow: 0 4px 12px rgba(0,0,0,${night ? '0.5' : '0.15'}), 0 0 0 1px ${badgeColor}22;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: ${night ? '#fff' : '#18181b'};
-  `;
-
-  return L.divIcon({
-    html: `
-      <div style="${containerStyle}">
-        ${labelHtml}
-        <div style="${circleStyle}">
-          <span style="font-weight: 900; font-size: 14px; color: ${badgeColor}; ${total !== undefined ? 'margin-bottom: -3px;' : ''}">${liberados}</span>
-          ${total !== undefined ? `<span style="font-size: 9px; opacity: 0.6; color: ${night ? '#a1a1aa' : '#52525b'};">/${total}</span>` : ''}
-        </div>
-      </div>
-    `,
-    className: 'custom-leaflet-icon',
-    iconSize: [40, label ? 66 : 40],
-    iconAnchor: [20, label ? 66 : 40],
-  });
-};
-
-// Ícone de faculdade — estilo BANDEIRA: completamente diferente dos POIs circulares do Mapbox
-const createFacultyIcon = (name, isCrominia, isDark = true) => {
-  const night = isDark;
-  const accent = isCrominia ? (isDark ? '#a1a1aa' : '#64748b') : '#f97316';
-  const textColor = night ? '#f4f4f5' : '#18181b';
-  const labelBg = night ? 'rgba(10,10,10,0.96)' : 'rgba(255,255,255,0.98)';
-  const borderCol = night ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.12)';
-  const shadow = night ? '0 4px 16px rgba(0,0,0,0.7)' : '0 3px 12px rgba(0,0,0,0.28)';
-  // Pole height
-  const poleH = 22;
-  return L.divIcon({
-    html: `
-      <div style="position:relative;display:flex;flex-direction:column;align-items:flex-start;pointer-events:none;">
-        <!-- Flag banner attached to a vertical pole -->
-        <div style="display:flex;flex-direction:row;align-items:flex-start;">
-          <!-- Pole -->
-          <div style="width:3px;height:${poleH + 22}px;background:${accent};border-radius:2px;box-shadow:${shadow};"></div>
-          <!-- Flag -->
-          <div style="
-            background:${accent};
-            color:${night ? '#111' : '#fff'};
-            font-size:10px;font-weight:800;
-            font-family:Inter,system-ui,sans-serif;
-            padding:3px 8px 3px 6px;
-            border-radius:0 6px 6px 0;
-            white-space:nowrap;
-            max-width:120px;
-            overflow:hidden;text-overflow:ellipsis;
-            letter-spacing:-0.01em;
-            box-shadow:${shadow};
-            margin-top:4px;
-          ">${name}</div>
-        </div>
-        <!-- Base dot -->
-        <div style="width:7px;height:7px;background:${accent};border-radius:50%;margin-left:-2px;margin-top:-2px;box-shadow:${shadow};"></div>
-      </div>
-    `,
-    className: 'bg-transparent border-none',
-    iconSize: [140, poleH + 32],
-    iconAnchor: [3, poleH + 32],
-  });
-};
-
-// Marcador de Aluno/Passageiro na visão do Motorista — avatar circular com halo/sonar único por status (sem duplicação de anéis)
-const createDriverStudentIcon = (
-  name,
-  isLiberado,
-  isSoIda,
-  response = null,
-  totalInCluster = 1,
-  isDark = true,
-  isNextStop = false
-) => {
-  const night = isDark;
-  const isComing = response === 'coming';
-
-  // Paleta do passageiro:
-  // - A Caminho (respondeu chamado): Azul Céu (#0ea5e9) com halo vibrante
-  // - Liberado: Verde Esmeralda (#10b981) indicando "pronto para embarque"
-  // - Aguardando: Âmbar (#f59e0b) indicando "ainda em aula/esperando"
-  // - Só Ida: Cinza Neutro (#71717a)
-  let bg = '#f59e0b';
-  let haloBg = 'transparent';
-  let haloBorder = 'transparent';
-  let showHalo = false;
-
-  if (isSoIda) {
-    bg = '#71717a';
-  } else if (isComing) {
-    bg = '#0ea5e9';
-    haloBg = 'rgba(14, 165, 233, 0.25)';
-    haloBorder = 'rgba(14, 165, 233, 0.7)';
-    showHalo = true;
-  } else if (isLiberado) {
-    bg = '#10b981';
-    haloBg = 'rgba(16, 185, 129, 0.25)';
-    haloBorder = 'rgba(16, 185, 129, 0.7)';
-    showHalo = true;
-  } else if (isNextStop) {
-    // Aluno aguardando que é a próxima parada com a van a caminho (<= 2.5km) -> sonar âmbar exclusivo
-    bg = '#f59e0b';
-    haloBg = 'rgba(245, 158, 11, 0.22)';
-    haloBorder = 'rgba(245, 158, 11, 0.7)';
-    showHalo = true;
-  }
-
-  const borderCol = night ? '#18181b' : '#ffffff';
-  const labelBg = night ? 'rgba(15,15,15,0.94)' : 'rgba(255,255,255,0.96)';
-  const labelText = night ? '#f4f4f5' : '#18181b';
-
-  // Halo / Sonar unificado: renderizado SEMPRE no mesmo elemento e na mesma cor do status
-  const haloHtml = showHalo
-    ? `
-    <div style="
-      position: absolute;
-      inset: -5px;
-      border-radius: 50%;
-      border: ${isNextStop ? '2px' : '1.5px'} solid ${haloBorder};
-      background: ${haloBg};
-      animation: studentHalo ${isNextStop ? '2.1s' : '2.5s'} ease-out infinite;
-      box-shadow: 0 0 ${isNextStop ? '12px' : '6px'} ${haloBorder};
-      pointer-events: none;
-      z-index: 1;
-    "></div>
-    ${
-      isNextStop
-        ? `
-      <div style="
-        position: absolute;
-        inset: -5px;
-        border-radius: 50%;
-        border: 1.5px solid ${haloBorder};
-        background: transparent;
-        animation: studentHalo 2.1s ease-out 1.05s infinite;
-        pointer-events: none;
-        z-index: 1;
-      "></div>
-    `
-        : ''
-    }
-  `
-    : '';
-
-  // Silhueta de pessoa / estudante (Avatar 👤) ou ícone de check se a caminho
-  const userSvg = isComing
-    ? `
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
-      <polyline points="20 6 9 17 4 12"></polyline>
-    </svg>
-  `
-    : `
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="white" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
-      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-    </svg>
-  `;
-
-  // Badge indicador de múltiplos alunos no cluster (+1, +2...)
-  const countBadge =
-    totalInCluster > 1
-      ? `
-    <span style="
-      position: absolute;
-      top: -4px;
-      right: -6px;
-      background: ${night ? '#27272a' : '#18181b'};
-      color: #ffffff;
-      font-size: 8.5px;
-      font-weight: 800;
-      padding: 0 4px;
-      border-radius: 9999px;
-      border: 1.5px solid ${borderCol};
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      z-index: 4;
-    ">+${totalInCluster - 1}</span>
-  `
-      : '';
-
-  const labelHtml = name
-    ? `
-    <div style="
-      background: ${labelBg};
-      color: ${labelText};
-      font-size: 9.5px;
-      font-weight: 700;
-      font-family: Inter, system-ui, sans-serif;
-      padding: 1px 6px;
-      border-radius: 5px;
-      white-space: nowrap;
-      box-shadow: 0 2px 6px rgba(0,0,0,${night ? '0.6' : '0.15'});
-      border: 1px solid ${night ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'};
-      margin-bottom: 3px;
-      max-width: 110px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      z-index: 3;
-    ">${name}</div>
-  `
-    : '';
-
-  return L.divIcon({
-    html: `
-      <div style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:none;">
-        ${labelHtml}
-        <div style="position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;">
-          ${haloHtml}
-          ${countBadge}
-          <div style="
-            width: 28px;
-            height: 28px;
-            background: ${bg};
-            border-radius: 50%;
-            border: 2px solid ${borderCol};
-            box-shadow: 0 3px 10px rgba(0,0,0,${night ? '0.6' : '0.25'}), 0 0 0 1px ${bg}44;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            z-index: 2;
-          ">
-            ${userSvg}
-          </div>
-        </div>
-      </div>
-    `,
-    className: 'bg-transparent border-none',
-    iconSize: [28, name ? 50 : 28],
-    iconAnchor: [14, name ? 36 : 14],
-  });
-};
-
-const createStudentPinIcon = (name, isCrominia, isDark = true, isSoIda = false) => {
-  return createDriverStudentIcon(name, false, isSoIda, null, 1, isDark, false);
-};
-
-// Ícone do motorista (Van / Ônibus) — estilo Uber sobre fundo dia/noite
-const createBusIcon = (isCrominia, isDark = true) => {
-  const night = isDark;
-  const label = isCrominia ? 'Ônibus' : 'VAN';
-  const bgColor = isCrominia ? (night ? '#ffffff' : '#18181b') : '#f97316';
-  const borderColor = isCrominia ? (night ? '#111' : '#f4f4f5') : night ? '#111' : '#fff7ed';
-  const iconColor = isCrominia ? (night ? '#111' : '#f4f4f5') : '#ffffff';
-  const wheelColor = isCrominia ? (night ? '#f4f4f5' : '#111') : '#111';
-
-  return L.divIcon({
-    html: `
-      <div style="
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        pointer-events: none;
-      ">
-        <div style="
-          background: ${night ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.96)'};
-          color: ${night ? '#f4f4f5' : '#18181b'};
-          font-size: 10px;
-          font-weight: 800;
-          font-family: Inter, system-ui, sans-serif;
-          padding: 2px 7px;
-          border-radius: 6px;
-          white-space: nowrap;
-          box-shadow: 0 2px 8px rgba(0,0,0,${night ? '0.5' : '0.45'});
-          border: 1px solid ${night ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'};
-          margin-bottom: 4px;
-          letter-spacing: 0.02em;
-          text-transform: uppercase;
-        ">${label}</div>
-        <div style="
-          width: 48px;
-          height: 48px;
-          background: ${bgColor};
-          border-radius: 50%;
-          border: 3.5px solid ${borderColor};
-          box-shadow: 0 6px 20px rgba(0,0,0,${night ? '0.6' : '0.2'}), 0 0 0 1px ${bgColor}44;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: ${iconColor};
-        ">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h2"></path>
-            <circle cx="9" cy="17" r="2" stroke="currentColor" fill="${wheelColor}" stroke-width="1.5"></circle>
-            <path d="M11 17h4"></path>
-            <circle cx="17" cy="17" r="2" stroke="currentColor" fill="${wheelColor}" stroke-width="1.5"></circle>
-          </svg>
-        </div>
-      </div>
-    `,
-    className: 'bg-transparent border-none',
-    iconSize: [48, 80],
-    iconAnchor: [24, 80],
-  });
-};
-
-// Ícone do Halo de Proximidade (Radar animado para faculdades sem cluster de aluno)
-const createHaloIcon = (isCrominia, customColor = null) => {
-  const baseColor = customColor || (isCrominia ? '#6366f1' : '#f97316');
-  return L.divIcon({
-    html: `
-      <div class="proximity-halo-container" style="--halo-color: ${baseColor}; --halo-bg: ${baseColor}33; --halo-shadow: ${baseColor}55">
-        <div class="proximity-halo-ring"></div>
-        <div class="proximity-halo-ring delay-1"></div>
-        <div class="proximity-halo-ring delay-2"></div>
-      </div>
-    `,
-    className: 'bg-transparent border-none',
-    iconSize: [90, 90],
-    iconAnchor: [45, 45],
-  });
-};
+import { RecenterButton, ZoomTracker } from '../components/StudentMapControllers';
+import {
+  MAPBOX_TOKEN,
+  TILE_DAY,
+  TILE_NIGHT,
+  TILE_ATTR_DAY,
+  TILE_ATTR_NIGHT,
+  createBusIcon,
+  createFacultyIcon,
+  createCustomIcon,
+  createDriverStudentIcon,
+  createStudentPinIcon,
+  createHaloIcon,
+  isNightTime,
+} from '../utils/mapIcons';
+import { useDriverTelemetry } from '../hooks/useDriverTelemetry';
+import { usePassengerCounters } from '../hooks/usePassengerCounters';
+import {
+  subscribeToDriverProfile,
+  subscribeToRouteStudents,
+  updatePassengerStatus,
+  startBoardingCall as startBoardingCallService,
+  extendBoardingCall as extendBoardingCallService,
+  closeBoardingCall as closeBoardingCallService,
+  updateTripStatus as updateTripStatusService,
+  saveDriverRoutePath,
+  clearAllDriverRoutes,
+  updateDriverRoutePreference,
+} from '../services/driverService';
 
 export default function DriverDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -481,18 +93,25 @@ export default function DriverDashboard() {
   const [activeLocalRoute, setActiveLocalRoute] = useState(null);
   const activeLocalRouteRef = useRef(null); // ref para acesso no GPS callback sem re-render
   const nextStopRef = useRef(null); // ref do nextStop para acesso no GPS callback
-  const isRecalculatingRef = useRef(false); // evita chamadas OSRM duplas durante recalculo
   const hasArrivedAlertRef = useRef(false); // evita alerta de chegada repetido
   const pressTimerRef = useRef(null);
   const [isUpdatingTrip, setIsUpdatingTrip] = useState(false);
   const [pendingStudentsConfirm, setPendingStudentsConfirm] = useState(null);
   const [isHudCollapsed, setIsHudCollapsed] = useState(false);
   const [isLegendOpen, setIsLegendOpen] = useState(false);
-  // GPS real-time state
-  const [gpsStatus, setGpsStatus] = useState('waiting'); // 'waiting' | 'active' | 'error'
-  const [lastGpsUpdate, setLastGpsUpdate] = useState(null); // Date
-  const [gpsAccuracy, setGpsAccuracy] = useState(null); // metres
   const [arrivedAtStudent, setArrivedAtStudent] = useState(false); // toast de chegada ao aluno
+
+  // GPS Telemetry & Screen Wake Lock via custom hook
+  const { gpsStatus, gpsAccuracy, lastGpsUpdate } = useDriverTelemetry({
+    trip,
+    user,
+    activeLocalRouteRef,
+    setActiveLocalRoute,
+    nextStopRef,
+    hasArrivedAlertRef,
+    setArrivedAtStudent,
+    showAlert,
+  });
 
   // --- Chamada de Embarque ---
   const [boardingCall, setBoardingCall] = useState(null); // objeto da chamada ativa
@@ -513,8 +132,8 @@ export default function DriverDashboard() {
 
     let unsubDriver = () => {};
 
-    unsubDriver = onSnapshot(
-      doc(db, 'students', user.uid),
+    unsubDriver = subscribeToDriverProfile(
+      user.uid,
       (driverSnap) => {
         if (!driverSnap.exists()) {
           setLoading(false);
@@ -545,19 +164,9 @@ export default function DriverDashboard() {
   useEffect(() => {
     if (!driver?.route) return;
 
-    const normalizedRoute = normalizeRoute(driver.route);
-    const studentsRef = collection(db, 'students');
-    // Escuta em tempo real qualquer mudança de rota, cadastro ou atualização de alunos
-    const qStudents = query(
-      studentsRef,
-      where('route', '==', normalizedRoute),
-      where('role', '==', 'student')
-    );
-
-    const unsubStudents = onSnapshot(
-      qStudents,
-      (snap) => {
-        const studentsData = snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
+    const unsubStudents = subscribeToRouteStudents(
+      driver.route,
+      (studentsData) => {
         setStudents(studentsData);
       },
       (err) => {
@@ -614,333 +223,10 @@ export default function DriverDashboard() {
     return map;
   }, [boardingCall?.targetStudentIds, attendanceMap]);
 
-  // Wake Lock: Mantém a tela ligada enquanto a rota está ativa
-  useEffect(() => {
-    let wakeLock = null;
-
-    const requestWakeLock = async () => {
-      if ('wakeLock' in navigator && trip?.status === 'in_progress') {
-        try {
-          wakeLock = await navigator.wakeLock.request('screen');
-        } catch (err) {
-          console.error('Erro ao solicitar wake lock:', err);
-        }
-      }
-    };
-
-    requestWakeLock();
-
-    const handleVisibilityChange = () => {
-      if (wakeLock !== null && document.visibilityState === 'visible') {
-        requestWakeLock();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      if (wakeLock) {
-        wakeLock.release().catch(() => {});
-      }
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [trip?.status]);
-
-  // GPS REAL: Atualizar posição do ônibus via dispositivo do motorista
-  // Restrito a 'in_progress' para economizar bateria — o GPS aquece ao pressionar Iniciar.
-  useEffect(() => {
-    if (!trip?.id || trip.status !== 'in_progress') {
-      setGpsStatus('waiting');
-      return;
-    }
-
-    if (!navigator.geolocation) {
-      showAlert('Seu navegador não suporta geolocalização. O rastreamento não funcionará.');
-      setGpsStatus('error');
-      return;
-    }
-
-    setGpsStatus('waiting');
-
-    let watchId;
-    let fallbackInterval;
-
-    const sendLocation = async (position) => {
-      const { latitude, longitude, accuracy } = position.coords;
-
-      // --- Detecção automática de desvio de rota local ---
-      // Se há uma rota local ativa, verifica se o motorista se afastou mais de 200m dela.
-      // Em caso positivo, limpa a rota local e recalcula para o próximo aluno.
-      const localRoute = activeLocalRouteRef.current;
-      if (localRoute && localRoute.length > 1) {
-        // Bug 4: Verifica proximidade ao DESTINO (último ponto da rota) — < 50m → chegou
-        const dest = localRoute[localRoute.length - 1];
-        const dLatD = ((latitude - dest[0]) * Math.PI) / 180;
-        const dLngD = ((longitude - dest[1]) * Math.PI) / 180;
-        const aD =
-          Math.sin(dLatD / 2) ** 2 +
-          Math.cos((latitude * Math.PI) / 180) *
-            Math.cos((dest[0] * Math.PI) / 180) *
-            Math.sin(dLngD / 2) ** 2;
-        const distToDest = 6371000 * 2 * Math.atan2(Math.sqrt(aD), Math.sqrt(1 - aD)); // metros
-
-        if (distToDest < 50) {
-          console.log(
-            `[Rota] Chegou ao ponto de embarque (${Math.round(distToDest)}m). Limpando rota.`
-          );
-          activeLocalRouteRef.current = null;
-          setActiveLocalRoute(null);
-          if (!hasArrivedAlertRef.current) {
-            hasArrivedAlertRef.current = true;
-            setArrivedAtStudent(true); // flag para mostrar toast de chegada
-          }
-        } else {
-          // Bug 3: Desvio de rota (> 200m do traçado) → limpa e recalcula pro próximo aluno
-          let minDist = Infinity;
-          for (const point of localRoute) {
-            const dLat = ((latitude - point[0]) * Math.PI) / 180;
-            const dLng = ((longitude - point[1]) * Math.PI) / 180;
-            const a =
-              Math.sin(dLat / 2) ** 2 +
-              Math.cos((latitude * Math.PI) / 180) *
-                Math.cos((point[0] * Math.PI) / 180) *
-                Math.sin(dLng / 2) ** 2;
-            const dist = 6371000 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            if (dist < minDist) minDist = dist;
-          }
-          if (minDist > 200) {
-            console.log(
-              `[Rota] Desvio detectado (${Math.round(minDist)}m). Limpando rota local e recalculando.`
-            );
-            activeLocalRouteRef.current = null;
-            setActiveLocalRoute(null);
-
-            // Auto-recalcula rota para o próximo aluno mais próximo (sem await — não bloqueia GPS)
-            const ns = nextStopRef.current;
-            if (ns && !isRecalculatingRef.current) {
-              isRecalculatingRef.current = true;
-              fetch(
-                `https://router.project-osrm.org/route/v1/driving/${longitude},${latitude};${ns.lng},${ns.lat}?overview=full&geometries=geojson`
-              )
-                .then((r) => r.json())
-                .then((data) => {
-                  if (data.routes?.[0]) {
-                    const path = data.routes[0].geometry.coordinates.map((c) => [c[1], c[0]]);
-                    activeLocalRouteRef.current = path;
-                    setActiveLocalRoute(path);
-                  }
-                })
-                .catch((e) => console.warn('[Rota] Falha ao recalcular após desvio:', e))
-                .finally(() => {
-                  isRecalculatingRef.current = false;
-                });
-            }
-          }
-        }
-      }
-      // --- Fim da detecção de desvio ---
-
-      try {
-        await updateDoc(doc(db, 'trips', trip.id), {
-          busLocation: { lat: latitude, lng: longitude },
-          locationProviderName: trip.driverName || 'Motorista',
-          locationProviderId: user.uid,
-          locationProviderRole: 'driver',
-          locationProviderStatus: 'active',
-          locationUpdatedAt: Date.now(),
-        });
-        setGpsStatus('active');
-        setLastGpsUpdate(new Date());
-        setGpsAccuracy(Math.round(accuracy));
-      } catch (e) {
-        console.error('Erro ao enviar coordenadas do GPS para o Firebase', e);
-        setGpsStatus('error');
-      }
-    };
-
-    const handleError = (error) => {
-      console.error('Erro de GPS:', error.message);
-      setGpsStatus('error');
-      if (error.code === 1) {
-        showAlert(
-          'Permissão de GPS negada. Por favor, autorize nas configurações do navegador para transmitir sua localização.'
-        );
-      } else if (error.code === 2) {
-        showAlert('Sinal de GPS indisponível no momento. Buscando...');
-      } else if (error.code === 3) {
-        showAlert('O sinal do GPS caiu por instabilidade na rede. Tentando reconectar...');
-      } else {
-        showAlert('Ocorreu um erro ao obter o GPS. Tente reiniciar o trajeto.');
-      }
-    };
-
-    // watchPosition: evento nativo de mudança de posição
-    watchId = navigator.geolocation.watchPosition(sendLocation, handleError, {
-      enableHighAccuracy: true,
-      maximumAge: 0,
-      // Sem timeout — evita que o browser desista em áreas de sinal fraco
-    });
-
-    // Fallback: força leitura ativa a cada 10s (mitiga hibernação do watchPosition no iOS)
-    fallbackInterval = setInterval(() => {
-      navigator.geolocation.getCurrentPosition(sendLocation, () => {}, {
-        enableHighAccuracy: true,
-        maximumAge: 5000,
-      });
-    }, 10000);
-
-    return () => {
-      navigator.geolocation.clearWatch(watchId);
-      clearInterval(fallbackInterval);
-      setGpsStatus('waiting');
-    };
-  }, [trip?.status, trip?.id]);
-
-  const facultySummary = useMemo(() => {
-    const map = {};
-    Object.values(attendanceMap).forEach((att) => {
-      if (att.status !== 'liberado' && att.status !== 'aguardando') return;
-      const faculty = att.faculty || 'Outra';
-      if (!map[faculty]) {
-        map[faculty] = { name: faculty, count: 0 };
-      }
-      map[faculty].count += 1;
-    });
-    return Object.values(map).sort((a, b) => b.count - a.count);
-  }, [attendanceMap]);
-
-  const customClusters = useMemo(() => {
-    const clusters = [];
-
-    Object.entries(attendanceMap).forEach(([studentId, att]) => {
-      if (
-        (att.status === 'liberado' || att.status === 'aguardando' || att.tripType === 'ida') &&
-        att.status !== 'cancelado' &&
-        att.status !== 'embarcado' &&
-        att.lat &&
-        att.lng
-      ) {
-        // Usa os dados do próprio attendance, incluindo tripType e resposta de chamada
-        const student = {
-          id: studentId,
-          name: att.studentName || 'Aluno',
-          faculty: att.faculty,
-          status: att.status,
-          tripType: att.tripType,
-          response: att.response || null,
-          responseAt: att.responseAt || null,
-        };
-
-        // Tentar adicionar a um cluster custom existente
-        let addedToCluster = false;
-        for (let cluster of clusters) {
-          const distToCluster = getDistanceFromLatLonInKm(
-            att.lat,
-            att.lng,
-            cluster.lat,
-            cluster.lng
-          );
-          if (distToCluster < 0.15) {
-            cluster.students.push(student);
-            addedToCluster = true;
-            break;
-          }
-        }
-
-        if (!addedToCluster) {
-          clusters.push({
-            id: `cluster_${studentId}`,
-            lat: att.lat,
-            lng: att.lng,
-            students: [student],
-          });
-        }
-      }
-    });
-
-    return clusters;
-  }, [attendanceMap]);
-
-  // Cálculo da Próxima Parada (Mais próxima do ônibus com passageiros pendentes)
-  const nextStop = useMemo(() => {
-    if (!trip?.busLocation?.lat || !trip?.busLocation?.lng) return null;
-
-    const activeStops = [];
-
-    // 1. A partir dos customClusters
-    customClusters.forEach((cluster) => {
-      const pendingStudents = cluster.students.filter(
-        (s) => s.status !== 'embarcado' && s.status !== 'cancelado'
-      );
-      if (pendingStudents.length > 0) {
-        const distKm = getDistanceFromLatLonInKm(
-          trip.busLocation.lat,
-          trip.busLocation.lng,
-          cluster.lat,
-          cluster.lng
-        );
-        const liberadosCount = pendingStudents.filter((s) => s.status === 'liberado').length;
-        const primaryFaculty = pendingStudents[0]?.faculty || 'Ponto de Embarque';
-        const title = pendingStudents.length === 1 ? pendingStudents[0].name : primaryFaculty;
-
-        activeStops.push({
-          id: cluster.id,
-          title,
-          faculty: primaryFaculty,
-          lat: cluster.lat,
-          lng: cluster.lng,
-          students: pendingStudents,
-          totalCount: pendingStudents.length,
-          liberadosCount,
-          distKm,
-        });
-      }
-    });
-
-    // 2. A partir das Faculdades MOCK_FACULTIES caso não agrupadas em customClusters
-    Object.entries(MOCK_FACULTIES).forEach(([facName, coords]) => {
-      const facAttendances = Object.values(attendanceMap).filter(
-        (att) =>
-          att.faculty === facName &&
-          att.status !== 'embarcado' &&
-          att.status !== 'cancelado' &&
-          att.tripType !== 'ida'
-      );
-
-      const alreadyInStops = activeStops.some((s) => s.faculty === facName);
-      if (facAttendances.length > 0 && !alreadyInStops) {
-        const distKm = getDistanceFromLatLonInKm(
-          trip.busLocation.lat,
-          trip.busLocation.lng,
-          coords[0],
-          coords[1]
-        );
-        const liberadosCount = facAttendances.filter((a) => a.status === 'liberado').length;
-
-        activeStops.push({
-          id: `fac_${facName}`,
-          title: facName,
-          faculty: facName,
-          lat: coords[0],
-          lng: coords[1],
-          students: facAttendances.map((a) => ({
-            name: a.studentName || 'Aluno',
-            faculty: a.faculty,
-            status: a.status,
-          })),
-          totalCount: facAttendances.length,
-          liberadosCount,
-          distKm,
-        });
-      }
-    });
-
-    if (activeStops.length === 0) return null;
-
-    // Ordena pela menor distância em relação ao ônibus
-    activeStops.sort((a, b) => a.distKm - b.distKm);
-    return activeStops[0];
-  }, [trip?.busLocation, customClusters, attendanceMap]);
+  const { facultySummary, customClusters, nextStop } = usePassengerCounters({
+    attendanceMap,
+    busLocation: trip?.busLocation,
+  });
 
   // Mantém o ref do nextStop sincronizado para acesso no callback do GPS (sem stale closure)
   useEffect(() => {
@@ -992,19 +278,12 @@ export default function DriverDashboard() {
       const resolvedRoute =
         attData?.route || studentObj?.route || driver?.route || 'Professor Jamil';
 
-      await setDoc(
-        doc(db, 'attendance', attendanceId),
-        {
-          status: newStatus,
-          tripId: trip.id,
-          studentId: studentId,
-          studentName: resolvedName,
-          faculty: resolvedFaculty,
-          route: resolvedRoute,
-          photoURL: attData?.photoURL || studentObj?.photoURL || null,
-        },
-        { merge: true }
-      );
+      await updatePassengerStatus(trip.id, studentId, newStatus, {
+        studentName: resolvedName,
+        faculty: resolvedFaculty,
+        route: resolvedRoute,
+        photoURL: attData?.photoURL || studentObj?.photoURL || null,
+      });
     } catch (e) {
       console.error(e);
       showAlert('Erro ao atualizar status do aluno');
@@ -1044,7 +323,7 @@ export default function DriverDashboard() {
     };
 
     try {
-      await updateDoc(doc(db, 'trips', trip.id), { boardingCall: callData });
+      await startBoardingCallService(trip.id, callData);
       setBoardingCall(callData);
       setBoardingCallSecondsLeft(durationMinutes * 60);
       try {
@@ -1061,7 +340,7 @@ export default function DriverDashboard() {
     const newExpiresAt = boardingCall.expiresAt + extraMinutes * 60_000;
     const updated = { ...boardingCall, expiresAt: newExpiresAt };
     try {
-      await updateDoc(doc(db, 'trips', trip.id), { boardingCall: updated });
+      await extendBoardingCallService(trip.id, updated);
       setBoardingCall(updated);
     } catch (e) {
       console.error('Erro ao estender chamada:', e);
@@ -1077,7 +356,7 @@ export default function DriverDashboard() {
     }
     if (!trip?.id) return;
     try {
-      await updateDoc(doc(db, 'trips', trip.id), { boardingCall: null });
+      await closeBoardingCallService(trip.id);
     } catch (e) {
       console.error('Erro ao encerrar chamada:', e);
     }
@@ -1162,9 +441,9 @@ export default function DriverDashboard() {
         if (routePath.length > 0) updateData.driverRoutePath = routePath;
         if (currentLat && currentLng) updateData.busLocation = { lat: currentLat, lng: currentLng };
 
-        await updateDoc(doc(db, 'trips', trip.id), updateData);
+        await updateTripStatusService(trip.id, newStatus, updateData);
       } else {
-        await updateDoc(doc(db, 'trips', trip.id), { status: newStatus });
+        await updateTripStatusService(trip.id, newStatus);
       }
       // Nota: não chamar setTrip aqui — o trip é gerenciado pelo hook useCurrentTrip
       // via onSnapshot, que atualizará o estado automaticamente.
@@ -1213,7 +492,7 @@ export default function DriverDashboard() {
         // para evitar polylines duplicadas no mapa.
         activeLocalRouteRef.current = null;
         setActiveLocalRoute(null);
-        await updateDoc(doc(db, 'trips', trip.id), { driverRoutePath: routePath });
+        await saveDriverRoutePath(trip.id, routePath);
         try {
           playSuccessSound();
         } catch (e) {}
@@ -1233,11 +512,7 @@ export default function DriverDashboard() {
     setActiveLocalRoute(null);
     if (trip?.id) {
       try {
-        await updateDoc(doc(db, 'trips', trip.id), {
-          driverRoutePath: [],
-          globalRoute: [],
-          routePath: [],
-        });
+        await clearAllDriverRoutes(trip.id);
         showAlert('Todas as rotas foram limpas do mapa.');
       } catch (e) {
         console.error('Erro ao limpar rotas:', e);
@@ -1302,7 +577,7 @@ export default function DriverDashboard() {
                 type="button"
                 onClick={async () => {
                   if (driver.route !== r) {
-                    await updateDoc(doc(db, 'students', user.uid), { route: r });
+                    await updateDriverRoutePreference(user.uid, r);
                   }
                 }}
                 className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${

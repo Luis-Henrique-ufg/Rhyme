@@ -223,3 +223,8 @@ export const CampusLongPressHandler = ({ isCampusModeActive, onLongPress }) => {
 
   return null;
 };
+
+export const ZoomTracker = ({ onZoomChange }) => {
+  useMapEvents({ zoomend: (e) => onZoomChange(e.target.getZoom()) });
+  return null;
+};

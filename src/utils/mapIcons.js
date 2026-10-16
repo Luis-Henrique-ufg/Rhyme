@@ -623,3 +623,269 @@ export const createSearchedPlaceIcon = (name) => {
     iconAnchor: [80, 18],
   });
 };
+
+/**
+ * Cria cluster marker estilo Uber: círculo com contagem e label acima
+ */
+export const createCustomIcon = (liberados, total, label, isCrominia, isDark = true) => {
+  const isComplete = total === undefined ? false : liberados === total && total > 0;
+  const accentColor = isCrominia ? (isDark ? '#27272a' : '#475569') : '#f97316';
+  const badgeColor = isComplete ? '#16a34a' : accentColor;
+  const night = isDark;
+
+  const containerStyle = `
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+  `;
+
+  const labelHtml = label
+    ? `
+    <div style="
+      background: ${night ? 'rgba(15,15,15,0.92)' : 'rgba(255,255,255,0.96)'};
+      color: ${night ? '#f4f4f5' : '#18181b'};
+      font-size: 11px;
+      font-weight: 700;
+      font-family: Inter, system-ui, sans-serif;
+      padding: 3px 8px;
+      border-radius: 8px;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,${night ? '0.5' : '0.15'});
+      border: 1px solid ${night ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'};
+      margin-bottom: 4px;
+      letter-spacing: -0.01em;
+    ">${label}</div>
+  `
+    : '';
+
+  const circleStyle = `
+    width: 40px;
+    height: 40px;
+    background: ${night ? '#111' : '#ffffff'};
+    border-radius: 50%;
+    border: 3px solid ${badgeColor};
+    box-shadow: 0 4px 12px rgba(0,0,0,${night ? '0.5' : '0.15'}), 0 0 0 1px ${badgeColor}22;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: ${night ? '#fff' : '#18181b'};
+  `;
+
+  return L.divIcon({
+    html: `
+      <div style="${containerStyle}">
+        ${labelHtml}
+        <div style="${circleStyle}">
+          <span style="font-weight: 900; font-size: 14px; color: ${badgeColor}; ${total !== undefined ? 'margin-bottom: -3px;' : ''}">${liberados}</span>
+          ${total !== undefined ? `<span style="font-size: 9px; opacity: 0.6; color: ${night ? '#a1a1aa' : '#52525b'};">/${total}</span>` : ''}
+        </div>
+      </div>
+    `,
+    className: 'custom-leaflet-icon',
+    iconSize: [40, label ? 66 : 40],
+    iconAnchor: [20, label ? 66 : 40],
+  });
+};
+
+/**
+ * Marcador de Passageiro visto pelo motorista
+ */
+export const createDriverStudentIcon = (
+  name,
+  isLiberado,
+  isSoIda,
+  response = null,
+  totalInCluster = 1,
+  isDark = true,
+  isNextStop = false
+) => {
+  const night = isDark;
+  const isComing = response === 'coming';
+
+  let bg = '#f59e0b';
+  let haloBg = 'transparent';
+  let haloBorder = 'transparent';
+  let showHalo = false;
+
+  if (isSoIda) {
+    bg = '#71717a';
+  } else if (isComing) {
+    bg = '#0ea5e9';
+    haloBg = 'rgba(14, 165, 233, 0.25)';
+    haloBorder = 'rgba(14, 165, 233, 0.7)';
+    showHalo = true;
+  } else if (isLiberado) {
+    bg = '#10b981';
+    haloBg = 'rgba(16, 185, 129, 0.25)';
+    haloBorder = 'rgba(16, 185, 129, 0.7)';
+    showHalo = true;
+  } else if (isNextStop) {
+    bg = '#f59e0b';
+    haloBg = 'rgba(245, 158, 11, 0.22)';
+    haloBorder = 'rgba(245, 158, 11, 0.7)';
+    showHalo = true;
+  }
+
+  const borderCol = night ? '#18181b' : '#ffffff';
+  const labelBg = night ? 'rgba(15,15,15,0.94)' : 'rgba(255,255,255,0.96)';
+  const labelText = night ? '#f4f4f5' : '#18181b';
+
+  const haloHtml = showHalo
+    ? `
+    <div style="
+      position: absolute;
+      inset: -5px;
+      border-radius: 50%;
+      border: ${isNextStop ? '2px' : '1.5px'} solid ${haloBorder};
+      background: ${haloBg};
+      animation: studentHalo ${isNextStop ? '2.1s' : '2.5s'} ease-out infinite;
+      box-shadow: 0 0 ${isNextStop ? '12px' : '6px'} ${haloBorder};
+      pointer-events: none;
+      z-index: 1;
+    "></div>
+    ${
+      isNextStop
+        ? `
+      <div style="
+        position: absolute;
+        inset: -5px;
+        border-radius: 50%;
+        border: 1.5px solid ${haloBorder};
+        background: transparent;
+        animation: studentHalo 2.1s ease-out 1.05s infinite;
+        pointer-events: none;
+        z-index: 1;
+      "></div>
+    `
+        : ''
+    }
+  `
+    : '';
+
+  const userSvg = isComing
+    ? `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+  `
+    : `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="white" style="filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));">
+      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+    </svg>
+  `;
+
+  const countBadge =
+    totalInCluster > 1
+      ? `
+    <span style="
+      position: absolute;
+      top: -4px;
+      right: -6px;
+      background: ${night ? '#27272a' : '#18181b'};
+      color: #ffffff;
+      font-size: 8.5px;
+      font-weight: 800;
+      padding: 1px 4.5px;
+      border-radius: 9999px;
+      border: 1.5px solid ${borderCol};
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      z-index: 4;
+      line-height: 1.1;
+    ">+${totalInCluster - 1}</span>
+  `
+      : '';
+
+  const labelHtml = name
+    ? `
+    <div style="
+      background: ${labelBg};
+      color: ${labelText};
+      font-size: 9.5px;
+      font-weight: 700;
+      font-family: Inter, system-ui, sans-serif;
+      padding: 1px 6px;
+      border-radius: 5px;
+      white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(0,0,0,${night ? '0.6' : '0.15'});
+      border: 1px solid ${night ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'};
+      margin-bottom: 3px;
+      max-width: 90px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      z-index: 3;
+    ">${name}</div>
+  `
+    : '';
+
+  return L.divIcon({
+    html: `
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;pointer-events:none;">
+        ${labelHtml}
+        <div style="position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;">
+          ${haloHtml}
+          ${countBadge}
+          <div style="
+            width: 28px;
+            height: 28px;
+            background: ${bg};
+            border-radius: 50%;
+            border: 2px solid ${borderCol};
+            box-shadow: 0 3px 10px rgba(0,0,0,${night ? '0.6' : '0.25'}), 0 0 0 1px ${bg}44;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+          ">
+            ${userSvg}
+          </div>
+        </div>
+      </div>
+    `,
+    className: 'bg-transparent border-none',
+    iconSize: [28, name ? 50 : 28],
+    iconAnchor: [14, name ? 36 : 14],
+  });
+};
+
+/**
+ * Halo de Proximidade animado
+ */
+export const createHaloIcon = (isCrominia, customColor = null) => {
+  const baseColor = customColor || (isCrominia ? '#6366f1' : '#f97316');
+  return L.divIcon({
+    html: `
+      <div style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+        <div style="
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          border: 2.5px solid ${baseColor};
+          background: radial-gradient(circle, ${baseColor}33 0%, transparent 70%);
+          animation: radarPulse 2s cubic-bezier(0.1, 0.5, 0.3, 1) infinite;
+        "></div>
+      </div>
+    `,
+    className: 'bg-transparent border-none',
+    iconSize: [48, 48],
+    iconAnchor: [24, 24],
+  });
+};
+
+/**
+ * Detecta modo dia/noite para alternar tile do mapa automaticamente.
+ */
+export function isNightTime() {
+  const h = new Date().getHours();
+  return h >= 18 || h < 6;
+}
+
+/**
+ * Marcador simplificado para pino de estudante
+ */
+export const createStudentPinIcon = (name, isCrominia, isDark = true, isSoIda = false) => {
+  return createDriverStudentIcon(name, false, isSoIda, null, 1, isDark, false);
+};
