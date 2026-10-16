@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-ssr
+dev-dist
+dev-dist/**
+docs
+.firebase
+coverage
+*.min.js

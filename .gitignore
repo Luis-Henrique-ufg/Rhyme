@@ -13,6 +13,11 @@ dist-ssr
 dev-dist
 *.local
 
+# Test coverage & caches
+coverage/
+.nyc_output/
+.cache/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -29,10 +34,8 @@ Design System/
 skill.md
 skills-lock.json
 
-
 # Firebase cache
 .firebase/
-
 
 # Environment variables
 .env
