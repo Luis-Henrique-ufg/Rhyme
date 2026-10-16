@@ -1,25 +1,26 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+﻿import { describe, it, expect } from 'vitest';
 import { normalizeRoute } from '../src/utils/routeUtils.js';
 
-test('normalizeRoute normaliza variações de Professor Jamil', () => {
-  assert.equal(normalizeRoute('professor_jamil'), 'Professor Jamil');
-  assert.equal(normalizeRoute('jamil'), 'Professor Jamil');
-  assert.equal(normalizeRoute('Professor Jamil'), 'Professor Jamil');
-});
+describe('routeUtils - normalizeRoute', () => {
+  it('normaliza variações de Professor Jamil', () => {
+    expect(normalizeRoute('professor_jamil')).toBe('Professor Jamil');
+    expect(normalizeRoute('jamil')).toBe('Professor Jamil');
+    expect(normalizeRoute('Professor Jamil')).toBe('Professor Jamil');
+  });
 
-test('normalizeRoute normaliza variações de Cromínia', () => {
-  assert.equal(normalizeRoute('crominia'), 'Cromínia');
-  assert.equal(normalizeRoute('Crom'), 'Cromínia');
-});
+  it('normaliza variações de Cromínia', () => {
+    expect(normalizeRoute('crominia')).toBe('Cromínia');
+    expect(normalizeRoute('Crom')).toBe('Cromínia');
+  });
 
-test('normalizeRoute normaliza variações de Hidrolândia', () => {
-  assert.equal(normalizeRoute('hidrolandia'), 'Hidrolândia');
-  assert.equal(normalizeRoute('Hidrol'), 'Hidrolândia');
-});
+  it('normaliza variações de Hidrolândia', () => {
+    expect(normalizeRoute('hidrolandia')).toBe('Hidrolândia');
+    expect(normalizeRoute('Hidrol')).toBe('Hidrolândia');
+  });
 
-test('normalizeRoute lida com entradas vazias ou indefinidas', () => {
-  assert.equal(normalizeRoute(''), '');
-  assert.equal(normalizeRoute(null), '');
-  assert.equal(normalizeRoute(undefined), '');
+  it('lida com entradas vazias ou indefinidas', () => {
+    expect(normalizeRoute('')).toBe('');
+    expect(normalizeRoute(null)).toBe('');
+    expect(normalizeRoute(undefined)).toBe('');
+  });
 });
