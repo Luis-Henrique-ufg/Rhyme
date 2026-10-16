@@ -3,70 +3,11 @@ import { useMap } from 'react-leaflet';
 import { Compass } from 'lucide-react';
 import ReactDOM from 'react-dom';
 
-/**
- * Calcula a menor diferença angular entre dois ângulos (-180° a +180°)
- * Evita o 'giro completo' na transição 359° <-> 0°
- */
-function shortestAngleDiff(target, current) {
-  return ((((target - current) % 360) + 540) % 360) - 180;
-}
-
-/**
- * Obtém o ângulo de rotação da tela em graus (0, 90, 180, 270)
- */
-function getScreenOrientationAngle() {
-  if (window.screen?.orientation?.angle !== undefined) {
-    return window.screen.orientation.angle;
-  }
-  if (typeof window.orientation === 'number') {
-    return (window.orientation + 360) % 360;
-  }
-  return 0;
-}
-
-/**
- * Calcula a direção da bússola com compensação de inclinação (tilt compensation)
- * usando a fórmula da matriz de rotação do W3C (ZXY order).
- *
- * Esta abordagem é matematicamente superior ao uso simples de `alpha` porque:
- * - A variável `alpha` no W3C indica rotação no eixo Z (vertical), que é afetada
- *   pela inclinação do dispositivo (beta/gamma).
- * - A rotação de matriz ZXY decompõe corretamente a orientação e extrai o azimute
- *   real independente do tilt, evitando erros de direção quando o celular não está
- *   perfeitamente plano (situação 100% da prática).
- *
- * @param {number} alpha - Rotação Z (0-360°)
- * @param {number} beta  - Inclinação frontal/traseira X (-180° a 180°)
- * @param {number} gamma - Inclinação lateral Y (-90° a 90°)
- * @returns {number} Azimute em graus [0, 360)
- */
-function computeTiltCompensatedHeading(alpha, beta, gamma) {
-  const toRad = Math.PI / 180;
-  const aR = alpha * toRad;
-  const bR = beta * toRad;
-  const gR = gamma * toRad;
-
-  const cA = Math.cos(aR);
-  const sA = Math.sin(aR);
-  const cB = Math.cos(bR);
-  const sB = Math.sin(bR);
-  const cG = Math.cos(gR);
-  const sG = Math.sin(gR);
-
-  // Componentes da matriz de rotação no plano horizontal (ZXY)
-  const rA = -cA * sG - sA * sB * cG;
-  const rB = -sA * sG + cA * sB * cG;
-
-  // Azimute real via atan2 para evitar ambiguidade
-  let heading = Math.atan2(rA, rB) * (180 / Math.PI);
-  if (heading < 0) heading += 360;
-
-  // Compensa rotação física da tela (retrato → paisagem etc.)
-  const screenAngle = getScreenOrientationAngle();
-  heading = (heading + screenAngle + 360) % 360;
-
-  return heading;
-}
+import {
+  computeTiltCompensatedHeading,
+  shortestAngleDiff,
+  getScreenOrientationAngle,
+} from '../services/geoService';
 
 export default function MapInteractions() {
   const map = useMap();
