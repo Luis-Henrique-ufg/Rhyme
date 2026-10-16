@@ -43,7 +43,17 @@ export function getFacultyCoords(studentObj) {
  * @returns {number} Distância em quilômetros
  */
 export function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
-  if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return Infinity;
+  if (
+    lat1 == null ||
+    lon1 == null ||
+    lat2 == null ||
+    lon2 == null ||
+    Number.isNaN(Number(lat1)) ||
+    Number.isNaN(Number(lon1)) ||
+    Number.isNaN(Number(lat2)) ||
+    Number.isNaN(Number(lon2))
+  )
+    return Infinity;
   const R = 6371; // Raio aproximado da Terra em km
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
@@ -122,6 +132,13 @@ export function computeTiltCompensatedHeading(alpha, beta, gamma, screenAngle = 
   const sB = Math.sin(bR);
   const cG = Math.cos(gR);
   const sG = Math.sin(gR);
+
+  // Se o dispositivo estiver perfeitamente plano sobre a mesa, o rumo é diretamente o alpha
+  if (Math.abs(bR) < 1e-6 && Math.abs(gR) < 1e-6) {
+    let heading = alpha || 0;
+    heading = (heading + (screenAngle || 0) + 360) % 360;
+    return heading;
+  }
 
   // Componentes do vetor norte projetado no plano do dispositivo
   const rA = -cA * sG - sA * sB * cG;

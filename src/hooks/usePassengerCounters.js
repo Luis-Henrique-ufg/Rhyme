@@ -45,7 +45,7 @@ export function usePassengerCounters({ attendanceMap = {}, busLocation = null })
         att.lng
       ) {
         const student = {
-          id: studentId,
+          id: att.studentId || studentId,
           name: att.studentName || 'Aluno',
           faculty: att.faculty,
           status: att.status,
