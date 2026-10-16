@@ -2,6 +2,9 @@
   "name": "rhyme",
   "private": true,
   "version": "1.0.0",
+  "description": "PWA de rastreamento em tempo real do transporte universitario intermunicipal (INF0449 - UFG)",
+  "author": "Grupo 12 (INF0449 - UFG)",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
