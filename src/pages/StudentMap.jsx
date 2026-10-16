@@ -47,6 +47,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { joinTrip, normalizeRoute } from '../utils/tripManager';
 import { useCurrentTrip, useTripAttendances, useOsrmEta } from '../utils/useTripData';
+import { useBusBroadcaster } from '../hooks/useBusBroadcaster';
+import { useStudentLocation } from '../hooks/useStudentLocation';
+import { useNearbyStudents } from '../hooks/useNearbyStudents';
 import Header from '../components/Header';
 import GpsStatusBanner from '../components/GpsStatusBanner';
 import BoardingCallModal from '../components/BoardingCallModal';
@@ -942,9 +945,13 @@ export default function StudentMap() {
   const { theme, isDark } = useTheme();
   const navigate = useNavigate();
   const { showAlert } = useCustomAlert();
-  const [isBroadcasting, setIsBroadcasting] = useState(false);
-  const [broadcastingLocation, setBroadcastingLocation] = useState(null);
   const [focusTrigger, setFocusTrigger] = useState(0);
+  const {
+    userWalkingCoords,
+    setUserWalkingCoords,
+    startCampusWalkingWatch,
+    stopCampusWalkingWatch,
+  } = useStudentLocation();
 
   // --- Chamada de Embarque (visão do aluno) ---
   const [boardingAlertDismissed, setBoardingAlertDismissed] = useState(false);
@@ -967,8 +974,6 @@ export default function StudentMap() {
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);
   const [routePath, setRoutePath] = useState([]);
   const [isPublicListOpen, setIsPublicListOpen] = useState(false);
-  const watchIdRef = useRef(null);
-  const fallbackIntervalRef = useRef(null);
   const simulationInterval = useRef(null);
 
   // --- 1. Alerta de Descida / Acorda Aluno ---
@@ -991,8 +996,6 @@ export default function StudentMap() {
   const [campusFacultyData, setCampusFacultyData] = useState(null);
   const [selectedCampusPoi, setSelectedCampusPoi] = useState(null);
   const [customCampusDestination, setCustomCampusDestination] = useState(null);
-  const [userWalkingCoords, setUserWalkingCoords] = useState(null);
-  const walkingWatchIdRef = useRef(null);
 
   // POIs do campus ativo
   const campusPois = useMemo(() => {
@@ -1208,6 +1211,20 @@ export default function StudentMap() {
     error: tripError,
   } = useCurrentTrip(student?.route?.trim());
   const { attendances: publicList, error: attendancesError } = useTripAttendances(tripId);
+
+  const { isBroadcasting, broadcastingLocation, stopBroadcasting, startBroadcasting } =
+    useBusBroadcaster({
+      trip,
+      tripId,
+      user,
+      student,
+      attendance,
+      gpsState,
+      showAlert,
+      setFocusTrigger,
+    });
+
+  const visibleOtherStudents = useNearbyStudents({ publicList, user, trip });
 
   // --- Relógio para reatualizar elapsed label a cada 30 s ---
   const [now, setNow] = useState(Date.now());
@@ -1567,126 +1584,6 @@ export default function StudentMap() {
     }
   }, [isLiberado, attendance?.lat, attendance?.lng, userWalkingCoords, trip?.busLocation]);
 
-  // Efeito de transmissão de GPS da Van pelo aluno
-  useEffect(() => {
-    if (isBroadcasting && user?.uid) {
-      const sendLocation = async (position) => {
-        const { latitude, longitude } = position.coords;
-        setBroadcastingLocation({ lat: latitude, lng: longitude });
-
-        const targetTripId = tripId || trip?.id;
-        if (targetTripId) {
-          try {
-            await broadcastBusLocationByStudent(
-              targetTripId,
-              { lat: latitude, lng: longitude },
-              student?.name,
-              user.uid
-            );
-          } catch (e) {
-            console.error('Erro ao enviar GPS como aluno:', e);
-          }
-        }
-      };
-
-      if (navigator.geolocation) {
-        // Chamada imediata para primeira captura precisa
-        navigator.geolocation.getCurrentPosition(
-          sendLocation,
-          (err) => {
-            console.warn('GPS inicial:', err);
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 8000,
-            maximumAge: 1000,
-          }
-        );
-
-        // Observador contínuo em tempo real (dispara a cada movimento do veículo)
-        watchIdRef.current = navigator.geolocation.watchPosition(
-          sendLocation,
-          (err) => {
-            console.error('watchPosition erro:', err);
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 1000,
-          }
-        );
-
-        // Polling de garantia
-        fallbackIntervalRef.current = setInterval(() => {
-          navigator.geolocation.getCurrentPosition(sendLocation, () => {}, {
-            enableHighAccuracy: true,
-            maximumAge: 5000,
-          });
-        }, 6000);
-      } else {
-        showAlert('Geolocalização não disponível no dispositivo.');
-      }
-
-      return () => {
-        if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
-        if (fallbackIntervalRef.current) clearInterval(fallbackIntervalRef.current);
-      };
-    } else if (!isBroadcasting) {
-      setBroadcastingLocation(null);
-    }
-  }, [
-    isBroadcasting,
-    trip?.id,
-    tripId,
-    user?.uid,
-    student?.name,
-    attendance?.lat,
-    attendance?.lng,
-  ]);
-
-  const stopBroadcasting = useCallback(async () => {
-    setIsBroadcasting(false);
-    setBroadcastingLocation(null);
-    if (watchIdRef.current) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-      watchIdRef.current = null;
-    }
-    if (fallbackIntervalRef.current) {
-      clearInterval(fallbackIntervalRef.current);
-      fallbackIntervalRef.current = null;
-    }
-    const targetTripId = tripId || trip?.id;
-    if (targetTripId && (trip?.locationProviderId === user?.uid || !trip?.locationProviderId)) {
-      try {
-        await pauseBusBroadcastByStudent(targetTripId);
-      } catch (e) {
-        console.warn('Falha ao marcar GPS como pausado:', e);
-      }
-    }
-    showAlert('Transmissão da Van pausada.');
-  }, [tripId, trip?.id, trip?.locationProviderId, user?.uid, showAlert]);
-
-  const startBroadcasting = async () => {
-    if (!user?.uid || !trip?.id) return;
-
-    setIsBroadcasting(true);
-    showAlert('Transmissão da Van ativada! O ícone da Van agora segue sua posição em tempo real.');
-
-    // Captura imediatamente o GPS real do dispositivo e foca o mapa nele
-    if (typeof navigator !== 'undefined' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          if (pos?.coords?.latitude != null && pos?.coords?.longitude != null) {
-            setBroadcastingLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-            setFocusTrigger((prev) => prev + 1);
-          }
-        },
-        (err) => console.warn('GPS inicial no startBroadcasting:', err),
-        { enableHighAccuracy: true, timeout: 6000, maximumAge: 1000 }
-      );
-    }
-  };
-
   const handleToggleBroadcasting = () => {
     if (isBroadcasting) {
       stopBroadcasting();
@@ -1700,18 +1597,6 @@ export default function StudentMap() {
       setShowBroadcastModal(true);
     }
   };
-
-  // Desativa automaticamente a transmissão do aluno caso o motorista assuma o GPS
-  useEffect(() => {
-    if (
-      isBroadcasting &&
-      trip?.locationProviderRole === 'driver' &&
-      (gpsState === 'live' || gpsState === 'stale')
-    ) {
-      stopBroadcasting();
-      showAlert('O motorista iniciou a transmissão do GPS. A sua transmissão foi desativada.');
-    }
-  }, [trip?.locationProviderRole, gpsState, isBroadcasting, stopBroadcasting, showAlert]);
 
   const handleTripTypeChange = async (type) => {
     setSelectedTripType(type);
@@ -2040,42 +1925,6 @@ export default function StudentMap() {
   };
 
   // --- 2. Handlers do Modo Campus Pedestre ---
-  const startCampusWalkingWatch = () => {
-    if (typeof navigator !== 'undefined' && navigator.geolocation) {
-      // 1. Obter posição GPS imediatamente com alta precisão sem depender do delay do watchPosition
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          if (pos?.coords?.latitude != null && pos?.coords?.longitude != null) {
-            setUserWalkingCoords([pos.coords.latitude, pos.coords.longitude]);
-          }
-        },
-        (err) => console.warn('Aviso GPS imediato:', err?.message || err),
-        { enableHighAccuracy: true, maximumAge: 4000, timeout: 8000 }
-      );
-
-      // 2. Acompanhar em tempo real conforme o usuário caminha
-      if (walkingWatchIdRef.current) {
-        navigator.geolocation.clearWatch(walkingWatchIdRef.current);
-      }
-      walkingWatchIdRef.current = navigator.geolocation.watchPosition(
-        (pos) => {
-          if (pos?.coords?.latitude != null && pos?.coords?.longitude != null) {
-            setUserWalkingCoords([pos.coords.latitude, pos.coords.longitude]);
-          }
-        },
-        (err) => console.warn('Aviso GPS contínuo pedestre:', err?.message || err),
-        { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
-      );
-    }
-  };
-
-  const stopCampusWalkingWatch = () => {
-    if (walkingWatchIdRef.current && typeof navigator !== 'undefined') {
-      navigator.geolocation.clearWatch(walkingWatchIdRef.current);
-      walkingWatchIdRef.current = null;
-    }
-  };
-
   const handleSelectCampusPoi = (poi) => {
     setCustomCampusDestination(null);
     setSelectedCampusPoi(poi);
@@ -2123,7 +1972,7 @@ export default function StudentMap() {
       );
     }
     return () => stopCampusWalkingWatch();
-  }, []);
+  }, [setUserWalkingCoords, stopCampusWalkingWatch]);
 
   // --- 3. Handlers da Busca no Mapa ---
   const handleSelectSearchedPlace = (place) => {
@@ -2510,40 +2359,25 @@ export default function StudentMap() {
             })()}
 
           {/* Marcadores dos DEMAIS Alunos — Apenas alunos liberados ou só ida (exclui o próprio usuário para evitar conflitos) */}
-          {publicList
-            .filter((a) => {
-              // O próprio aluno possui seu marcador dedicado acima
-              if (a.studentId === user?.uid) return false;
-              // Se outro aluno está transmitindo o GPS da van ativamente, a Van já representa sua posição
-              if (
-                trip?.locationProviderId &&
-                a.studentId === trip.locationProviderId &&
-                trip?.locationProviderStatus === 'active'
-              )
-                return false;
-              if (a.status === 'cancelado' || a.status === 'embarcado') return false;
-              if (!a.lat || !a.lng || isNaN(a.lat) || isNaN(a.lng)) return false;
-              return a.status === 'liberado' || a.tripType === 'ida';
-            })
-            .map((att) => {
-              const isSoIda = att.tripType === 'ida';
-              const displayName = att.studentName ? att.studentName.split(' ')[0] : 'Aluno';
-              const icon = createStudentMapIcon(displayName, false, true, isSoIda, isDark);
-              return (
-                <Marker
-                  key={`${att.id}_${att.status}`}
-                  position={[att.lat, att.lng]}
-                  icon={icon}
-                  zIndexOffset={isSoIda ? 750 : 800}
-                >
-                  <Popup className="dark-popup">
-                    <span className="font-bold text-heading">
-                      {att.studentName} {isSoIda ? '(Só Ida)' : ''}
-                    </span>
-                  </Popup>
-                </Marker>
-              );
-            })}
+          {visibleOtherStudents.map((att) => {
+            const isSoIda = att.tripType === 'ida';
+            const displayName = att.studentName ? att.studentName.split(' ')[0] : 'Aluno';
+            const icon = createStudentMapIcon(displayName, false, true, isSoIda, isDark);
+            return (
+              <Marker
+                key={`${att.id}_${att.status}`}
+                position={[att.lat, att.lng]}
+                icon={icon}
+                zIndexOffset={isSoIda ? 750 : 800}
+              >
+                <Popup className="dark-popup">
+                  <span className="font-bold text-heading">
+                    {att.studentName} {isSoIda ? '(Só Ida)' : ''}
+                  </span>
+                </Popup>
+              </Marker>
+            );
+          })}
 
           {/* Marcador do Ônibus / Van em Tempo Real (oculto na tela de quem está transmitindo para exibir apenas o ícone de pessoa) */}
           {!isBroadcasting &&
