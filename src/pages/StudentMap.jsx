@@ -27,16 +27,24 @@ import {
   Crosshair,
 } from 'lucide-react';
 import {
-  doc,
-  collection,
-  setDoc,
-  updateDoc,
-  onSnapshot,
-  serverTimestamp,
-} from 'firebase/firestore';
+  subscribeToStudentProfile,
+  subscribeToAttendance,
+  respondToBoardingCall,
+  toggleAttendanceStatus,
+  updateAttendanceTripType,
+  saveUserDefaultTripType,
+  checkInAttendance,
+  markStudentLiberado,
+  updateStudentCustomLocation,
+  cancelAttendance,
+  reportEmergencyAndMarkForgotten,
+  updateStudentDropOffLocation,
+  updateStudentRoute,
+  broadcastBusLocationByStudent,
+  pauseBusBroadcastByStudent,
+} from '../services/studentService';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { db } from '../config/firebase';
 import { joinTrip, normalizeRoute } from '../utils/tripManager';
 import { useCurrentTrip, useTripAttendances, useOsrmEta } from '../utils/useTripData';
 import Header from '../components/Header';
@@ -1351,9 +1359,7 @@ export default function StudentMap() {
     if (!trip?.id || !user?.uid) return;
     const attendanceId = `${trip.id}_${user.uid}`;
     try {
-      const updates = { boardingResponse: response, boardingResponseAt: Date.now() };
-      if (response === 'skip') updates.status = 'cancelado';
-      await updateDoc(doc(db, 'attendance', attendanceId), updates);
+      await respondToBoardingCall(attendanceId, response);
     } catch (e) {
       console.error('Erro ao responder chamada de embarque:', e);
     }
@@ -1367,8 +1373,8 @@ export default function StudentMap() {
     setStudentLoading(true);
     setStudentError(null);
 
-    const unsub = onSnapshot(
-      doc(db, 'students', user.uid),
+    const unsub = subscribeToStudentProfile(
+      user.uid,
       (snap) => {
         if (!snap.exists()) {
           setStudentLoading(false);
@@ -1403,7 +1409,7 @@ export default function StudentMap() {
     const facCoords = getFacultyCoords(student);
     joinTrip(trip.id, { uid: user.uid, ...student }, { lat: facCoords[0], lng: facCoords[1] });
 
-    const unsub = onSnapshot(doc(db, 'attendance', attendanceId), (docSnap) => {
+    const unsub = subscribeToAttendance(attendanceId, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setAttendance(data);
@@ -1464,8 +1470,7 @@ export default function StudentMap() {
     if (!trip) return;
     try {
       const attendanceId = `${trip.id}_${studentId}`;
-      const newStatus = currentStatus === targetStatus ? 'aguardando' : targetStatus;
-      await setDoc(doc(db, 'attendance', attendanceId), { status: newStatus }, { merge: true });
+      await toggleAttendanceStatus(attendanceId, currentStatus, targetStatus);
     } catch (e) {
       console.error(e);
       showAlert('Erro ao atualizar status do aluno');
@@ -1540,9 +1545,9 @@ export default function StudentMap() {
       user?.uid &&
       isAguardando
     ) {
-      updateDoc(doc(db, 'attendance', `${trip.id}_${user.uid}`), {
-        tripType: student.defaultTripType,
-      }).catch((e) => console.warn('Erro ao sincronizar defaultTripType com attendance:', e));
+      updateAttendanceTripType(`${trip.id}_${user.uid}`, student.defaultTripType).catch((e) =>
+        console.warn('Erro ao sincronizar defaultTripType com attendance:', e)
+      );
     }
   }, [attendance?.tripType, student?.defaultTripType, trip?.id, user?.uid, isAguardando]);
 
@@ -1572,14 +1577,12 @@ export default function StudentMap() {
         const targetTripId = tripId || trip?.id;
         if (targetTripId) {
           try {
-            await updateDoc(doc(db, 'trips', targetTripId), {
-              busLocation: { lat: latitude, lng: longitude },
-              locationProviderName: student?.name || 'Aluno',
-              locationProviderId: user.uid,
-              locationProviderRole: 'student',
-              locationProviderStatus: 'active',
-              locationUpdatedAt: Date.now(),
-            });
+            await broadcastBusLocationByStudent(
+              targetTripId,
+              { lat: latitude, lng: longitude },
+              student?.name,
+              user.uid
+            );
           } catch (e) {
             console.error('Erro ao enviar GPS como aluno:', e);
           }
@@ -1655,9 +1658,7 @@ export default function StudentMap() {
     const targetTripId = tripId || trip?.id;
     if (targetTripId && (trip?.locationProviderId === user?.uid || !trip?.locationProviderId)) {
       try {
-        await updateDoc(doc(db, 'trips', targetTripId), {
-          locationProviderStatus: 'paused',
-        });
+        await pauseBusBroadcastByStudent(targetTripId);
       } catch (e) {
         console.warn('Falha ao marcar GPS como pausado:', e);
       }
@@ -1716,10 +1717,7 @@ export default function StudentMap() {
     setSelectedTripType(type);
     if (attendance && attendance.status !== 'cancelado') {
       try {
-        await updateDoc(doc(db, 'attendance', `${trip.id}_${user.uid}`), {
-          tripType: type,
-          updatedAt: serverTimestamp(),
-        });
+        await updateAttendanceTripType(`${trip.id}_${user.uid}`, type);
       } catch (e) {
         console.error('Erro ao atualizar trajeto', e);
       }
@@ -1743,30 +1741,25 @@ export default function StudentMap() {
 
     try {
       // 1. Salva o trajeto no Firestore mantendo o status (aguardando)
-      await setDoc(
-        doc(db, 'attendance', attendanceId),
-        {
-          tripId: trip.id,
-          studentId: user.uid,
-          studentName: student?.name || 'Aluno',
-          faculty: student?.faculty || 'Outra',
-          route: normalizeRoute(student?.route) || 'Professor Jamil',
-          photoURL: student?.photoURL || null,
-          status: attendance?.status || 'aguardando',
-          tripType: type,
-          lat: initialLat,
-          lng: initialLng,
-          updatedAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
+      await checkInAttendance(attendanceId, {
+        tripId: trip.id,
+        studentId: user.uid,
+        studentName: student?.name || 'Aluno',
+        faculty: student?.faculty || 'Outra',
+        route: normalizeRoute(student?.route) || 'Professor Jamil',
+        photoURL: student?.photoURL || null,
+        status: attendance?.status || 'aguardando',
+        tripType: type,
+        lat: initialLat,
+        lng: initialLng,
+      });
 
       // Salva preferência para não solicitar novamente nas próximas visitas/viagens
       if (user?.uid) {
         localStorage.setItem(`rhyme_checkin_prompted_${user.uid}`, 'true');
         localStorage.setItem('rhyme_default_trip_type', type);
         try {
-          await updateDoc(doc(db, 'users', user.uid), { defaultTripType: type });
+          await saveUserDefaultTripType(user.uid, type);
         } catch (profileErr) {
           console.warn('Erro ao salvar defaultTripType no perfil do aluno:', profileErr);
         }
@@ -1814,8 +1807,8 @@ export default function StudentMap() {
       }
 
       try {
-        await setDoc(
-          doc(db, 'attendance', attendanceId),
+        await markStudentLiberado(
+          attendanceId,
           {
             tripId: trip.id,
             studentId: user.uid,
@@ -1823,12 +1816,9 @@ export default function StudentMap() {
             faculty: student?.faculty || 'Outra',
             route: normalizeRoute(student?.route) || 'Professor Jamil',
             photoURL: student?.photoURL || null,
-            status: 'liberado',
-            lat,
-            lng,
-            updatedAt: serverTimestamp(),
           },
-          { merge: true }
+          lat,
+          lng
         );
 
         if (attendance?.tripType !== 'ida' && selectedTripType !== 'ida') {
@@ -1895,8 +1885,8 @@ export default function StudentMap() {
 
     try {
       const attendanceId = `${trip.id}_${user.uid}`;
-      await setDoc(
-        doc(db, 'attendance', attendanceId),
+      await updateStudentCustomLocation(
+        attendanceId,
         {
           tripId: trip.id,
           studentId: user.uid,
@@ -1904,12 +1894,9 @@ export default function StudentMap() {
           faculty: student?.faculty || 'Outra',
           route: student?.route || 'Professor Jamil',
           photoURL: student?.photoURL || null,
-          status: 'liberado',
-          lat: tempLocation.lat,
-          lng: tempLocation.lng,
-          updatedAt: serverTimestamp(),
         },
-        { merge: true }
+        tempLocation.lat,
+        tempLocation.lng
       );
       drawRouteToBus(tempLocation.lat, tempLocation.lng);
       setIsEditingLocation(false);
@@ -1928,7 +1915,7 @@ export default function StudentMap() {
     setIsSubmitting(true);
     try {
       const attendanceId = `${trip.id}_${user.uid}`;
-      await updateDoc(doc(db, 'attendance', attendanceId), { status: 'cancelado' });
+      await cancelAttendance(attendanceId);
       clearRoute();
       showAlert('Embarque cancelado. O motorista não passará na sua localização.');
     } catch (err) {
@@ -1943,23 +1930,15 @@ export default function StudentMap() {
     if (!trip || !user) return;
     setIsSubmitting(true);
     try {
-      const { updateDoc } = await import('firebase/firestore');
-      const docRef = doc(collection(db, 'emergencies'));
-      await setDoc(docRef, {
+      await reportEmergencyAndMarkForgotten({
         tripId: trip.id,
         studentId: user.uid,
-        studentName: student.name,
-        route: student.route,
-        faculty: student.faculty,
+        studentName: student?.name,
+        route: student?.route,
+        faculty: student?.faculty,
         lat: attendance?.lat || null,
         lng: attendance?.lng || null,
-        timestamp: serverTimestamp(),
-        resolved: false,
       });
-
-      // Atualiza status do attendance para esquecido para refletir a denúncia
-      const attendanceId = `${trip.id}_${user.uid}`;
-      await setDoc(doc(db, 'attendance', attendanceId), { status: 'esquecido' }, { merge: true });
       clearRoute();
 
       showAlert(
@@ -2053,7 +2032,7 @@ export default function StudentMap() {
     setWakeUpAlarmTriggered(false);
 
     if (user?.uid) {
-      updateDoc(doc(db, 'students', user.uid), { dropOffLocation: stopObj }).catch((e) =>
+      updateStudentDropOffLocation(user.uid, stopObj).catch((e) =>
         console.warn('Erro ao persistir dropOffLocation:', e)
       );
     }
@@ -2204,7 +2183,7 @@ export default function StudentMap() {
                 type="button"
                 onClick={async () => {
                   if (student.route !== r) {
-                    await updateDoc(doc(db, 'students', user.uid), { route: r });
+                    await updateStudentRoute(user.uid, r);
                   }
                 }}
                 className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
