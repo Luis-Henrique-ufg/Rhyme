@@ -1,34 +1,4 @@
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-  useMap,
-  useMapEvents,
-  Polyline,
-} from 'react-leaflet';
-import {
-  Users,
-  Check,
-  RefreshCcw,
-  Navigation,
-  Play,
-  StopCircle,
-  MapPin,
-  MapPinOff,
-  BarChart2,
-  LocateFixed,
-  ChevronUp,
-  ChevronDown,
-  X,
-  BellRing,
-  Clock,
-  UserCheck,
-  UserX,
-  Timer,
-} from 'lucide-react';
+import { Navigation, MapPin, X } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-rotate';
@@ -38,6 +8,11 @@ import { ensureDailyTripExists, normalizeRoute } from '../utils/tripManager';
 import { useCurrentTrip, useDriverAttendanceMap } from '../utils/useTripData';
 import Header from '../components/Header';
 import PublicListModal from '../components/PublicListModal';
+import DriverCockpitHUD from '../components/DriverCockpitHUD';
+import CampusSummaryCard from '../components/CampusSummaryCard';
+import DriverBottomBar from '../components/DriverBottomBar';
+import EmergencyRescueModal from '../components/EmergencyRescueModal';
+
 import Loader from '../components/Loader';
 import ErrorState from '../components/ErrorState';
 import MapInteractions from '../components/MapInteractions';
@@ -657,249 +632,21 @@ export default function DriverDashboard() {
           )}
 
           {/* HUD de Próxima Parada (Estilo Waze/GPS) */}
-          {trip?.status === 'in_progress' && nextStop && (
-            <div className="absolute top-4 left-4 z-[1001] max-w-[calc(100vw-130px)] sm:max-w-md pointer-events-auto">
-              {isHudCollapsed ? (
-                <button
-                  onClick={() => setIsHudCollapsed(false)}
-                  className="flex items-center gap-2.5 bg-card/90 backdrop-blur-xl border border-primary/40 hover:border-primary text-heading rounded-full px-3.5 py-2 shadow-2xl transition-all group active:scale-95"
-                  title="Expandir detalhes da próxima parada"
-                >
-                  <span className="relative flex h-2.5 w-2.5 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500"></span>
-                  </span>
-                  <span className="text-xs font-bold text-heading truncate max-w-[120px] sm:max-w-[180px]">
-                    {nextStop.title}
-                  </span>
-                  <span className="text-[10px] text-orange-400 font-semibold bg-orange-500/10 px-1.5 py-0.5 rounded border border-orange-500/20 shrink-0">
-                    {nextStop.totalCount} {nextStop.totalCount === 1 ? 'aluno' : 'alunos'}
-                  </span>
-                  <span className="text-xs font-mono text-caption shrink-0 ml-0.5">
-                    {nextStop.distKm < 1
-                      ? `${Math.round(nextStop.distKm * 1000)}m`
-                      : `${nextStop.distKm.toFixed(1)}km`}
-                  </span>
-                  <ChevronDown
-                    size={14}
-                    className="text-caption group-hover:text-heading shrink-0"
-                  />
-                </button>
-              ) : (
-                <div className="bg-card/95 backdrop-blur-2xl border border-primary/30 rounded-2xl p-3.5 sm:p-4 shadow-2xl flex flex-col gap-2.5 transition-all animate-[fadeIn_0.2s_ease-out]">
-                  {/* Top Row: Tag + Minimize Button */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
-                      </span>
-                      <span className="text-[10px] font-extrabold uppercase tracking-widest text-orange-400 font-mono">
-                        PRÓXIMA PARADA
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => setIsHudCollapsed(true)}
-                      className="text-caption hover:text-heading p-1 rounded-lg hover-bg-subtle transition-colors"
-                      title="Minimizar painel"
-                    >
-                      <ChevronUp size={16} />
-                    </button>
-                  </div>
-
-                  {/* Content: Title, students & real-time distance */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-sm sm:text-base font-bold text-heading truncate leading-tight">
-                        {nextStop.title}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span className="text-xs text-caption">
-                          {nextStop.totalCount}{' '}
-                          {nextStop.totalCount === 1 ? 'passageiro' : 'passageiros'}
-                        </span>
-                        {nextStop.liberadosCount > 0 && (
-                          <span className="text-success font-semibold bg-success-bg px-1.5 py-0.5 rounded text-[10px] border border-success-border">
-                            {nextStop.liberadosCount} liberado
-                            {nextStop.liberadosCount > 1 ? 's' : ''}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0 bg-subtle border border-subtle rounded-xl px-2.5 py-1.5">
-                      <div className="text-base sm:text-lg font-black text-heading font-mono tracking-tight leading-none">
-                        {nextStop.distKm < 1
-                          ? `${Math.round(nextStop.distKm * 1000)}`
-                          : nextStop.distKm.toFixed(1)}
-                        <span className="text-[10px] text-caption font-normal ml-0.5">
-                          {nextStop.distKm < 1 ? 'm' : 'km'}
-                        </span>
-                      </div>
-                      <span className="text-[9px] text-caption font-medium block mt-0.5 uppercase tracking-wider">
-                        distância
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Quick Action Buttons */}
-                  <div className="flex flex-col gap-2 mt-0.5">
-                    <button
-                      onClick={() => openNavigationTo(nextStop.lat, nextStop.lng)}
-                      className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-orange-600 to-amber-500 hover:brightness-110 text-white font-bold text-xs py-2 px-3 rounded-xl shadow-lg transition-all active:scale-[0.98]"
-                    >
-                      <Navigation size={13} className="shrink-0 fill-current" />
-                      Traçar rota até este ponto
-                    </button>
-
-                    {/* Chamada de Embarque */}
-                    {!boardingCall || boardingCall.status !== 'active' ? (
-                      <div className="relative">
-                        <button
-                          onClick={() => setShowDurationPicker((v) => !v)}
-                          className="w-full flex items-center justify-center gap-2 bg-subtle hover:bg-success-bg border border-subtle hover:border-success/60 text-heading hover:text-success font-bold text-xs py-2 px-3 rounded-xl transition-all active:scale-[0.98]"
-                        >
-                          <BellRing size={13} className="shrink-0" />
-                          Chamar Alunos
-                        </button>
-                        {/* Seletor de Duração */}
-                        {showDurationPicker && (
-                          <div className="absolute bottom-[110%] left-0 right-0 z-10 bg-card border border-subtle rounded-xl p-3 shadow-2xl flex flex-col gap-2 animate-[fadeIn_0.15s_ease-out]">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-caption flex items-center gap-1.5">
-                              <Timer size={11} /> Tolerância de espera
-                            </span>
-                            <div className="flex gap-2">
-                              {[2, 3, 5].map((min) => (
-                                <button
-                                  key={min}
-                                  onClick={() => handleStartBoardingCall(min)}
-                                  className="flex-1 py-2 rounded-xl badge-success font-black text-sm hover:brightness-110 transition-all active:scale-95"
-                                >
-                                  {min} min
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      /* Chamada Ativa — Cronômetro + Respostas */
-                      <div className="rounded-xl border border-success/30 bg-success-bg p-3 flex flex-col gap-2">
-                        {/* Header: countdown + encerrar */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="relative flex h-2 w-2">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                            </span>
-                            <span className="text-[10px] font-extrabold uppercase tracking-widest text-success">
-                              Chamada Ativa
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                handleExtendBoardingCall(1);
-                              }}
-                              className="text-caption hover:text-heading text-xs font-bold px-2.5 py-1 rounded-lg border border-subtle transition-all active:scale-95 cursor-pointer bg-surface/80"
-                              title="Adicionar 1 minuto"
-                            >
-                              +1 min
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                handleCloseBoardingCall();
-                              }}
-                              className="w-8 h-8 flex items-center justify-center rounded-lg bg-surface/80 hover:bg-danger/15 text-caption hover:text-danger border border-subtle transition-all cursor-pointer shadow-sm active:scale-95"
-                              title="Encerrar chamada"
-                              aria-label="Encerrar chamada"
-                            >
-                              <X size={18} strokeWidth={2.5} />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Cronômetro */}
-                        <div className="flex flex-col items-center gap-0.5">
-                          <span
-                            className={`font-black font-mono text-2xl leading-none ${
-                              boardingCallSecondsLeft <= 30
-                                ? 'text-danger animate-pulse'
-                                : boardingCallSecondsLeft <= 60
-                                  ? 'text-warning'
-                                  : 'text-success'
-                            }`}
-                          >
-                            {String(Math.floor(boardingCallSecondsLeft / 60)).padStart(2, '0')}:
-                            {String(boardingCallSecondsLeft % 60).padStart(2, '0')}
-                          </span>
-                          {/* Barra de progresso */}
-                          <div className="w-full h-1 bg-subtle rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all duration-1000"
-                              style={{
-                                width: `${(boardingCallSecondsLeft / (boardingCall.durationMinutes * 60)) * 100}%`,
-                                background:
-                                  boardingCallSecondsLeft <= 30
-                                    ? '#f87171'
-                                    : boardingCallSecondsLeft <= 60
-                                      ? '#fbbf24'
-                                      : '#34d399',
-                              }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Lista de respostas dos alunos */}
-                        <div className="flex flex-col gap-1">
-                          {boardingCall.targetStudentNames?.map(({ uid, name }) => {
-                            const resp = boardingResponseMap[uid];
-                            return (
-                              <div key={uid} className="flex items-center justify-between py-0.5">
-                                <span className="text-xs text-body font-medium truncate max-w-[120px]">
-                                  {name}
-                                </span>
-                                {!resp ? (
-                                  <span className="flex items-center gap-1 text-[10px] text-caption">
-                                    <Clock size={10} /> Aguardando
-                                  </span>
-                                ) : resp.response === 'coming' ? (
-                                  <span className="flex items-center gap-1 text-[10px] text-success font-semibold">
-                                    <UserCheck size={10} /> A caminho
-                                  </span>
-                                ) : (
-                                  <span className="flex items-center gap-1 text-[10px] text-caption line-through">
-                                    <UserX size={10} /> Dispensado
-                                  </span>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            handleCloseBoardingCall();
-                          }}
-                          className="w-full flex items-center justify-center gap-2 bg-subtle hover-bg-subtle text-body hover:text-heading font-bold text-xs py-2.5 px-3 rounded-xl transition-all active:scale-[0.98] cursor-pointer"
-                        >
-                          <Check size={14} /> Partir / Encerrar chamada
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          <DriverCockpitHUD
+            trip={trip}
+            nextStop={nextStop}
+            isHudCollapsed={isHudCollapsed}
+            setIsHudCollapsed={setIsHudCollapsed}
+            openNavigationTo={openNavigationTo}
+            boardingCall={boardingCall}
+            showDurationPicker={showDurationPicker}
+            setShowDurationPicker={setShowDurationPicker}
+            handleStartBoardingCall={handleStartBoardingCall}
+            handleExtendBoardingCall={handleExtendBoardingCall}
+            handleCloseBoardingCall={handleCloseBoardingCall}
+            boardingCallSecondsLeft={boardingCallSecondsLeft}
+            boardingResponseMap={boardingResponseMap}
+          />
 
           <MapContainer
             center={CENTER}
@@ -1233,62 +980,12 @@ export default function DriverDashboard() {
         </div>
 
         {/* Tabela Consolidada (Painel Flutuante) */}
-        <div
-          className={`absolute md:relative z-10 w-full md:w-[400px] electric-card bg-card p-5 overflow-y-auto border-t md:border-t-0 md:border-r border-subtle shadow-2xl flex flex-col mt-auto md:mt-0 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isPanelOpen ? 'translate-y-0 md:translate-x-0 max-h-[55vh] md:max-h-full bottom-0' : 'translate-y-full md:translate-y-0 md:-translate-x-full max-h-[55vh] md:max-h-full bottom-0 md:left-0'} `}
-        >
-          <div className="flex justify-between items-center mb-5">
-            <h2 className="text-2xl font-bricolage font-light text-heading tracking-tight">
-              Resumo da Rota
-            </h2>
-            <button
-              onClick={() => setIsPanelOpen(false)}
-              className="w-8 h-8 flex items-center justify-center bg-subtle hover-bg-subtle text-caption hover:text-heading rounded-full transition-colors border border-subtle"
-            >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
-
-          {!trip && (
-            <div className="bg-yellow-500/10 border border-yellow-500/50 text-yellow-500 p-4 rounded-xl mb-4 text-sm font-medium">
-              Nenhuma viagem aberta no momento. (Aguardando criação de rota).
-            </div>
-          )}
-
-          <div className="flex-1 space-y-4 pr-2 custom-scrollbar">
-            {facultySummary.map((fac) => (
-              <div
-                key={fac.name}
-                className="bg-subtle border border-subtle p-4 rounded-2xl flex items-center justify-between"
-              >
-                <div>
-                  <h3 className="font-bold text-heading text-lg">{fac.name}</h3>
-                  <p className="text-caption text-sm font-medium">Na lista de hoje</p>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-black tracking-tight text-orange-500">
-                    {fac.count}{' '}
-                    <span className="text-sm font-medium text-caption">passageiros</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {facultySummary.length === 0 && (
-              <p className="text-center text-caption py-6">Nenhum aluno aguardando na rota hoje.</p>
-            )}
-          </div>
-        </div>
+        <CampusSummaryCard
+          isPanelOpen={isPanelOpen}
+          setIsPanelOpen={setIsPanelOpen}
+          trip={trip}
+          facultySummary={facultySummary}
+        />
       </div>
 
       {/* Modal da Lista Pública (Checklist de Embarque) */}
@@ -1302,221 +999,52 @@ export default function DriverDashboard() {
       />
 
       {/* Bottom Navigation Bar (WhatsApp style) */}
-      {trip && (
-        <div
-          className="bottom-nav bg-surface border-t border-subtle flex items-center justify-around gap-1 py-2 px-2 md:justify-center md:gap-8 md:px-6 z-50 shrink-0 pb-safe shadow-lg w-full overflow-hidden select-none touch-none overscroll-none"
-          onWheel={(e) => e.preventDefault()}
-        >
-          <button
-            onClick={() => {
-              const newState = !isPublicListOpen;
-              setIsPublicListOpen(newState);
-              if (newState) setIsPanelOpen(false);
-            }}
-            className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors relative"
-          >
-            <div className="relative p-1.5 sm:p-2">
-              <Users size={22} />
-              <span className="absolute top-0 right-0 bg-orange-500 text-black px-1.5 py-0.5 rounded-full text-[9px] font-black translate-x-1/2 -translate-y-1/4 shadow-sm border border-black">
-                {
-                  Object.values(attendanceMap).filter(
-                    (att) => att.status === 'liberado' || att.status === 'aguardando'
-                  ).length
-                }
-              </span>
-            </div>
-            <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
-              Lista
-            </span>
-          </button>
-
-          <button
-            onClick={() => setIsPanelOpen(!isPanelOpen)}
-            className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center transition-colors ${isPanelOpen ? 'text-primary' : 'text-body hover:text-primary'}`}
-          >
-            <div className="p-1.5 sm:p-2">
-              <BarChart2 size={22} />
-            </div>
-            <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
-              Resumo
-            </span>
-          </button>
-
-          {/* Indicador GPS — visível apenas em in_progress, alinhado ao design system */}
-          {trip.status === 'in_progress' && (
-            <div
-              title={gpsAccuracy != null ? `Precisão: ±${gpsAccuracy}m` : 'Aguardando GPS...'}
-              className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center shrink-0 select-none ${
-                gpsStatus === 'active'
-                  ? 'text-success'
-                  : gpsStatus === 'error'
-                    ? 'text-danger'
-                    : 'text-caption'
-              }`}
-            >
-              <div className="relative p-1.5 sm:p-2">
-                {gpsStatus === 'active' && (
-                  <span className="absolute inset-0 rounded-full bg-success/20 animate-ping" />
-                )}
-                <LocateFixed size={22} className="relative" />
-              </div>
-              <span className="text-[10px] font-bold mt-0.5 leading-none truncate max-w-full">
-                {gpsStatus === 'active'
-                  ? gpsAccuracy != null
-                    ? `±${gpsAccuracy}m`
-                    : 'AO VIVO'
-                  : gpsStatus === 'error'
-                    ? 'Erro'
-                    : 'GPS'}
-              </span>
-            </div>
-          )}
-
-          <div
-            id="navbar-compass-slot"
-            className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex items-center justify-center empty:hidden"
-          ></div>
-          <div
-            id="navbar-recenter-slot"
-            className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex items-center justify-center empty:hidden"
-          ></div>
-
-          {trip.status === 'open' && (
-            <button
-              onClick={() => updateTripStatus('in_progress')}
-              disabled={isUpdatingTrip}
-              className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors ${isUpdatingTrip ? 'opacity-50' : ''}`}
-            >
-              <div className="p-1.5 sm:p-2">
-                <Play size={22} />
-              </div>
-              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
-                {isUpdatingTrip ? 'Iniciando' : 'Iniciar'}
-              </span>
-            </button>
-          )}
-
-          {trip.status === 'in_progress' && (
-            <button
-              onClick={recalculateGlobalRoute}
-              disabled={isUpdatingTrip}
-              className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors ${isUpdatingTrip ? 'opacity-50' : ''}`}
-            >
-              <div className="p-1.5 sm:p-2">
-                <RefreshCcw size={22} />
-              </div>
-              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
-                {isUpdatingTrip ? 'Atz...' : 'Atualizar'}
-              </span>
-            </button>
-          )}
-
-          {trip.status === 'in_progress' && (
-            <button
-              onClick={handleFinishClick}
-              className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-danger transition-colors"
-            >
-              <div className="p-1.5 sm:p-2">
-                <StopCircle size={22} />
-              </div>
-              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
-                Finalizar
-              </span>
-            </button>
-          )}
-
-          {trip.status === 'finished' && (
-            <button
-              onClick={() => updateTripStatus('open')}
-              className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors"
-            >
-              <div className="p-1.5 sm:p-2">
-                <Play size={22} />
-              </div>
-              <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
-                Reabrir
-              </span>
-            </button>
-          )}
-
-          {Boolean(
-            (activeLocalRoute && activeLocalRoute.length > 0) ||
-            (trip?.driverRoutePath && trip.driverRoutePath.length > 0) ||
-            (trip?.routePath && trip.routePath.length > 0) ||
-            (trip?.globalRoute && trip.globalRoute.length > 0)
-          ) &&
-            trip.status !== 'finished' && (
-              <button
-                onClick={clearAllRoutes}
-                className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors"
-                title="Limpar todas as rotas do mapa"
-              >
-                <div className="p-1.5 sm:p-2">
-                  <MapPinOff size={22} />
-                </div>
-                <span className="text-[10px] sm:text-[11px] font-medium mt-0.5 truncate max-w-full">
-                  Limpar
-                </span>
-              </button>
-            )}
-        </div>
-      )}
+      <DriverBottomBar
+        trip={trip}
+        isPublicListOpen={isPublicListOpen}
+        setIsPublicListOpen={setIsPublicListOpen}
+        isPanelOpen={isPanelOpen}
+        setIsPanelOpen={setIsPanelOpen}
+        attendanceMap={attendanceMap}
+        gpsStatus={gpsStatus}
+        gpsAccuracy={gpsAccuracy}
+        isUpdatingTrip={isUpdatingTrip}
+        updateTripStatus={updateTripStatus}
+        recalculateGlobalRoute={recalculateGlobalRoute}
+        handleFinishClick={handleFinishClick}
+        clearAllRoutes={clearAllRoutes}
+        hasActiveRoutes={Boolean(
+          (activeLocalRoute && activeLocalRoute.length > 0) ||
+          (trip?.driverRoutePath && trip.driverRoutePath.length > 0) ||
+          (trip?.routePath && trip.routePath.length > 0) ||
+          (trip?.globalRoute && trip.globalRoute.length > 0)
+        )}
+      />
 
       {/* Modal de Alunos Deixados para Trás */}
-      {pendingStudentsConfirm && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-          <div className="bg-card border border-subtle rounded-3xl p-6 max-w-sm w-full shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 blur-[50px] rounded-full pointer-events-none"></div>
-            <h3 className="text-lg font-bold text-heading mb-2 relative z-10">Finalizar viagem?</h3>
-            <p className="text-body text-sm mb-4 relative z-10">
-              Ainda há <strong className="text-heading">{pendingStudentsConfirm.length}</strong>{' '}
-              aluno(s) aguardando na lista:
-              <br />
-              <span className="text-orange-400 font-medium italic mt-1 block">
-                {pendingStudentsConfirm.map((s) => s.studentName).join(', ')}
-              </span>
-              <br />
-              Eles embarcaram e você esqueceu de marcar, ou realmente ficaram para trás?
-            </p>
-            <div className="flex flex-col gap-2 relative z-10">
-              <button
-                onClick={async () => {
-                  setPendingStudentsConfirm(null);
-                  setIsUpdatingTrip(true);
-                  try {
-                    for (let student of pendingStudentsConfirm) {
-                      await handleStudentStatus(student.studentId, student.status, 'embarcado');
-                    }
-                    await updateTripStatus('finished');
-                  } catch (e) {
-                    console.error(e);
-                  } finally {
-                    setIsUpdatingTrip(false);
-                  }
-                }}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-black font-bold py-3 px-4 rounded-xl transition-colors"
-              >
-                Eles embarcaram (marcar e finalizar)
-              </button>
-              <button
-                onClick={() => {
-                  setPendingStudentsConfirm(null);
-                  updateTripStatus('finished');
-                }}
-                className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-xl transition-colors mt-2"
-              >
-                Ficaram para trás (apenas finalizar)
-              </button>
-              <button
-                onClick={() => setPendingStudentsConfirm(null)}
-                className="w-full bg-subtle hover-bg-subtle text-heading font-bold py-3 px-4 rounded-xl transition-colors mt-2 border border-subtle"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <EmergencyRescueModal
+        pendingStudents={pendingStudentsConfirm}
+        onConfirmBoarded={async () => {
+          const toUpdate = pendingStudentsConfirm;
+          setPendingStudentsConfirm(null);
+          setIsUpdatingTrip(true);
+          try {
+            for (let student of toUpdate) {
+              await handleStudentStatus(student.studentId, student.status, 'embarcado');
+            }
+            await updateTripStatus('finished');
+          } catch (e) {
+            console.error(e);
+          } finally {
+            setIsUpdatingTrip(false);
+          }
+        }}
+        onConfirmAbandoned={() => {
+          setPendingStudentsConfirm(null);
+          updateTripStatus('finished');
+        }}
+        onCancel={() => setPendingStudentsConfirm(null)}
+      />
     </div>
   );
 }
