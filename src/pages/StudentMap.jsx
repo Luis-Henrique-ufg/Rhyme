@@ -77,7 +77,7 @@ import {
   playPopSound,
   playSuccessSound,
   triggerHaptic,
-} from '../utils/audioEffects';
+} from '../services/audioService';
 import { useFCM } from '../hooks/useFCM';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-rotate';
