@@ -49,3 +49,4 @@ export function resolveWakeUpState({
 export function isAlarmActive(state) {
   return state === WAKEUP_STATE.RINGING;
 }
+

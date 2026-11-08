@@ -51,3 +51,4 @@ export function isStudentTargetedByBoardingCall(boardingCall, studentUid, now = 
   if (state !== BOARDING_CALL_STATUS.ACTIVE) return false;
   return Boolean(boardingCall.targetStudentIds?.includes(studentUid));
 }
+

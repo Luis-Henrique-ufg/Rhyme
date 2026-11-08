@@ -56,3 +56,4 @@ export function transitionTrip(currentStatus, targetStatus) {
 export const isTripOpen = (status) => status === TRIP_STATUS.OPEN;
 export const isTripActive = (status) => status === TRIP_STATUS.IN_PROGRESS;
 export const isTripFinished = (status) => status === TRIP_STATUS.FINISHED;
+

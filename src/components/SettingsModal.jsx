@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file SettingsModal.jsx
  * @module components/SettingsModal
  * @description Modal completo de configurações do usuário: perfil, foto (ImgBB),

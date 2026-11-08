@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file usePassengerCounters.js
  * @module hooks/usePassengerCounters
  * @description Hook customizado para calcular contadores de passageiros por faculdade (RF06),

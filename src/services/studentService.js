@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file studentService.js
  * @module services/studentService
  * @description Encapsula todas as operações do Firestore relacionadas ao aluno

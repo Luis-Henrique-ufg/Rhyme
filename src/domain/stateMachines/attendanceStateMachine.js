@@ -128,3 +128,4 @@ export function getAttendanceStatusPriority(status) {
       return 0;
   }
 }
+

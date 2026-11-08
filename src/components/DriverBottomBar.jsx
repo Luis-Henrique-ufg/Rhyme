@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file DriverBottomBar.jsx
  * @module components/DriverBottomBar
  * @description Barra de navegação inferior e controle de ações da viagem para o motorista

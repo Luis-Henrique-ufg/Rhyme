@@ -177,3 +177,4 @@ describe('WakeUpAlarmStateMachine (ISO-6.4.7)', () => {
     expect(isAlarmActive(WAKEUP_STATE.DISMISSED)).toBe(false);
   });
 });
+

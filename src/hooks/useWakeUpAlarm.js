@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file useWakeUpAlarm.js
  * @module hooks/useWakeUpAlarm
  * @description Hook customizado para gerenciar o despertador de proximidade do aluno ("Acorda Aluno"),

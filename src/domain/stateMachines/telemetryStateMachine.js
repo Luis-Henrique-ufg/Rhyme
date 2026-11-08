@@ -87,3 +87,4 @@ export function formatGpsElapsedLabel(gpsState, locationUpdatedAt, now = Date.no
   if (minutes < 60) return `HÁ ${minutes}min`;
   return `HÁ ${Math.floor(minutes / 60)}h`;
 }
+

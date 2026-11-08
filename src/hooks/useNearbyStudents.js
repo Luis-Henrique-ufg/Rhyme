@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file useNearbyStudents.js
  * @module hooks/useNearbyStudents
  * @description Hook customizado para filtrar e preparar a lista de alunos visíveis no mapa
