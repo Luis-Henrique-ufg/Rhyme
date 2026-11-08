@@ -6,9 +6,10 @@
  * Em conformidade com a ISO/IEC/IEEE 12207:2017 (6.4.7 - Software Construction / SRP).
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getDistanceFromLatLonInKm } from '../services/geoService';
 import { updateStudentDropOffLocation } from '../services/studentService';
+import { resolveWakeUpState, isAlarmActive } from '../domain/stateMachines';
 
 export function useWakeUpAlarm({
   student,
@@ -62,7 +63,15 @@ export function useWakeUpAlarm({
     const distMeters = Math.round(distKm * 1000);
     setCurrentDistanceToStop(distMeters);
 
-    if (distMeters > 0 && distMeters <= wakeUpSettings.distance) {
+    const alarmState = resolveWakeUpState({
+      enabled: wakeUpSettings.enabled,
+      hasStopLocation: Boolean(target.lat && target.lng),
+      distanceMeters: distMeters,
+      alertThresholdMeters: wakeUpSettings.distance || 1000,
+      isDismissed: wakeUpAlarmTriggered,
+    });
+
+    if (isAlarmActive(alarmState)) {
       setWakeUpAlarmTriggered(true);
       setIsWakeUpAlarmModalOpen(true);
       if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {

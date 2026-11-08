@@ -100,6 +100,11 @@ import {
   triggerHaptic,
 } from '../services/audioService';
 import { useFCM } from '../hooks/useFCM';
+import {
+  resolveGpsState,
+  formatGpsElapsedLabel,
+  isStudentTargetedByBoardingCall,
+} from '../domain/stateMachines';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-rotate';
 import L from 'leaflet';
@@ -393,44 +398,26 @@ export default function StudentMap() {
     return () => clearInterval(id);
   }, []);
 
-  // --- Sistema de Frescor do GPS ---
-  // Limiares: live < 45 s | stale 45 s – 3 min | expired > 3 min
-  const GPS_LIVE_MS = 45_000;
-  const GPS_STALE_MS = 3 * 60_000;
-
+  // --- Sistema de Frescor do GPS (Máquina de Estados de Telemetria) ---
   const gpsState = useMemo(() => {
-    // O aluno está transmitindo manualmente: sempre live
-    if (isBroadcasting) return 'live';
-    // Sinal pausado intencionalmente pelo transmissor anterior
-    if (trip?.locationProviderStatus === 'paused') return 'paused';
-    // Sem localização alguma
-    if (!trip?.busLocation?.lat) return 'expired';
-    // Com timestamp: calcular idade
-    if (trip?.locationUpdatedAt) {
-      const age = now - trip.locationUpdatedAt;
-      if (age < GPS_LIVE_MS) return 'live';
-      if (age < GPS_STALE_MS) return 'stale';
-      return 'expired';
-    }
-    // Sem timestamp (dados legados): assume live se há posição
-    return 'live';
+    return resolveGpsState({
+      isBroadcasting,
+      providerStatus: trip?.locationProviderStatus,
+      locationUpdatedAt: trip?.locationUpdatedAt,
+      hasCoordinates: Boolean(trip?.busLocation?.lat != null && trip?.busLocation?.lng != null),
+      now,
+    });
   }, [
     isBroadcasting,
     trip?.locationProviderStatus,
-    trip?.busLocation,
+    trip?.busLocation?.lat,
+    trip?.busLocation?.lng,
     trip?.locationUpdatedAt,
     now,
   ]);
 
   const elapsedLabel = useMemo(() => {
-    if (gpsState === 'live') return '';
-    if (gpsState === 'paused') return 'PAUSADO';
-    if (!trip?.locationUpdatedAt) return 'SEM SINAL';
-    const seconds = Math.round((now - trip.locationUpdatedAt) / 1000);
-    if (seconds < 60) return `HÁ ${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `HÁ ${minutes}min`;
-    return `HÁ ${Math.floor(minutes / 60)}h`;
+    return formatGpsElapsedLabel(gpsState, trip?.locationUpdatedAt, now);
   }, [gpsState, trip?.locationUpdatedAt, now]);
 
   // --- Alerta de Descida / Acorda Aluno ---
@@ -500,11 +487,7 @@ export default function StudentMap() {
 
   // --- Chamada de Embarque: detectar se este aluno é alvo ---
   const isTargetedByBoardingCall = useMemo(() => {
-    const bc = trip?.boardingCall;
-    if (!bc || bc.status !== 'active') return false;
-    if (!bc.targetStudentIds?.includes(user?.uid)) return false;
-    if (Date.now() > bc.expiresAt) return false;
-    return true;
+    return isStudentTargetedByBoardingCall(trip?.boardingCall, user?.uid);
   }, [trip?.boardingCall, user?.uid]);
 
   // Dispara som e notificação do sistema ao ser alvo de uma nova chamada de embarque

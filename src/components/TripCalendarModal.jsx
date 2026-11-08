@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { X, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
+import { isPassengerBoarded, isPassengerCancelled, isTripActive, isTripFinished } from '../domain/stateMachines';
 
 export default function TripCalendarModal({ history, onClose, userProfile }) {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -45,8 +46,8 @@ export default function TripCalendarModal({ history, onClose, userProfile }) {
 
       const status = historyMap[dateString];
       const isSuccess = isStudent
-        ? status === 'confirmado'
-        : status === 'finished' || status === 'in_progress';
+        ? isPassengerBoarded(status)
+        : isTripFinished(status) || isTripActive(status);
 
       if (isSuccess) {
         currentStreak++;
@@ -174,11 +175,15 @@ export default function TripCalendarModal({ history, onClose, userProfile }) {
               let borderColor = 'border-transparent';
               let textColor = 'text-body';
 
-              if (status === 'confirmado' || status === 'finished' || status === 'in_progress') {
+              const isSuccess = isStudent
+                ? isPassengerBoarded(status)
+                : isTripFinished(status) || isTripActive(status);
+
+              if (isSuccess) {
                 bgColor = 'bg-primary/15';
                 borderColor = 'border-primary/40';
                 textColor = 'text-primary font-bold';
-              } else if (status === 'cancelado') {
+              } else if (isPassengerCancelled(status)) {
                 bgColor = 'bg-subtle';
                 borderColor = 'border-subtle';
                 textColor = 'text-caption line-through';

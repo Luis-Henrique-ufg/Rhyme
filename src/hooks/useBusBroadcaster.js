@@ -11,6 +11,7 @@ import {
   broadcastBusLocationByStudent,
   pauseBusBroadcastByStudent,
 } from '../services/studentService';
+import { shouldStudentBroadcastYield } from '../domain/stateMachines';
 
 /**
  * @typedef {Object} UseBusBroadcasterParams
@@ -174,19 +175,12 @@ export function useBusBroadcaster({
 
   // Desativa automaticamente a transmissão do aluno caso o motorista assuma o GPS
   useEffect(() => {
-    const isDriverSignalActive =
-      trip?.locationProviderRole === 'driver' &&
-      Boolean(trip?.busLocation?.lat) &&
-      (!trip?.locationUpdatedAt || Date.now() - trip.locationUpdatedAt < 3 * 60_000);
-
-    if (isBroadcasting && (isDriverSignalActive || gpsState === 'live' || gpsState === 'stale')) {
+    if (isBroadcasting && shouldStudentBroadcastYield({ trip, gpsState })) {
       stopBroadcasting();
       showAlert?.('O motorista iniciou a transmissão do GPS. A sua transmissão foi desativada.');
     }
   }, [
-    trip?.locationProviderRole,
-    trip?.busLocation?.lat,
-    trip?.locationUpdatedAt,
+    trip,
     gpsState,
     isBroadcasting,
     stopBroadcasting,

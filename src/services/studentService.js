@@ -15,6 +15,7 @@ import {
   onSnapshot,
   serverTimestamp,
 } from 'firebase/firestore';
+import { ATTENDANCE_STATUS, BOARDING_RESPONSE } from '../domain/stateMachines';
 
 /**
  * Escuta em tempo real o perfil do aluno.
@@ -66,7 +67,7 @@ export async function setAttendance(attendanceId, data, options = { merge: true 
 /**
  * Responde à chamada de embarque ativa da van.
  * @param {string} attendanceId - ID do attendance
- * @param {string} response - Resposta ('embarking' | 'skip')
+ * @param {'coming'|'skip'} response - Resposta do aluno
  * @returns {Promise<void>}
  */
 export async function respondToBoardingCall(attendanceId, response) {
@@ -75,8 +76,8 @@ export async function respondToBoardingCall(attendanceId, response) {
     boardingResponse: response,
     boardingResponseAt: Date.now(),
   };
-  if (response === 'skip') {
-    updates.status = 'cancelado';
+  if (response === BOARDING_RESPONSE.SKIP || response === 'skip') {
+    updates.status = ATTENDANCE_STATUS.CANCELADO;
   }
   return updateDoc(doc(db, 'attendance', attendanceId), updates);
 }

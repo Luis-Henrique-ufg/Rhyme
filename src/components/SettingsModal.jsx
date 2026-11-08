@@ -40,6 +40,7 @@ import { playSuccessSound, playPopSound } from '../utils/audioEffects';
 import ThemeToggle from './ThemeToggle';
 import SoundToggle from './SoundToggle';
 import DropdownSelect from './DropdownSelect';
+import { isPassengerBoarded, isPassengerCancelled, isTripFinished } from '../domain/stateMachines';
 
 export default function SettingsModal({
   isOpen,
@@ -448,20 +449,20 @@ export default function SettingsModal({
                           </span>
                           <span className="text-xs text-caption mt-0.5">
                             {userProfile?.role === 'student'
-                              ? item.status === 'confirmado'
+                              ? isPassengerBoarded(item.status)
                                 ? 'Embarcou'
-                                : item.status === 'cancelado'
+                                : isPassengerCancelled(item.status)
                                   ? 'Não foi'
                                   : 'Aguardando'
-                              : `Status: ${item.status === 'finished' ? 'Finalizada' : 'Em andamento'}`}
+                              : `Status: ${isTripFinished(item.status) ? 'Finalizada' : 'Em andamento'}`}
                           </span>
                         </div>
-                        {userProfile?.role === 'student' && item.status === 'confirmado' && (
+                        {userProfile?.role === 'student' && isPassengerBoarded(item.status) && (
                           <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded flex items-center gap-1">
                             <Check size={12} className="stroke-[3]" /> Confirmado
                           </span>
                         )}
-                        {userProfile?.role === 'student' && item.status === 'cancelado' && (
+                        {userProfile?.role === 'student' && isPassengerCancelled(item.status) && (
                           <span className="text-[10px] font-bold text-caption bg-subtle px-2 py-1 rounded flex items-center gap-1">
                             <X size={12} className="stroke-[3]" /> Cancelado
                           </span>

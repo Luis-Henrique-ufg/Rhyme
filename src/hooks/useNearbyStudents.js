@@ -7,6 +7,7 @@
  */
 
 import { useMemo } from 'react';
+import { isPassengerCancelled, isPassengerBoarded } from '../domain/stateMachines';
 
 /**
  * @param {Object} params
@@ -26,7 +27,7 @@ export function useNearbyStudents({ publicList = [], user, trip }) {
       ) {
         return false;
       }
-      if (a.status === 'cancelado' || a.status === 'embarcado') return false;
+      if (isPassengerCancelled(a.status) || isPassengerBoarded(a.status)) return false;
       if (!a.lat || !a.lng || isNaN(a.lat) || isNaN(a.lng)) return false;
       return a.status === 'liberado' || a.tripType === 'ida';
     });

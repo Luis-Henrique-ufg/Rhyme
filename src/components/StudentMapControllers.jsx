@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file StudentMapControllers.jsx
  * @module components/StudentMapControllers
  * @description Controladores, adaptadores de evento e listeners integrados ao Leaflet

@@ -8,6 +8,7 @@
 
 import { useMemo } from 'react';
 import { getDistanceFromLatLonInKm, MOCK_FACULTIES } from '../services/geoService';
+import { isPassengerPending, isPassengerBoarded, isPassengerCancelled } from '../domain/stateMachines';
 
 /**
  * @param {Object} params
@@ -23,7 +24,7 @@ export function usePassengerCounters({ attendanceMap = {}, busLocation = null })
   const facultySummary = useMemo(() => {
     const map = {};
     Object.values(attendanceMap).forEach((att) => {
-      if (att.status !== 'liberado' && att.status !== 'aguardando') return;
+      if (!isPassengerPending(att.status)) return;
       const faculty = att.faculty || 'Outra';
       if (!map[faculty]) {
         map[faculty] = { name: faculty, count: 0 };
@@ -38,9 +39,9 @@ export function usePassengerCounters({ attendanceMap = {}, busLocation = null })
 
     Object.entries(attendanceMap).forEach(([studentId, att]) => {
       if (
-        (att.status === 'liberado' || att.status === 'aguardando' || att.tripType === 'ida') &&
-        att.status !== 'cancelado' &&
-        att.status !== 'embarcado' &&
+        (isPassengerPending(att.status) || att.tripType === 'ida') &&
+        !isPassengerCancelled(att.status) &&
+        !isPassengerBoarded(att.status) &&
         att.lat &&
         att.lng
       ) {

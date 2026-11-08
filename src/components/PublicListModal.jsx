@@ -1,4 +1,10 @@
 import { Users, Check, X } from 'lucide-react';
+import {
+  getAttendanceStatusPriority,
+  isPassengerBoarded,
+  isPassengerCancelled,
+  ATTENDANCE_STATUS,
+} from '../domain/stateMachines';
 
 /**
  * PublicListModal - Displays passenger checklist for a trip with attendance status and actions.
@@ -16,9 +22,8 @@ export default function PublicListModal({
   const items = Array.isArray(list) ? list : Object.values(list || {});
 
   const sortedList = [...items].sort((a, b) => {
-    const statusOrder = { aguardando: 0, liberado: 0, embarcado: 1, cancelado: 2 };
-    const orderA = statusOrder[a.status] ?? 0;
-    const orderB = statusOrder[b.status] ?? 0;
+    const orderA = getAttendanceStatusPriority(a.status);
+    const orderB = getAttendanceStatusPriority(b.status);
     if (orderA !== orderB) return orderA - orderB;
     return (a.studentName || '').localeCompare(b.studentName || '');
   });
@@ -49,8 +54,8 @@ export default function PublicListModal({
             <p className="text-caption text-center py-8">{emptyMessage}</p>
           ) : (
             sortedList.map((att, idx) => {
-              const isEmbarcado = att.status === 'embarcado';
-              const isCancelado = att.status === 'cancelado';
+              const isEmbarcado = isPassengerBoarded(att.status);
+              const isCancelado = isPassengerCancelled(att.status);
 
               let bgColor = 'bg-subtle border border-subtle hover-bg-subtle';
               let avatarBg = 'bg-gradient-to-br from-orange-500 to-yellow-500 text-black';

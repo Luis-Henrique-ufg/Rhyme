@@ -16,6 +16,13 @@ import {
   StopCircle,
   MapPinOff,
 } from 'lucide-react';
+import {
+  TRIP_STATUS,
+  isTripOpen,
+  isTripActive,
+  isTripFinished,
+  isPassengerPending,
+} from '../domain/stateMachines';
 
 export default function DriverBottomBar({
   trip,
@@ -36,7 +43,7 @@ export default function DriverBottomBar({
   if (!trip) return null;
 
   const pendingCount = Object.values(attendanceMap).filter(
-    (att) => att.status === 'liberado' || att.status === 'aguardando'
+    (att) => isPassengerPending(att.status)
   ).length;
 
   return (
@@ -116,9 +123,9 @@ export default function DriverBottomBar({
         className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex items-center justify-center empty:hidden"
       ></div>
 
-      {trip.status === 'open' && (
+      {isTripOpen(trip.status) && (
         <button
-          onClick={() => updateTripStatus('in_progress')}
+          onClick={() => updateTripStatus(TRIP_STATUS.IN_PROGRESS)}
           disabled={isUpdatingTrip}
           className={`flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors ${
             isUpdatingTrip ? 'opacity-50' : ''
@@ -133,7 +140,7 @@ export default function DriverBottomBar({
         </button>
       )}
 
-      {trip.status === 'in_progress' && (
+      {isTripActive(trip.status) && (
         <button
           onClick={recalculateGlobalRoute}
           disabled={isUpdatingTrip}
@@ -150,7 +157,7 @@ export default function DriverBottomBar({
         </button>
       )}
 
-      {trip.status === 'in_progress' && (
+      {isTripActive(trip.status) && (
         <button
           onClick={handleFinishClick}
           className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-danger transition-colors"
@@ -164,9 +171,9 @@ export default function DriverBottomBar({
         </button>
       )}
 
-      {trip.status === 'finished' && (
+      {isTripFinished(trip.status) && (
         <button
-          onClick={() => updateTripStatus('open')}
+          onClick={() => updateTripStatus(TRIP_STATUS.OPEN)}
           className="flex-1 min-w-0 max-w-[80px] md:max-w-none md:flex-initial flex flex-col items-center justify-center text-body hover:text-primary transition-colors"
         >
           <div className="p-1.5 sm:p-2">
