@@ -7,6 +7,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MapPin, Navigation, X, Check } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import { TILE_DAY, TILE_NIGHT, TILE_ATTR_DAY, TILE_ATTR_NIGHT } from '../utils/mapIcons';
 
 // Ícone de pino customizado para o picker
 const PickerIcon = L.divIcon({
@@ -40,13 +41,18 @@ function MapClickHandler({ onPin }) {
   return null;
 }
 
-// Componente que re-centraliza o mapa suavemente
+// Componente que re-centraliza o mapa suavemente e invalida dimensões
 function MapRecenter({ center }) {
   const map = useMap();
   useEffect(() => {
+    map.invalidateSize();
+    const timer = setTimeout(() => {
+      map.invalidateSize();
+    }, 200);
     if (center) {
       map.flyTo(center, map.getZoom(), { duration: 1 });
     }
+    return () => clearTimeout(timer);
   }, [center, map]);
   return null;
 }
@@ -126,12 +132,8 @@ export default function LocationPickerMap({
             attributionControl={false}
           >
             <TileLayer
-              url={
-                isDark
-                  ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/256/{z}/{x}/{y}@2x?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`
-                  : `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${import.meta.env.VITE_MAPBOX_ACCESS_TOKEN}`
-              }
-              attribution='&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>'
+              url={isDark ? TILE_NIGHT : TILE_DAY}
+              attribution={isDark ? TILE_ATTR_NIGHT : TILE_ATTR_DAY}
               key={isDark ? 'dark' : 'light'}
             />
             <MapClickHandler onPin={setPin} />

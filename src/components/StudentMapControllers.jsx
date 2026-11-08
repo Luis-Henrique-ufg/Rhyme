@@ -15,7 +15,14 @@ import L from 'leaflet';
 export const MapBridge = ({ onReady }) => {
   const map = useMap();
   useEffect(() => {
-    if (map && onReady) onReady(map);
+    if (map) {
+      map.invalidateSize();
+      const timer = setTimeout(() => {
+        map.invalidateSize();
+      }, 200);
+      if (onReady) onReady(map);
+      return () => clearTimeout(timer);
+    }
   }, [map, onReady]);
   return null;
 };

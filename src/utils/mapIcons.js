@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file mapIcons.js
  * @module utils/mapIcons
  * @description Fábrica de ícones customizados do Leaflet para o mapa interativo (ônibus, van,
@@ -9,10 +9,18 @@
 import L from 'leaflet';
 
 export const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
-export const TILE_DAY = `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`;
-export const TILE_NIGHT = `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`;
-export const TILE_ATTR_DAY = '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>';
-export const TILE_ATTR_NIGHT = '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>';
+export const TILE_DAY = MAPBOX_TOKEN
+  ? `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`
+  : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+export const TILE_NIGHT = MAPBOX_TOKEN
+  ? `https://api.mapbox.com/styles/v1/mapbox/navigation-night-v1/tiles/256/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`
+  : 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+export const TILE_ATTR_DAY = MAPBOX_TOKEN
+  ? '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>'
+  : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+export const TILE_ATTR_NIGHT = MAPBOX_TOKEN
+  ? '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a>'
+  : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 /**
  * Ícone do motorista (Van / Ônibus) — estilo Uber, adapta ao horário e estado do sinal de GPS.

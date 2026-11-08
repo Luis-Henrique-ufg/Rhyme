@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file useBusBroadcaster.js
  * @module hooks/useBusBroadcaster
  * @description Hook customizado para gerenciar a transmissão colaborativa da localização da van
@@ -30,7 +30,7 @@ export function useBusBroadcaster({
   user,
   student,
   attendance,
-  gpsState,
+  gpsState = null,
   showAlert,
   setFocusTrigger,
 }) {
@@ -174,15 +174,24 @@ export function useBusBroadcaster({
 
   // Desativa automaticamente a transmissão do aluno caso o motorista assuma o GPS
   useEffect(() => {
-    if (
-      isBroadcasting &&
+    const isDriverSignalActive =
       trip?.locationProviderRole === 'driver' &&
-      (gpsState === 'live' || gpsState === 'stale')
-    ) {
+      Boolean(trip?.busLocation?.lat) &&
+      (!trip?.locationUpdatedAt || Date.now() - trip.locationUpdatedAt < 3 * 60_000);
+
+    if (isBroadcasting && (isDriverSignalActive || gpsState === 'live' || gpsState === 'stale')) {
       stopBroadcasting();
       showAlert?.('O motorista iniciou a transmissão do GPS. A sua transmissão foi desativada.');
     }
-  }, [trip?.locationProviderRole, gpsState, isBroadcasting, stopBroadcasting, showAlert]);
+  }, [
+    trip?.locationProviderRole,
+    trip?.busLocation?.lat,
+    trip?.locationUpdatedAt,
+    gpsState,
+    isBroadcasting,
+    stopBroadcasting,
+    showAlert,
+  ]);
 
   return {
     isBroadcasting,

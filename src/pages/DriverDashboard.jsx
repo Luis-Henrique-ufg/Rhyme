@@ -1,3 +1,12 @@
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { useNavigate, Navigate } from 'react-router-dom';
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  Polyline,
+} from 'react-leaflet';
 import { Navigation, MapPin, X } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -19,7 +28,7 @@ import MapInteractions from '../components/MapInteractions';
 import { playSuccessSound, playBoardingAlarmSound } from '../utils/audioEffects';
 import { useCustomAlert } from '../contexts/AlertContext';
 import { MOCK_FACULTIES, CENTER, getDistanceFromLatLonInKm } from '../services/geoService';
-import { RecenterButton, ZoomTracker } from '../components/StudentMapControllers';
+import { RecenterButton, ZoomTracker, MapBridge } from '../components/StudentMapControllers';
 import {
   MAPBOX_TOKEN,
   TILE_DAY,
@@ -76,6 +85,10 @@ export default function DriverDashboard() {
   const [isLegendOpen, setIsLegendOpen] = useState(false);
   const [arrivedAtStudent, setArrivedAtStudent] = useState(false); // toast de chegada ao aluno
 
+  // --- Data Adapter hooks (deep modules) ---
+  const { trip, tripId, error: tripError } = useCurrentTrip(driver?.route?.trim());
+  const { attendanceMap, error: attendanceError } = useDriverAttendanceMap(tripId);
+
   // GPS Telemetry & Screen Wake Lock via custom hook
   const { gpsStatus, gpsAccuracy, lastGpsUpdate } = useDriverTelemetry({
     trip,
@@ -93,10 +106,6 @@ export default function DriverDashboard() {
   const [boardingCallSecondsLeft, setBoardingCallSecondsLeft] = useState(0);
   const [showDurationPicker, setShowDurationPicker] = useState(false);
   const boardingCallIntervalRef = useRef(null);
-
-  // --- Data Adapter hooks (deep modules) ---
-  const { trip, tripId, error: tripError } = useCurrentTrip(driver?.route?.trim());
-  const { attendanceMap, error: attendanceError } = useDriverAttendanceMap(tripId);
 
   // Listener do perfil do motorista (redireciona se aluno ou não cadastrado)
   useEffect(() => {
@@ -657,6 +666,7 @@ export default function DriverDashboard() {
             rotate={true}
             touchRotate={true}
           >
+            <MapBridge />
             <MapInteractions />
             <ZoomTracker onZoomChange={setMapZoom} />
             <TileLayer

@@ -151,29 +151,6 @@ export default function StudentMap() {
   const [isPublicListOpen, setIsPublicListOpen] = useState(false);
   const simulationInterval = useRef(null);
 
-  // --- 1. Alerta de Descida / Acorda Aluno ---
-  const {
-    wakeUpSettings,
-    setWakeUpSettings,
-    isWakeUpSettingsOpen,
-    setIsWakeUpSettingsOpen,
-    isWakeUpAlarmModalOpen,
-    setIsWakeUpAlarmModalOpen,
-    setWakeUpAlarmTriggered,
-    currentDistanceToStop,
-    isSettingDropOffLocation,
-    setIsSettingDropOffLocation,
-    handleSaveWakeUpSettings,
-    handleSetStopLocation,
-  } = useWakeUpAlarm({
-    student,
-    attendance,
-    trip,
-    isBroadcasting,
-    broadcastingLocation,
-    user,
-    showAlert,
-  });
 
   // --- 2. Modo Campus Pedestre ---
   const [isCampusModeActive, setIsCampusModeActive] = useState(false);
@@ -403,7 +380,6 @@ export default function StudentMap() {
       user,
       student,
       attendance,
-      gpsState,
       showAlert,
       setFocusTrigger,
     });
@@ -456,6 +432,30 @@ export default function StudentMap() {
     if (minutes < 60) return `HÁ ${minutes}min`;
     return `HÁ ${Math.floor(minutes / 60)}h`;
   }, [gpsState, trip?.locationUpdatedAt, now]);
+
+  // --- Alerta de Descida / Acorda Aluno ---
+  const {
+    wakeUpSettings,
+    setWakeUpSettings,
+    isWakeUpSettingsOpen,
+    setIsWakeUpSettingsOpen,
+    isWakeUpAlarmModalOpen,
+    setIsWakeUpAlarmModalOpen,
+    setWakeUpAlarmTriggered,
+    currentDistanceToStop,
+    isSettingDropOffLocation,
+    setIsSettingDropOffLocation,
+    handleSaveWakeUpSettings,
+    handleSetStopLocation,
+  } = useWakeUpAlarm({
+    student,
+    attendance,
+    trip,
+    isBroadcasting,
+    broadcastingLocation,
+    user,
+    showAlert,
+  });
 
   // --- Prioridade Motorista > Aluno ---
   // O motorista está ativo (live ou stale): aluno não deve transmitir
