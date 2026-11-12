@@ -774,9 +774,12 @@ export default function DriverDashboard() {
                   let displayName = firstName;
                   if (isSoIda) {
                     displayName = `${firstName} (Só Ida)`;
-                  } else if (totalStudents > 1) {
-                    displayName = `${firstName} +${totalStudents - 1}`;
                   }
+
+                  const isAtFaculty = Object.values(MOCK_FACULTIES).some(
+                    ([fLat, fLng]) =>
+                      getDistanceFromLatLonInKm(cluster.lat, cluster.lng, fLat, fLng) < 0.05
+                  );
 
                   const icon = createDriverStudentIcon(
                     displayName,
@@ -785,7 +788,8 @@ export default function DriverDashboard() {
                     hasComing ? 'coming' : null,
                     totalStudents,
                     isDark,
-                    isNextStop
+                    isNextStop,
+                    isAtFaculty
                   );
 
                   return (
@@ -877,12 +881,17 @@ export default function DriverDashboard() {
                   const primaryFaculty = cluster.students[0]?.faculty || '';
                   const liberados = cluster.students.filter((s) => s.status === 'liberado').length;
                   const total = totalStudents;
+                  const isAtFaculty = Object.values(MOCK_FACULTIES).some(
+                    ([fLat, fLng]) =>
+                      getDistanceFromLatLonInKm(cluster.lat, cluster.lng, fLat, fLng) < 0.05
+                  );
                   const icon = createCustomIcon(
                     liberados,
                     total,
                     primaryFaculty,
                     isCrominia,
-                    isDark
+                    isDark,
+                    isAtFaculty
                   );
                   return (
                     <Marker

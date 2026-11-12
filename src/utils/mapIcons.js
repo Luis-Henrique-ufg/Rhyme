@@ -635,7 +635,14 @@ export const createSearchedPlaceIcon = (name) => {
 /**
  * Cria cluster marker estilo Uber: círculo com contagem e label acima
  */
-export const createCustomIcon = (liberados, total, label, isCrominia, isDark = true) => {
+export const createCustomIcon = (
+  liberados,
+  total,
+  label,
+  isCrominia,
+  isDark = true,
+  isAtFaculty = false
+) => {
   const isComplete = total === undefined ? false : liberados === total && total > 0;
   const accentColor = isCrominia ? (isDark ? '#27272a' : '#475569') : '#f97316';
   const badgeColor = isComplete ? '#16a34a' : accentColor;
@@ -694,7 +701,7 @@ export const createCustomIcon = (liberados, total, label, isCrominia, isDark = t
     `,
     className: 'custom-leaflet-icon',
     iconSize: [40, label ? 66 : 40],
-    iconAnchor: [20, label ? 66 : 40],
+    iconAnchor: isAtFaculty ? [48, label ? 66 : 40] : [20, label ? 66 : 40],
   });
 };
 
@@ -708,7 +715,8 @@ export const createDriverStudentIcon = (
   response = null,
   totalInCluster = 1,
   isDark = true,
-  isNextStop = false
+  isNextStop = false,
+  isAtFaculty = false
 ) => {
   const night = isDark;
   const isComing = response === 'coming';
@@ -855,7 +863,7 @@ export const createDriverStudentIcon = (
     `,
     className: 'bg-transparent border-none',
     iconSize: [28, name ? 50 : 28],
-    iconAnchor: [14, name ? 36 : 14],
+    iconAnchor: isAtFaculty ? [40, name ? 36 : 14] : [14, name ? 36 : 14],
   });
 };
 
