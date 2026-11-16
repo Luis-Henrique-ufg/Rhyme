@@ -1,0 +1,32 @@
+@startuml Diagrama_Componentes_Rhyme
+
+title Diagrama de Componentes - Arquitetura do PWA Rhyme
+
+package "Cliente PWA (Browser / Mobile Device)" {
+    [React 19 Core App] as UI
+    [Leaflet Map Engine] as Leaflet
+    [Geolocation Controller] as GeoCtrl
+    [Service Worker (Offline e PWA)] as SW
+    
+    UI --> Leaflet : Renderiza mapa interativo
+    UI --> GeoCtrl : Solicita coordenadas do GPS
+    UI --> SW : Cache de assets e funcionamento offline
+}
+
+package "APIs e Serviços Externos" {
+    [Mapbox API (Tiles Free Tier)] as Mapbox
+    Leaflet --> Mapbox : Requisições HTTPS (Vector/Raster Tiles)
+}
+
+package "Backend e Cloud Services (Firebase Services)" {
+    [Firebase Authentication] as Auth
+    [Cloud Firestore (Real-time DB)] as Firestore
+    [Firebase Cloud Messaging] as FCM
+}
+
+UI ..> Auth : HTTPS / Auth Tokens (Login Aluno/Motorista)
+UI ..> Firestore : WebSockets / Realtime Listeners (onSnapshot)
+GeoCtrl ..> Firestore : Transmissão de GPS e Status
+SW ..> FCM : Recebe Push Notifications de Geofence
+
+@enduml

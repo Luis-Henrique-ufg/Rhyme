@@ -1,0 +1,52 @@
+@startuml Diagrama_Sequencia_Rhyme
+
+title Diagrama de Sequência - Atualização de Status e Rastreamento GPS em Tempo Real
+
+actor "Estudante" as E
+participant "PWA Rhyme\n(Interface Aluno)" as AppA
+participant "API Geolocation\n(Navegador)" as GPS
+database "Firebase Firestore\n(Realtime DB)" as DB
+participant "PWA Rhyme\n(Interface Motorista)" as AppM
+actor "Motorista" as M
+
+autonumber
+
+== Alteração de Status pelo Estudante (One-Touch) ==
+E -> AppA: Clica em "Liberado da Aula"
+activate AppA
+
+note over AppA: Em conformidade com a LGPD, o PWA não coleta\ncoordenadas privadas do estudante; apenas o estado\noperacional vinculado ao campus cadastrado.
+
+AppA -> DB: updateDoc("trips/{tripId}/students/{id}", { status: "released", updatedAt: timestamp })
+activate DB
+DB --> AppA: Confirmação de escrita OK
+deactivate DB
+
+AppA --> E: Exibe confirmação visual no app (Status "Liberado")
+deactivate AppA
+
+== Sincronização em Tempo Real (Push Event) ==
+DB -> AppM: onSnapshot() - Notificação de alteração
+activate AppM
+
+AppM -> AppM: Recalcula contagem de alunos liberados por faculdade
+AppM -> AppM: Atualiza marcadores Leaflet no Mapa do Motorista
+
+AppM --> M: Notificação sonora/visual + Atualização do Mapa
+deactivate AppM
+
+== Transmissão de GPS a Bordo (Broadcast Mode) ==
+group Transmissão Contínua a Bordo [Estudante no Ônibus]
+    E -> AppA: Ativa modo "Transmitir GPS da Van"
+    activate AppA
+    loop Cada 5 segundos
+        AppA -> GPS: watchPosition()
+        GPS --> AppA: Localização GPS em movimento
+        AppA -> DB: setDoc("bus_location/active", { lat, lng, speed, heading, updatedAt })
+        DB -> AppM: Broadcast em tempo real
+        AppM -> AppM: Atualiza posição do Ônibus no Mapa Leaflet
+    end
+    deactivate AppA
+end
+
+@enduml

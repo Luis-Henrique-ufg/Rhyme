@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="1972px" preserveAspectRatio="none" style="width:1681px;height:1972px;" version="1.1" viewBox="0 0 1681 1972" width="1681px" zoomAndPan="magnify"><defs><filter height="300%" id="f8g0vax0uwgnm" width="300%" x="-1" y="-1"><feGaussianBlur result="blurOut" stdDeviation="2.0"/><feColorMatrix in="blurOut" result="blurOut2" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"/><feOffset dx="4.0" dy="4.0" in="blurOut2" result="blurOut3"/><feBlend in="SourceGraphic" in2="blurOut3" mode="normal"/></filter></defs><g><text fill="#000000" font-family="sans-serif" font-size="18" lengthAdjust="spacing" textLength="418" x="625" y="18.6855">Diagrama de Casos de Uso - Sistema Rhyme (PWA)</text><!--MD5=[7db8a0fd1624512dfb89d79c052e44e4]
+cluster Sistema Rhyme (PWA)--><rect fill="#FFFFFF" filter="url(#f8g0vax0uwgnm)" height="1058" style="stroke:#000000;stroke-width:1.5;" width="1049" x="252" y="224.0306"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="151" x="701" y="240.5638">Sistema Rhyme (PWA)</text><!--MD5=[f79349506ca7431c2d98d5d7c5afec75]
+cluster Autenticação e Perfil--><polygon fill="#FFFFFF" filter="url(#f8g0vax0uwgnm)" points="304.5,798.0306,455.5,798.0306,462.5,821.64,643.5,821.64,643.5,1009.0306,304.5,1009.0306,304.5,798.0306" style="stroke:#000000;stroke-width:1.5;"/><line style="stroke:#000000;stroke-width:1.5;" x1="304.5" x2="462.5" y1="821.64" y2="821.64"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="145" x="308.5" y="814.5638">Autenticação e Perfil</text><!--MD5=[5366d9fd3399c58b41e34a40c9de78ab]
+cluster Gestão de Presença e Status--><polygon fill="#FFFFFF" filter="url(#f8g0vax0uwgnm)" points="297.5,1033.0306,506.5,1033.0306,513.5,1056.64,650.5,1056.64,650.5,1258.0306,297.5,1258.0306,297.5,1033.0306" style="stroke:#000000;stroke-width:1.5;"/><line style="stroke:#000000;stroke-width:1.5;" x1="297.5" x2="513.5" y1="1056.64" y2="1056.64"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="203" x="301.5" y="1049.5638">Gestão de Presença e Status</text><!--MD5=[005c27adae4af0dad23d1ce36e57358c]
+cluster Rastreamento Cartográfico e Notificações--><polygon fill="#FFFFFF" filter="url(#f8g0vax0uwgnm)" points="276,422.0306,575,422.0306,582,445.64,1269,445.64,1269,774.0306,276,774.0306,276,422.0306" style="stroke:#000000;stroke-width:1.5;"/><line style="stroke:#000000;stroke-width:1.5;" x1="276" x2="582" y1="445.64" y2="445.64"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="293" x="280" y="438.5638">Rastreamento Cartográfico e Notificações</text><!--MD5=[e845921eab08fc4ff90da829a38535ab]
+cluster Painel Veicular e Protocolo de Segurança--><polygon fill="#FFFFFF" filter="url(#f8g0vax0uwgnm)" points="286.5,268.0306,582.5,268.0306,589.5,291.64,1277,291.64,1277,398.0306,286.5,398.0306,286.5,268.0306" style="stroke:#000000;stroke-width:1.5;"/><line style="stroke:#000000;stroke-width:1.5;" x1="286.5" x2="589.5" y1="291.64" y2="291.64"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="290" x="290.5" y="284.5638">Painel Veicular e Protocolo de Segurança</text><ellipse cx="473.7692" cy="862.7845" fill="#FEFECE" filter="url(#f8g0vax0uwgnm)" rx="129.2692" ry="28.2538" style="stroke:#A80036;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="167" x="387.2692" y="858.4964">UC01 - Autenticar no PWA</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="45" x="448.2692" y="876.1058">(RF01)</text><ellipse cx="473.9575" cy="960.1221" fill="#FEFECE" filter="url(#f8g0vax0uwgnm)" rx="153.4575" ry="33.0915" style="stroke:#A80036;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="232" x="357.311" y="955.2251">UC02 - Selecionar Rota e Faculdade</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="45" x="450.811" y="972.8345">(RF02)</text><ellipse cx="473.7707" cy="1208.1848" fill="#FEFECE" filter="url(#f8g0vax0uwgnm)" rx="158.7707" ry="34.1541" style="stroke:#A80036;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="220" x="363.7707" y="1203.1086">UC03 - Informar Status One-Touch</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="245" x="351.2707" y="1220.718">(Em sala / Liberado / No ponto - RF03)</text><ellipse cx="473.9246" cy="1104.0155" fill="#FEFECE" filter="url(#f8g0vax0uwgnm)" rx="160.4246" ry="34.4849" style="stroke:#A80036;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="249" x="349.4246" y="1098.9394">UC10 - Confirmar Embarque no Veículo</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="217" x="365.4246" y="1116.5487">(Transição para 'boarded' - RF03)</text><ellipse cx="1077.6398" cy="497.0586" fill="#FEFECE" filter="url(#f8g0vax0uwgnm)" rx="175.6398" ry="37.528" style="stroke:#A80036;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="285" x="935.1398" y="491.9824">UC04 - Visualizar Ônibus e Paradas no Mapa</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="190" x="982.6398" y="509.5918">(Telemetria e Mapbox - RF04)</text><ellipse cx="474.227" cy="609.076" fill="#FEFECE" filter="url(#f8g0vax0uwgnm)" rx="178.227" ry="38.0454" style="stroke:#A80036;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="291" x="328.727" y="603.9999">UC05 - Transmitir Localização GPS do Ônibus</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="248" x="350.227" y="621.6092">(Motorista / Passageiro Âncora - RF05)</text><ellipse cx="474.1319" cy="496.857" fill="#FEFECE" filter="url(#f8g0vax0uwgnm)" rx="182.1319" ry="38.8264" style="stroke:#A80036;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="300" x="324.1319" y="491.7808">UC07 - Consultar Estimativa de Chegada (ETA)</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="172" x="388.1319" y="509.3902">(Cálculo Haversine - RF08)</text><ellipse cx="473.7804" cy="719.8867" fill="#FEFECE" filter="url(#f8g0vax0uwgnm)" rx="174.7804" ry="37.3561" style="stroke:#A80036;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="283" x="332.2804" y="714.8105">UC08 - Receber Alertas Push de Geofencing</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="141" x="403.2804" y="732.4199">(Raio de 1 km - RF09)</text><ellipse cx="1077.4397" cy="343.1186" fill="#FEFECE" filter="url(#f8g0vax0uwgnm)" rx="183.4397" ry="39.0879" style="stroke:#A80036;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="303" x="925.9397" y="338.0424">UC06 - Monitorar Contadores e Alertas Sonoros</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="179" x="987.9397" y="355.6518">(Painel do Motorista - RF06)</text><ellipse cx="473.8583" cy="345.2023" fill="#FEFECE" filter="url(#f8g0vax0uwgnm)" rx="171.3583" ry="36.6717" style="stroke:#A80036;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="275" x="336.3583" y="340.1261">UC09 - Acionar Emergência 'Fui Esquecido'</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="270" x="338.8583" y="357.7355">(Sinalização Audiovisual Prioritária - RF10)</text><!--MD5=[23f93e0cdbac79b764b6b1e80a89cb93]
+entity aluno--><ellipse cx="38" cy="736.0306" fill="#FEFECE" filter="url(#f8g0vax0uwgnm)" rx="8" ry="8" style="stroke:#A80036;stroke-width:1.5;"/><path d="M38,744.0306 L38,771.0306 M25,752.0306 L51,752.0306 M38,771.0306 L25,786.0306 M38,771.0306 L51,786.0306 " fill="none" filter="url(#f8g0vax0uwgnm)" style="stroke:#A80036;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="64" x="6" y="806.0638">Estudante</text><!--MD5=[ebac6f7c3cc5ba1b81c2ff678684a57e]
+entity motorista--><ellipse cx="38" cy="431.0306" fill="#FEFECE" filter="url(#f8g0vax0uwgnm)" rx="8" ry="8" style="stroke:#A80036;stroke-width:1.5;"/><path d="M38,439.0306 L38,466.0306 M25,447.0306 L51,447.0306 M38,466.0306 L25,481.0306 M38,466.0306 L51,481.0306 " fill="none" filter="url(#f8g0vax0uwgnm)" style="stroke:#A80036;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="58" x="9" y="501.0638">Motorista</text><!--MD5=[f11baee3137158b194bdaee9ece3526d]
+entity gps--><ellipse cx="1077.5" cy="1325.14" fill="#FEFECE" filter="url(#f8g0vax0uwgnm)" rx="8" ry="8" style="stroke:#A80036;stroke-width:1.5;"/><path d="M1077.5,1333.14 L1077.5,1360.14 M1064.5,1341.14 L1090.5,1341.14 M1077.5,1360.14 L1064.5,1375.14 M1077.5,1360.14 L1090.5,1375.14 " fill="none" filter="url(#f8g0vax0uwgnm)" style="stroke:#A80036;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="100" x="982.5" y="1395.1732">Serviço de GPS</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="190" x="982.5" y="1412.7826">(Dispositivo Veicular / Âncora)</text><text fill="#000000" font-family="sans-serif" font-size="14" font-style="italic" lengthAdjust="spacing" textLength="62" x="1046.5" y="1312.5638">«System»</text><!--MD5=[c2655ce3bf1e7fc41951504c61ef49ec]
+entity firebase--><ellipse cx="1612" cy="1558.14" fill="#FEFECE" filter="url(#f8g0vax0uwgnm)" rx="8" ry="8" style="stroke:#A80036;stroke-width:1.5;"/><path d="M1612,1566.14 L1612,1593.14 M1599,1574.14 L1625,1574.14 M1612,1593.14 L1599,1608.14 M1612,1593.14 L1625,1608.14 " fill="none" filter="url(#f8g0vax0uwgnm)" style="stroke:#A80036;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="117" x="1550" y="1628.1732">Firebase Firestore</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="124" x="1550" y="1645.7826">(Backend Realtime)</text><text fill="#000000" font-family="sans-serif" font-size="14" font-style="italic" lengthAdjust="spacing" textLength="62" x="1581" y="1545.5638">«System»</text><!--MD5=[a9008c4e3c30f4f07653190875e02854]
+entity fcm--><ellipse cx="1077.5" cy="1566.14" fill="#FEFECE" filter="url(#f8g0vax0uwgnm)" rx="8" ry="8" style="stroke:#A80036;stroke-width:1.5;"/><path d="M1077.5,1574.14 L1077.5,1601.14 M1064.5,1582.14 L1090.5,1582.14 M1077.5,1601.14 L1064.5,1616.14 M1077.5,1601.14 L1090.5,1616.14 " fill="none" filter="url(#f8g0vax0uwgnm)" style="stroke:#A80036;stroke-width:1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="169" x="993" y="1636.1732">Firebase Cloud Messaging</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="76" x="993" y="1653.7826">(FCM Push)</text><text fill="#000000" font-family="sans-serif" font-size="14" font-style="italic" lengthAdjust="spacing" textLength="62" x="1046.5" y="1553.5638">«System»</text><!--MD5=[25cb751d2670ab2e7fb1c40ac39b2780]
+link aluno to UC01--><path d="M70.21,774.8706 C133.38,788.6906 278.66,820.4906 376.35,841.8806 " fill="none" id="aluno-to-UC01" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="381.25,842.9506,373.2995,837.1378,376.3631,841.8932,371.6076,844.9568,381.25,842.9506" style="stroke:#A80036;stroke-width:1.0;"/><!--MD5=[b04e3384574cd670c846a1b5b3d0ce51]
+link aluno to UC02--><path d="M70.08,794.7406 C79.5,802.5006 90.01,810.8206 100,818.0306 C161.39,862.3406 174.02,880.1606 244,909.0306 C275.58,922.0706 311.05,932.0306 344.47,939.5406 " fill="none" id="aluno-to-UC02" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="349.38,940.6406,341.462,934.7835,344.4991,939.556,339.7266,942.593,349.38,940.6406" style="stroke:#A80036;stroke-width:1.0;"/><!--MD5=[d45cef1c583f4652f7cde8c3f7e14b52]
+link aluno to UC03--><path d="M41.17,809.9206 C45.61,863.6506 59.08,958.1206 100,1027.0306 C143.87,1100.9206 167.66,1116.5906 244,1156.0306 C271.93,1170.4706 303.82,1180.9206 334.74,1188.4906 " fill="none" id="aluno-to-UC03" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="339.7,1189.6806,331.8887,1183.682,334.8394,1188.5084,330.013,1191.459,339.7,1189.6806" style="stroke:#A80036;stroke-width:1.0;"/><!--MD5=[5e113a1052bb1d4da26dc6a48cf53aa7]
+link aluno to UC04--><path d="M44.25,726.3706 C57.85,618.9806 93.63,340.5406 100,333.0306 C143.38,281.9106 177.72,298.1506 244,288.0306 C380.2,267.2506 754.51,204.4006 864,288.0306 C904.27,318.7906 862.53,358.3206 894,398.0306 C916.29,426.1806 948.87,447.4006 980.34,462.8406 " fill="none" id="aluno-to-UC04" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="984.98,465.0806,978.6127,457.5668,980.4769,462.9077,975.136,464.7718,984.98,465.0806" style="stroke:#A80036;stroke-width:1.0;"/><!--MD5=[48cf2f42c954dcc1873da2066d9e2a1b]
+link aluno to UC05--><path d="M70.31,749.4906 C109.68,726.8406 179.9,688.6306 244,665.0306 C274.26,653.9006 307.58,644.3106 339.22,636.3706 " fill="none" id="aluno-to-UC05" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="344.28,635.1106,334.5833,633.386,339.4259,636.3099,336.5021,641.1525,344.28,635.1106" style="stroke:#A80036;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="134" x="101" y="650.5257">(Quando assume papel</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="128" x="104" y="666.8773">de passageiro âncora)</text><!--MD5=[f25b9afafd1dab004c0db5ba00f31bb4]
+link aluno to UC07--><path d="M43.27,726.5106 C50.74,662.7306 68.5,545.2806 100,519.0306 C129.56,494.4006 211.84,487.8706 291.62,487.9606 " fill="none" id="aluno-to-UC07" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="296.87,487.9806,287.8815,483.9549,291.87,487.9663,287.8586,491.9549,296.87,487.9806" style="stroke:#A80036;stroke-width:1.0;"/><!--MD5=[7f54a1acc32f0590d2fda2b12c88e69f]
+link aluno to UC08--><path d="M70.21,764.5806 C120.76,758.9906 223.89,747.5906 313.14,737.7206 " fill="none" id="aluno-to-UC08" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="318.18,737.1606,308.7905,734.1879,313.2111,737.7175,309.6815,742.1381,318.18,737.1606" style="stroke:#A80036;stroke-width:1.0;"/><!--MD5=[86c6a5bec864c372e1a30a8b41e50e66]
+link aluno to UC09--><path d="M42.8,726.5206 C50.08,655.6806 68.16,515.5606 100,479.0306 C118.5,457.8106 265.78,408.9606 369.63,376.4806 " fill="none" id="aluno-to-UC09" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="374.54,374.9506,364.7547,373.8339,369.7701,376.4501,367.1539,381.4656,374.54,374.9506" style="stroke:#A80036;stroke-width:1.0;"/><!--MD5=[e8a497e9d0a795dbe7d89e1366fb5917]
+link aluno to UC10--><path d="M49.23,809.6006 C58.51,840.8906 74.68,883.4606 100,914.0306 C168.86,997.1806 283.39,1047.8006 367.4,1075.6506 " fill="none" id="aluno-to-UC10" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="372.39,1077.2906,365.1048,1070.663,367.6437,1075.7181,362.5887,1078.257,372.39,1077.2906" style="stroke:#A80036;stroke-width:1.0;"/><!--MD5=[14d2da5bec896fbaf5886a39c1492680]
+link motorista to UC01--><path d="M59.73,504.6406 C70.09,522.5706 83.87,542.8606 100,558.0306 C150.44,605.4806 199.27,575.3406 236,634.0306 C252.53,660.4506 225.68,748.8306 244,774.0306 C271.41,811.7406 317.15,833.4706 360.58,846.0006 " fill="none" id="motorista-to-UC01" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="365.59,847.4106,358.0129,841.1188,360.7776,846.054,355.8423,848.8187,365.59,847.4106" style="stroke:#A80036;stroke-width:1.0;"/><!--MD5=[a0edbc0d338a3b174f555c32b1dd95a5]
+link motorista to UC04--><path d="M42.82,421.3506 C49.76,356.0006 66.9,234.1506 100,208.0306 C233.29,102.8706 734.93,97.7406 864,208.0306 C928.99,263.5706 844.66,328.2206 894,398.0306 C914.32,426.7906 945.71,448.0206 976.76,463.2806 " fill="none" id="motorista-to-UC04" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="981.34,465.4806,974.9634,457.9747,976.8342,463.3133,971.4956,465.184,981.34,465.4806" style="stroke:#A80036;stroke-width:1.0;"/><!--MD5=[55e68e9645163fde4240667ab95392f8]
+link motorista to UC05--><path d="M67.23,477.3106 C106.2,496.5806 179.03,531.0106 244,553.0306 C275.18,563.6006 309.38,573.0606 341.62,581.0606 " fill="none" id="motorista-to-UC05" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="346.78,582.3306,339.0021,576.2888,341.9259,581.1314,337.0833,584.0552,346.78,582.3306" style="stroke:#A80036;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="125" x="105.5" y="474.5257">(Transmissor primário</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="109" x="113.5" y="490.8773">conectado ao 12V)</text><!--MD5=[afc50401297a1fe0e29b9e261ef5521c]
+link motorista to UC06--><path d="M41.95,421.2506 C48.09,346.3306 64.68,193.3706 100,155.0306 C145.09,106.1006 178.1,123.2306 244,114.0306 C517.37,75.8806 616.11,28.6406 864,150.0306 C937.64,186.1006 1004.4,255.5306 1042.71,300.5406 " fill="none" id="motorista-to-UC06" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="1046.1,304.5506,1043.3385,295.0968,1042.8696,300.7342,1037.2323,300.2654,1046.1,304.5506" style="stroke:#A80036;stroke-width:1.0;"/><!--MD5=[6b9677af128b0c2191866bb6cf2a77c9]
+link motorista to UC09--><path d="M67.29,436.8206 C77.03,429.0506 88.42,421.2406 100,416.0306 C165.34,386.6806 242.42,369.4506 309.5,359.3406 " fill="none" id="motorista-to-UC09" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="314.72,358.5706,305.2329,355.9258,309.7734,359.2997,306.3995,363.8403,314.72,358.5706" style="stroke:#A80036;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="134" x="101" y="355.5257">(Recebe alarme sonoro</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="100" x="118" y="371.8773">e visual contínuo)</text><!--MD5=[786bb6cecdf3bc1b5e7d6aec9d9d2fe3]
+link motorista to UC10--><path d="M43.77,504.8906 C50.23,542.7406 65.28,597.5306 100,631.0306 C145.71,675.1506 198.01,624.1106 236,675.0306 C258.2,704.7906 223.02,978.4106 244,1009.0306 C267.91,1043.9206 307.2,1066.0206 346.54,1080.0106 " fill="none" id="motorista-to-UC10" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="351.34,1081.6806,344.1576,1074.9417,346.6185,1080.0352,341.525,1082.4962,351.34,1081.6806" style="stroke:#A80036;stroke-width:1.0;"/><!--MD5=[b5d08c929880476e35e12f65f7030759]
+link UC03 to UC04--><path d="M598.29,1186.5406 C619.67,1179.1806 640.72,1169.3006 658.5,1156.0306 C884.79,987.2606 1019.62,656.6606 1061.97,539.4706 " fill="none" id="UC03-to-UC04" style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#A80036" points="1063.68,534.7206,1056.8573,541.8235,1061.9793,539.4225,1064.3803,544.5446,1063.68,534.7206" style="stroke:#A80036;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="53" x="748.5" y="936.5257">«extend»</text><!--MD5=[6544311199e75e0a086c7f3798ec1673]
+link UC07 to UC04--><path d="M656.29,497.0306 C732.29,497.0306 820.45,497.0306 896.34,497.0306 " fill="none" id="UC07-to-UC04" style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#A80036" points="901.78,497.0306,892.78,493.0306,896.78,497.0306,892.78,501.0306,901.78,497.0306" style="stroke:#A80036;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="55" x="747.5" y="493.5257">«include»</text><!--MD5=[f4d8c302ccbb8355127f7fc5d894ef46]
+link UC09 to UC06--><path d="M645.76,344.4706 C721.63,344.2106 811.17,343.9206 888.91,343.6606 " fill="none" id="UC09-to-UC06" style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#A80036" points="894.01,343.6406,884.9986,339.6664,889.01,343.6549,885.0215,347.6663,894.01,343.6406" style="stroke:#A80036;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="55" x="747.5" y="340.5257">«include»</text><!--MD5=[f75a197001080d4c92c9d9fb4a440f40]
+link UC01 to firebase--><path d="M598.6,871.2706 C621.67,878.5306 643.28,890.3006 658.5,909.0306 C707.51,969.3606 641.4,1544.3706 686,1608.0306 C877.49,1881.3806 1367.5,1699.1406 1545.3,1620.8006 " fill="none" id="UC01-to-firebase" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="1549.95,1618.7406,1540.1011,1618.7349,1545.3798,1620.7687,1543.346,1626.0473,1549.95,1618.7406" style="stroke:#A80036;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="119" x="1018" y="1704.5257">Autenticação segura</text><!--MD5=[d5811f087670c5a4d4e98839703fff0b]
+link UC03 to firebase--><path d="M475.35,1242.2606 C478.43,1347.5206 503.07,1668.7806 686,1824.0306 C827.3,1943.9606 1376.14,1940.8806 1520,1824.0306 C1571.3,1782.3706 1593.75,1707.9906 1603.53,1654.2506 " fill="none" id="UC03-to-firebase" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="1604.44,1649.1106,1598.9341,1657.2767,1603.5694,1654.0343,1606.8119,1658.6696,1604.44,1649.1106" style="stroke:#A80036;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="158" x="998.5" y="1894.5257">Atualiza status ("released")</text><!--MD5=[7f23dbd12f74725a945885dd5bb42fdc]
+link UC05 to gps--><path d="M616.2,632.0106 C632.49,640.0606 647.26,650.7806 658.5,665.0306 C720.94,744.2306 634.05,1031.5906 686,1118.0306 C750.76,1225.8006 884.56,1291.6306 977.37,1326.2106 " fill="none" id="UC05-to-gps" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="982.32,1328.0406,975.2606,1321.1729,977.629,1326.3101,972.4918,1328.6785,982.32,1328.0406" style="stroke:#A80036;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="176" x="687" y="1114.5257">Coleta coordenadas do veículo</text><!--MD5=[25dfa20171d6160ea89674365ebfe960]
+link UC05 to firebase--><path d="M616.41,631.8406 C632.67,639.9206 647.38,650.6906 658.5,665.0306 C700.42,719.0906 655.49,1218.8106 686,1280.0306 C739.5,1387.4006 784.91,1402.1306 894,1452.0306 C1064.1,1529.8406 1125.47,1485.9206 1309,1522.0306 C1390.55,1538.0806 1483.79,1559.5606 1544.82,1574.0506 " fill="none" id="UC05-to-firebase" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="1549.9,1575.2506,1542.0681,1569.279,1545.0354,1574.0951,1540.2192,1577.0624,1549.9,1575.2506" style="stroke:#A80036;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="132" x="1011.5" y="1448.5257">Grava em bus_location</text><!--MD5=[e37ab7d4e9d6d6dcc61e76676a44b7cb]
+reverse link UC06 to firebase--><path d="M1201.69,374.4806 C1240.29,389.5106 1280.26,411.1906 1309,442.0306 C1503.42,650.6906 1449.25,771.7606 1520,1048.0306 C1564.26,1220.8806 1592.42,1430.4106 1604.38,1530.8106 " fill="none" id="UC06-backto-firebase" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="1196.99,372.6806,1203.9685,379.6305,1201.6604,374.4659,1206.825,372.1579,1196.99,372.6806" style="stroke:#A80036;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="201" x="1318" y="451.5257">Sincroniza listeners em tempo real</text><!--MD5=[66840ad693ae13bb13572fb537a5fcfd]
+reverse link UC08 to fcm--><path d="M579.52,752.9206 C610.11,767.8306 640.22,788.8706 658.5,818.0306 C699.55,883.5206 636.33,1453.8306 686,1513.0306 C759.91,1601.1406 901.81,1610.7906 992.68,1606.6406 " fill="none" id="UC08-backto-fcm" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="575.01,750.7706,581.4059,758.2601,579.5214,752.9264,584.8551,751.0419,575.01,750.7706" style="stroke:#A80036;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="150" x="700" y="1509.5257">Entrega push notifications</text><!--MD5=[68f2d5d4676cfb80f20a9fce65eced5a]
+link UC09 to firebase--><path d="M573.93,374.8406 C606.35,389.7106 639.02,411.2906 658.5,442.0306 C694.81,499.3506 642.98,999.5706 686,1052.0306 C737.67,1115.0506 786.57,1070.6206 864,1096.0306 C1067.34,1162.7906 1131.79,1160.0306 1309,1280.0306 C1411.78,1349.6406 1507.68,1458.5106 1562.77,1526.9806 " fill="none" id="UC09-to-firebase" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="1566.01,1531.0306,1563.4985,1521.5074,1562.8813,1527.1305,1557.2582,1526.5133,1566.01,1531.0306" style="stroke:#A80036;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="169" x="993" y="1103.5257">Grava alerta em emergencies</text><!--MD5=[1a4c9a581e4a1257e3034652db5c81b8]
+link UC10 to firebase--><path d="M612.17,1121.8406 C630.06,1129.7206 646.35,1140.7306 658.5,1156.0306 C698.62,1206.5606 643.18,1687.7806 686,1736.0306 C809,1874.6706 1365.89,1838.9806 1520,1736.0306 C1549.47,1716.3506 1571.17,1683.5506 1585.97,1654.0206 " fill="none" id="UC10-to-firebase" style="stroke:#A80036;stroke-width:1.0;"/><polygon fill="#A80036" points="1588.29,1649.3106,1580.7195,1655.6104,1586.0768,1653.7941,1587.8931,1659.1515,1588.29,1649.3106" style="stroke:#A80036;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="167" x="994" y="1801.5257">Registra presença na viagem</text><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="510" x="579" y="1964.4938">Alinhamento Direto com Requisitos Funcionais (RF01 a RF10) e Diretrizes LGPD</text><!--MD5=[2c7ec795df5d10b91c8e6a9ceffacfd1]
+@startuml Diagrama_Casos_de_Uso_Rhyme
+
+title Diagrama de Casos de Uso - Sistema Rhyme (PWA)
+caption Alinhamento Direto com Requisitos Funcionais (RF01 a RF10) e Diretrizes LGPD
+
+left to right direction
+
+actor "Estudante" as aluno
+actor "Motorista" as motorista
+actor "Serviço de GPS\n(Dispositivo Veicular / Âncora)" as gps << System >>
+actor "Firebase Firestore\n(Backend Realtime)" as firebase << System >>
+actor "Firebase Cloud Messaging\n(FCM Push)" as fcm << System >>
+
+rectangle "Sistema Rhyme (PWA)" {
+
+    package "Autenticação e Perfil" {
+        usecase "UC01 - Autenticar no PWA\n(RF01)" as UC01
+        usecase "UC02 - Selecionar Rota e Faculdade\n(RF02)" as UC02
+    }
+
+    package "Gestão de Presença e Status" {
+        usecase "UC03 - Informar Status One-Touch\n(Em sala / Liberado / No ponto - RF03)" as UC03
+        usecase "UC10 - Confirmar Embarque no Veículo\n(Transição para 'boarded' - RF03)" as UC10
+    }
+
+    package "Rastreamento Cartográfico e Notificações" {
+        usecase "UC04 - Visualizar Ônibus e Paradas no Mapa\n(Telemetria e Mapbox - RF04)" as UC04
+        usecase "UC05 - Transmitir Localização GPS do Ônibus\n(Motorista / Passageiro Âncora - RF05)" as UC05
+        usecase "UC07 - Consultar Estimativa de Chegada (ETA)\n(Cálculo Haversine - RF08)" as UC07
+        usecase "UC08 - Receber Alertas Push de Geofencing\n(Raio de 1 km - RF09)" as UC08
+    }
+
+    package "Painel Veicular e Protocolo de Segurança" {
+        usecase "UC06 - Monitorar Contadores e Alertas Sonoros\n(Painel do Motorista - RF06)" as UC06
+        usecase "UC09 - Acionar Emergência 'Fui Esquecido'\n(Sinalização Audiovisual Prioritária - RF10)" as UC09
+    }
+}
+
+' Relacionamentos do Aluno
+aluno - -> UC01
+aluno - -> UC02
+aluno - -> UC03
+aluno - -> UC04
+aluno - -> UC05 : (Quando assume papel\nde passageiro âncora)
+aluno - -> UC07
+aluno - -> UC08
+aluno - -> UC09
+aluno - -> UC10
+
+' Relacionamentos do Motorista
+motorista - -> UC01
+motorista - -> UC04
+motorista - -> UC05 : (Transmissor primário\nconectado ao 12V)
+motorista - -> UC06
+motorista - -> UC09 : (Recebe alarme sonoro\ne visual contínuo)
+motorista - -> UC10
+
+' Inclusões e Extensões
+UC03 ..> UC04 : <<extend>>
+UC07 ..> UC04 : <<include>>
+UC09 ..> UC06 : <<include>>
+
+' Integrações com Sistemas Externos
+UC01 - -> firebase : Autenticação segura
+UC03 - -> firebase : Atualiza status ("released")
+UC05 - -> gps : Coleta coordenadas do veículo
+UC05 - -> firebase : Grava em bus_location
+UC06 <- - firebase : Sincroniza listeners em tempo real
+UC08 <- - fcm : Entrega push notifications
+UC09 - -> firebase : Grava alerta em emergencies
+UC10 - -> firebase : Registra presença na viagem
+
+@enduml
+
+@startuml Diagrama_Casos_de_Uso_Rhyme
+
+title Diagrama de Casos de Uso - Sistema Rhyme (PWA)
+caption Alinhamento Direto com Requisitos Funcionais (RF01 a RF10) e Diretrizes LGPD
+
+left to right direction
+
+actor "Estudante" as aluno
+actor "Motorista" as motorista
+actor "Serviço de GPS\n(Dispositivo Veicular / Âncora)" as gps << System >>
+actor "Firebase Firestore\n(Backend Realtime)" as firebase << System >>
+actor "Firebase Cloud Messaging\n(FCM Push)" as fcm << System >>
+
+rectangle "Sistema Rhyme (PWA)" {
+
+    package "Autenticação e Perfil" {
+        usecase "UC01 - Autenticar no PWA\n(RF01)" as UC01
+        usecase "UC02 - Selecionar Rota e Faculdade\n(RF02)" as UC02
+    }
+
+    package "Gestão de Presença e Status" {
+        usecase "UC03 - Informar Status One-Touch\n(Em sala / Liberado / No ponto - RF03)" as UC03
+        usecase "UC10 - Confirmar Embarque no Veículo\n(Transição para 'boarded' - RF03)" as UC10
+    }
+
+    package "Rastreamento Cartográfico e Notificações" {
+        usecase "UC04 - Visualizar Ônibus e Paradas no Mapa\n(Telemetria e Mapbox - RF04)" as UC04
+        usecase "UC05 - Transmitir Localização GPS do Ônibus\n(Motorista / Passageiro Âncora - RF05)" as UC05
+        usecase "UC07 - Consultar Estimativa de Chegada (ETA)\n(Cálculo Haversine - RF08)" as UC07
+        usecase "UC08 - Receber Alertas Push de Geofencing\n(Raio de 1 km - RF09)" as UC08
+    }
+
+    package "Painel Veicular e Protocolo de Segurança" {
+        usecase "UC06 - Monitorar Contadores e Alertas Sonoros\n(Painel do Motorista - RF06)" as UC06
+        usecase "UC09 - Acionar Emergência 'Fui Esquecido'\n(Sinalização Audiovisual Prioritária - RF10)" as UC09
+    }
+}
+
+aluno - -> UC01
+aluno - -> UC02
+aluno - -> UC03
+aluno - -> UC04
+aluno - -> UC05 : (Quando assume papel\nde passageiro âncora)
+aluno - -> UC07
+aluno - -> UC08
+aluno - -> UC09
+aluno - -> UC10
+
+motorista - -> UC01
+motorista - -> UC04
+motorista - -> UC05 : (Transmissor primário\nconectado ao 12V)
+motorista - -> UC06
+motorista - -> UC09 : (Recebe alarme sonoro\ne visual contínuo)
+motorista - -> UC10
+
+UC03 ..> UC04 : <<extend>>
+UC07 ..> UC04 : <<include>>
+UC09 ..> UC06 : <<include>>
+
+UC01 - -> firebase : Autenticação segura
+UC03 - -> firebase : Atualiza status ("released")
+UC05 - -> gps : Coleta coordenadas do veículo
+UC05 - -> firebase : Grava em bus_location
+UC06 <- - firebase : Sincroniza listeners em tempo real
+UC08 <- - fcm : Entrega push notifications
+UC09 - -> firebase : Grava alerta em emergencies
+UC10 - -> firebase : Registra presença na viagem
+
+@enduml
+
+PlantUML version 1.2021.00(Sun Jan 10 07:25:05 BRT 2021)
+(MIT source distribution)
+Java Runtime: Java(TM) SE Runtime Environment
+JVM: Java HotSpot(TM) 64-Bit Server VM
+Default Encoding: UTF-8
+Language: pt
+Country: BR
+--></g></svg>

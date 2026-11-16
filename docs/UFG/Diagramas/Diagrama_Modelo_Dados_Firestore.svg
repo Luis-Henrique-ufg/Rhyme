@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="606px" preserveAspectRatio="none" style="width:747px;height:606px;" version="1.1" viewBox="0 0 747 606" width="747px" zoomAndPan="magnify"><defs><filter height="300%" id="fdf6bejqcgi69" width="300%" x="-1" y="-1"><feGaussianBlur result="blurOut" stdDeviation="2.0"/><feColorMatrix in="blurOut" result="blurOut2" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"/><feOffset dx="4.0" dy="4.0" in="blurOut2" result="blurOut3"/><feBlend in="SourceGraphic" in2="blurOut3" mode="normal"/></filter></defs><g><text fill="#000000" font-family="sans-serif" font-size="18" lengthAdjust="spacing" textLength="424" x="155.25" y="18.6855">Modelo de Dados NoSQL - Coleções Cloud Firestore</text><!--MD5=[4e5e1fd7835748d2130dd04f1359b45f]
+class routes--><rect codeLine="4" fill="#FEFECE" filter="url(#fdf6bejqcgi69)" height="117.1797" id="routes" style="stroke:#A80036;stroke-width:1.5;" width="135" x="354" y="29.6406"/><ellipse cx="373.95" cy="45.6406" fill="#ADD1B2" rx="11" ry="11" style="stroke:#A80036;stroke-width:1.0;"/><path d="M372.8094,46.4375 L372.8094,48.9375 L377.1375,48.9375 L377.1375,48.0156 Q377.1375,47.4063 377.3797,47.1406 Q377.6219,46.875 377.9969,46.875 Q378.3719,46.875 378.6063,47.1406 Q378.8406,47.4063 378.8406,48.0156 L378.8406,50.6406 L370.8406,50.6406 Q370.2156,50.6406 369.9578,50.4063 Q369.7,50.1719 369.7,49.7813 Q369.7,49.4063 369.9656,49.1719 Q370.2313,48.9375 370.8406,48.9375 L371.1063,48.9375 L371.1063,42.2813 L370.8406,42.2813 Q370.2156,42.2813 369.9578,42.0469 Q369.7,41.8125 369.7,41.4219 Q369.7,41.0469 369.9578,40.8125 Q370.2156,40.5781 370.8406,40.5781 L378.4656,40.5781 L378.4656,43.1719 Q378.4656,43.7813 378.2391,44.0391 Q378.0125,44.2969 377.6219,44.2969 Q377.2469,44.2969 377.0125,44.0391 Q376.7781,43.7813 376.7781,43.1719 L376.7781,42.2813 L372.8094,42.2813 L372.8094,44.7344 L374.2938,44.7344 Q374.2938,44.0781 374.4188,43.8906 Q374.6844,43.4844 375.1531,43.4844 Q375.5281,43.4844 375.7625,43.7422 Q375.9969,44 375.9969,44.6094 L375.9969,46.5781 Q375.9969,47.125 375.8719,47.3125 Q375.6063,47.7031 375.1531,47.7031 Q374.6844,47.7031 374.4188,47.2969 Q374.2938,47.1094 374.2938,46.4375 L372.8094,46.4375 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="92" x="389.05" y="50.5508">routes (Coleção)</text><line style="stroke:#A80036;stroke-width:1.5;" x1="355" x2="488" y1="61.6406" y2="61.6406"/><ellipse cx="365" cy="72.6406" fill="#000000" rx="3" ry="3" style="stroke:#000000;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="72" x="374" y="77.0596">id : string «PK»</text><line style="stroke:#A80036;stroke-width:1.0;" x1="355" x2="488" y1="83.4766" y2="83.4766"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="62" x="360" y="98.8955">name : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="76" x="360" y="112.7314">active : boolean</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="123" x="360" y="126.5674">faculties : array&lt;Faculty&gt;</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="105" x="360" y="140.4033">createdAt : timestamp</text><!--MD5=[01a729e2354d5d6d9c7570641d172f66]
+class trips--><rect codeLine="13" fill="#FEFECE" filter="url(#fdf6bejqcgi69)" height="131.0156" id="trips" style="stroke:#A80036;stroke-width:1.5;" width="248" x="297.5" y="224.6406"/><ellipse cx="376.75" cy="240.6406" fill="#ADD1B2" rx="11" ry="11" style="stroke:#A80036;stroke-width:1.0;"/><path d="M375.6094,241.4375 L375.6094,243.9375 L379.9375,243.9375 L379.9375,243.0156 Q379.9375,242.4063 380.1797,242.1406 Q380.4219,241.875 380.7969,241.875 Q381.1719,241.875 381.4063,242.1406 Q381.6406,242.4063 381.6406,243.0156 L381.6406,245.6406 L373.6406,245.6406 Q373.0156,245.6406 372.7578,245.4063 Q372.5,245.1719 372.5,244.7813 Q372.5,244.4063 372.7656,244.1719 Q373.0313,243.9375 373.6406,243.9375 L373.9063,243.9375 L373.9063,237.2813 L373.6406,237.2813 Q373.0156,237.2813 372.7578,237.0469 Q372.5,236.8125 372.5,236.4219 Q372.5,236.0469 372.7578,235.8125 Q373.0156,235.5781 373.6406,235.5781 L381.2656,235.5781 L381.2656,238.1719 Q381.2656,238.7813 381.0391,239.0391 Q380.8125,239.2969 380.4219,239.2969 Q380.0469,239.2969 379.8125,239.0391 Q379.5781,238.7813 379.5781,238.1719 L379.5781,237.2813 L375.6094,237.2813 L375.6094,239.7344 L377.0938,239.7344 Q377.0938,239.0781 377.2188,238.8906 Q377.4844,238.4844 377.9531,238.4844 Q378.3281,238.4844 378.5625,238.7422 Q378.7969,239 378.7969,239.6094 L378.7969,241.5781 Q378.7969,242.125 378.6719,242.3125 Q378.4063,242.7031 377.9531,242.7031 Q377.4844,242.7031 377.2188,242.2969 Q377.0938,242.1094 377.0938,241.4375 L375.6094,241.4375 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="81" x="397.25" y="245.5508">trips (Coleção)</text><line style="stroke:#A80036;stroke-width:1.5;" x1="298.5" x2="544.5" y1="256.6406" y2="256.6406"/><ellipse cx="308.5" cy="267.6406" fill="#000000" rx="3" ry="3" style="stroke:#000000;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="87" x="317.5" y="272.0596">tripId : string «PK»</text><line style="stroke:#A80036;stroke-width:1.0;" x1="298.5" x2="544.5" y1="278.4766" y2="278.4766"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="97" x="303.5" y="293.8955">routeId : string «FK»</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="79" x="303.5" y="307.7314">driverUid : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="236" x="303.5" y="321.5674">status : "scheduled" | "in_progress" | "completed"</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="102" x="303.5" y="335.4033">startedAt : timestamp</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="98" x="303.5" y="349.2393">endedAt : timestamp</text><!--MD5=[c477114cb051f23564cff5895b7f58cf]
+class trip_students--><rect codeLine="23" fill="#FEFECE" filter="url(#fdf6bejqcgi69)" height="137.9336" id="trip_students" style="stroke:#A80036;stroke-width:1.5;" width="265" x="7" y="444.1406"/><ellipse cx="41.8" cy="460.1406" fill="#ADD1B2" rx="11" ry="11" style="stroke:#A80036;stroke-width:1.0;"/><path d="M40.6594,460.9375 L40.6594,463.4375 L44.9875,463.4375 L44.9875,462.5156 Q44.9875,461.9063 45.2297,461.6406 Q45.4719,461.375 45.8469,461.375 Q46.2219,461.375 46.4563,461.6406 Q46.6906,461.9063 46.6906,462.5156 L46.6906,465.1406 L38.6906,465.1406 Q38.0656,465.1406 37.8078,464.9063 Q37.55,464.6719 37.55,464.2813 Q37.55,463.9063 37.8156,463.6719 Q38.0813,463.4375 38.6906,463.4375 L38.9563,463.4375 L38.9563,456.7813 L38.6906,456.7813 Q38.0656,456.7813 37.8078,456.5469 Q37.55,456.3125 37.55,455.9219 Q37.55,455.5469 37.8078,455.3125 Q38.0656,455.0781 38.6906,455.0781 L46.3156,455.0781 L46.3156,457.6719 Q46.3156,458.2813 46.0891,458.5391 Q45.8625,458.7969 45.4719,458.7969 Q45.0969,458.7969 44.8625,458.5391 Q44.6281,458.2813 44.6281,457.6719 L44.6281,456.7813 L40.6594,456.7813 L40.6594,459.2344 L42.1438,459.2344 Q42.1438,458.5781 42.2688,458.3906 Q42.5344,457.9844 43.0031,457.9844 Q43.3781,457.9844 43.6125,458.2422 Q43.8469,458.5 43.8469,459.1094 L43.8469,461.0781 Q43.8469,461.625 43.7219,461.8125 Q43.4563,462.2031 43.0031,462.2031 Q42.5344,462.2031 42.2688,461.7969 Q42.1438,461.6094 42.1438,460.9375 L40.6594,460.9375 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="189" x="60.2" y="465.0508">trips/{tripId}/students (Subcoleção)</text><line style="stroke:#A80036;stroke-width:1.5;" x1="8" x2="271" y1="476.1406" y2="476.1406"/><ellipse cx="18" cy="487.1406" fill="#000000" rx="3" ry="3" style="stroke:#000000;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="115" x="27" y="491.5596">studentUid : string «PK»</text><line style="stroke:#A80036;stroke-width:1.0;" x1="8" x2="271" y1="497.9766" y2="497.9766"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="62" x="13" y="513.3955">name : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="69" x="13" y="527.2314">faculty : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="253" x="13" y="541.0674">status : "in_class" | "released" | "at_stop" | "boarded"</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="107" x="13" y="554.9033">updatedAt : timestamp</text><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:1.0,2.0;" x1="8" x2="126" y1="568.2383" y2="568.2383"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="27" x="126" y="572.2393">LGPD</text><line style="stroke:#A80036;stroke-width:1.0;stroke-dasharray:1.0,2.0;" x1="153" x2="271" y1="568.2383" y2="568.2383"/><!--MD5=[f36fa8af8a0312d73daf3f21c2a97013]
+class bus_location--><rect codeLine="35" fill="#FEFECE" filter="url(#fdf6bejqcgi69)" height="158.6875" id="bus_location" style="stroke:#A80036;stroke-width:1.5;" width="229" x="307" y="433.6406"/><ellipse cx="353.25" cy="449.6406" fill="#ADD1B2" rx="11" ry="11" style="stroke:#A80036;stroke-width:1.0;"/><path d="M352.1094,450.4375 L352.1094,452.9375 L356.4375,452.9375 L356.4375,452.0156 Q356.4375,451.4063 356.6797,451.1406 Q356.9219,450.875 357.2969,450.875 Q357.6719,450.875 357.9063,451.1406 Q358.1406,451.4063 358.1406,452.0156 L358.1406,454.6406 L350.1406,454.6406 Q349.5156,454.6406 349.2578,454.4063 Q349,454.1719 349,453.7813 Q349,453.4063 349.2656,453.1719 Q349.5313,452.9375 350.1406,452.9375 L350.4063,452.9375 L350.4063,446.2813 L350.1406,446.2813 Q349.5156,446.2813 349.2578,446.0469 Q349,445.8125 349,445.4219 Q349,445.0469 349.2578,444.8125 Q349.5156,444.5781 350.1406,444.5781 L357.7656,444.5781 L357.7656,447.1719 Q357.7656,447.7813 357.5391,448.0391 Q357.3125,448.2969 356.9219,448.2969 Q356.5469,448.2969 356.3125,448.0391 Q356.0781,447.7813 356.0781,447.1719 L356.0781,446.2813 L352.1094,446.2813 L352.1094,448.7344 L353.5938,448.7344 Q353.5938,448.0781 353.7188,447.8906 Q353.9844,447.4844 354.4531,447.4844 Q354.8281,447.4844 355.0625,447.7422 Q355.2969,448 355.2969,448.6094 L355.2969,450.5781 Q355.2969,451.125 355.1719,451.3125 Q354.9063,451.7031 354.4531,451.7031 Q353.9844,451.7031 353.7188,451.2969 Q353.5938,451.1094 353.5938,450.4375 L352.1094,450.4375 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="128" x="373.75" y="454.5508">bus_location (Coleção)</text><line style="stroke:#A80036;stroke-width:1.5;" x1="308" x2="535" y1="465.6406" y2="465.6406"/><ellipse cx="318" cy="476.6406" fill="#000000" rx="3" ry="3" style="stroke:#000000;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="93" x="327" y="481.0596">active : string «PK»</text><line style="stroke:#A80036;stroke-width:1.0;" x1="308" x2="535" y1="487.4766" y2="487.4766"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="87" x="313" y="502.8955">tripId : string «FK»</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="56" x="313" y="516.7314">lat : number</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="59" x="313" y="530.5674">lng : number</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="75" x="313" y="544.4033">speed : number</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="83" x="313" y="558.2393">heading : number</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="217" x="313" y="572.0752">broadcasterRole : "driver" | "anchor_student"</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="107" x="313" y="585.9111">updatedAt : timestamp</text><!--MD5=[4abf30e7347e9b1a0ff90106b6407538]
+class emergencies--><rect codeLine="47" fill="#FEFECE" filter="url(#fdf6bejqcgi69)" height="144.8516" id="emergencies" style="stroke:#A80036;stroke-width:1.5;" width="162" x="571.5" y="440.6406"/><ellipse cx="586.5" cy="456.6406" fill="#ADD1B2" rx="11" ry="11" style="stroke:#A80036;stroke-width:1.0;"/><path d="M585.3594,457.4375 L585.3594,459.9375 L589.6875,459.9375 L589.6875,459.0156 Q589.6875,458.4063 589.9297,458.1406 Q590.1719,457.875 590.5469,457.875 Q590.9219,457.875 591.1563,458.1406 Q591.3906,458.4063 591.3906,459.0156 L591.3906,461.6406 L583.3906,461.6406 Q582.7656,461.6406 582.5078,461.4063 Q582.25,461.1719 582.25,460.7813 Q582.25,460.4063 582.5156,460.1719 Q582.7813,459.9375 583.3906,459.9375 L583.6563,459.9375 L583.6563,453.2813 L583.3906,453.2813 Q582.7656,453.2813 582.5078,453.0469 Q582.25,452.8125 582.25,452.4219 Q582.25,452.0469 582.5078,451.8125 Q582.7656,451.5781 583.3906,451.5781 L591.0156,451.5781 L591.0156,454.1719 Q591.0156,454.7813 590.7891,455.0391 Q590.5625,455.2969 590.1719,455.2969 Q589.7969,455.2969 589.5625,455.0391 Q589.3281,454.7813 589.3281,454.1719 L589.3281,453.2813 L585.3594,453.2813 L585.3594,455.7344 L586.8438,455.7344 Q586.8438,455.0781 586.9688,454.8906 Q587.2344,454.4844 587.7031,454.4844 Q588.0781,454.4844 588.3125,454.7422 Q588.5469,455 588.5469,455.6094 L588.5469,457.5781 Q588.5469,458.125 588.4219,458.3125 Q588.1563,458.7031 587.7031,458.7031 Q587.2344,458.7031 586.9688,458.2969 Q586.8438,458.1094 586.8438,457.4375 L585.3594,457.4375 Z " fill="#000000"/><text fill="#000000" font-family="sans-serif" font-size="12" lengthAdjust="spacing" textLength="130" x="600.5" y="461.5508">emergencies (Coleção)</text><line style="stroke:#A80036;stroke-width:1.5;" x1="572.5" x2="732.5" y1="472.6406" y2="472.6406"/><ellipse cx="582.5" cy="483.6406" fill="#000000" rx="3" ry="3" style="stroke:#000000;stroke-width:1.0;"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="72" x="591.5" y="488.0596">id : string «PK»</text><line style="stroke:#A80036;stroke-width:1.0;" x1="572.5" x2="732.5" y1="494.4766" y2="494.4766"/><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="87" x="577.5" y="509.8955">tripId : string «FK»</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="87" x="577.5" y="523.7314">studentUid : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="99" x="577.5" y="537.5674">studentName : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="69" x="577.5" y="551.4033">faculty : string</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="76" x="577.5" y="565.2393">active : boolean</text><text fill="#000000" font-family="sans-serif" font-size="11" lengthAdjust="spacing" textLength="105" x="577.5" y="579.0752">createdAt : timestamp</text><!--MD5=[0fac2afb4618d699e0485be7e06fdfe3]
+link routes to trips--><path codeLine="58" d="M421.5,154.8506 C421.5,174.5406 421.5,196.2606 421.5,216.3806 " fill="none" id="routes-trips" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;" x1="421.5" x2="427.5" y1="216.5906" y2="224.5906"/><line style="stroke:#A80036;stroke-width:1.0;" x1="421.5" x2="415.5" y1="216.5906" y2="224.5906"/><line style="stroke:#A80036;stroke-width:1.0;" x1="421.5" x2="421.5" y1="216.5906" y2="224.5906"/><ellipse cx="421.5" cy="210.5906" fill="none" rx="4" ry="4" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;" x1="417.5" x2="425.5" y1="150.7206" y2="150.7206"/><line style="stroke:#A80036;stroke-width:1.0;" x1="417.5" x2="425.5" y1="153.7206" y2="153.7206"/><line style="stroke:#A80036;stroke-width:1.0;" x1="421.5" x2="421.5" y1="154.7206" y2="146.7206"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="74" x="422.5" y="191.1357">define trajeto</text><!--MD5=[0437674c89aea01a38b150dab4123577]
+link trips to trip_students--><path codeLine="59" d="M327.16,360.6106 C316.09,368.9706 305.01,377.4506 294.5,385.6406 C272.81,402.5506 249.71,421.1006 228.14,438.6606 " fill="none" id="trips-trip_students" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;" x1="227.9993" x2="225.5924" y1="438.7741" y2="448.4801"/><line style="stroke:#A80036;stroke-width:1.0;" x1="227.9993" x2="218.0076" y1="438.7741" y2="439.1812"/><line style="stroke:#A80036;stroke-width:1.0;" x1="227.9993" x2="221.8" y1="438.7741" y2="443.8306"/><ellipse cx="232.6488" cy="434.9816" fill="none" rx="4" ry="4" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;" x1="328.058" x2="332.874" y1="354.9146" y2="361.3026"/><line style="stroke:#A80036;stroke-width:1.0;" x1="325.6625" x2="330.4785" y1="356.7206" y2="363.1086"/><line style="stroke:#A80036;stroke-width:1.0;" x1="327.272" x2="333.66" y1="360.5166" y2="355.7006"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="117" x="295.5" y="400.1357">contém passageiros</text><!--MD5=[a061b9b6a820f1dd89f56309d704ace6]
+link trips to bus_location--><path codeLine="60" d="M421.5,363.7606 C421.5,383.4606 421.5,404.9906 421.5,425.3806 " fill="none" id="trips-bus_location" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;" x1="421.5" x2="421.5" y1="422.4306" y2="433.4306"/><ellipse cx="421.5" cy="422.4306" fill="none" rx="4" ry="4" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;" x1="425.5" x2="417.5" y1="429.4306" y2="429.4306"/><line style="stroke:#A80036;stroke-width:1.0;" x1="417.5" x2="425.5" y1="359.6606" y2="359.6606"/><line style="stroke:#A80036;stroke-width:1.0;" x1="417.5" x2="425.5" y1="362.6606" y2="362.6606"/><line style="stroke:#A80036;stroke-width:1.0;" x1="421.5" x2="421.5" y1="363.6606" y2="355.6606"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="129" x="422.5" y="400.1357">possui telemetria ativa</text><!--MD5=[5626d610cc1b5e9d60e17ce5412ad939]
+link trips to emergencies--><path codeLine="61" d="M531.59,360.6006 C541.74,368.5806 551.56,376.9806 560.5,385.6406 C575.31,399.9906 589.42,416.9506 601.96,433.7106 " fill="none" id="trips-emergencies" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;" x1="602.1173" x2="611.692" y1="433.928" y2="436.8136"/><line style="stroke:#A80036;stroke-width:1.0;" x1="602.1173" x2="602.028" y1="433.928" y2="443.9276"/><line style="stroke:#A80036;stroke-width:1.0;" x1="602.1173" x2="606.86" y1="433.928" y2="440.3706"/><ellipse cx="598.5603" cy="429.0961" fill="none" rx="4" ry="4" style="stroke:#A80036;stroke-width:1.0;"/><line style="stroke:#A80036;stroke-width:1.0;" x1="525.9339" x2="530.8316" y1="361.3022" y2="354.9767"/><line style="stroke:#A80036;stroke-width:1.0;" x1="528.306" x2="533.2037" y1="363.1389" y2="356.8133"/><line style="stroke:#A80036;stroke-width:1.0;" x1="531.5456" x2="525.22" y1="360.5883" y2="355.6906"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="86" x="575.5" y="400.1357">registra alertas</text><!--MD5=[cfade10116bc4b728d8dfe9d96b216cb]
+@startuml Diagrama_Modelo_Dados_Firestore
+
+title Modelo de Dados NoSQL - Coleções Cloud Firestore
+
+entity "routes (Coleção)" as routes {
+    * id : string <<PK>>
+    - -
+    name : string
+    active : boolean
+    faculties : array<Faculty>
+    createdAt : timestamp
+}
+
+entity "trips (Coleção)" as trips {
+    * tripId : string <<PK>>
+    - -
+    routeId : string <<FK>>
+    driverUid : string
+    status : "scheduled" | "in_progress" | "completed"
+    startedAt : timestamp
+    endedAt : timestamp
+}
+
+entity "trips/{tripId}/students (Subcoleção)" as trip_students {
+    * studentUid : string <<PK>>
+    - -
+    name : string
+    faculty : string
+    status : "in_class" | "released" | "at_stop" | "boarded"
+    updatedAt : timestamp
+    .. LGPD ..
+    ' Sem coordenadas privadas do aluno;
+    ' telemetria restrita ao veículo em bus_location
+}
+
+entity "bus_location (Coleção)" as bus_location {
+    * active : string <<PK>>
+    - -
+    tripId : string <<FK>>
+    lat : number
+    lng : number
+    speed : number
+    heading : number
+    broadcasterRole : "driver" | "anchor_student"
+    updatedAt : timestamp
+}
+
+entity "emergencies (Coleção)" as emergencies {
+    * id : string <<PK>>
+    - -
+    tripId : string <<FK>>
+    studentUid : string
+    studentName : string
+    faculty : string
+    active : boolean
+    createdAt : timestamp
+}
+
+routes ||- -o{ trips : "define trajeto"
+trips ||- -o{ trip_students : "contém passageiros"
+trips ||- -o| bus_location : "possui telemetria ativa"
+trips ||- -o{ emergencies : "registra alertas"
+
+@enduml
+
+@startuml Diagrama_Modelo_Dados_Firestore
+
+title Modelo de Dados NoSQL - Coleções Cloud Firestore
+
+entity "routes (Coleção)" as routes {
+    * id : string <<PK>>
+    - -
+    name : string
+    active : boolean
+    faculties : array<Faculty>
+    createdAt : timestamp
+}
+
+entity "trips (Coleção)" as trips {
+    * tripId : string <<PK>>
+    - -
+    routeId : string <<FK>>
+    driverUid : string
+    status : "scheduled" | "in_progress" | "completed"
+    startedAt : timestamp
+    endedAt : timestamp
+}
+
+entity "trips/{tripId}/students (Subcoleção)" as trip_students {
+    * studentUid : string <<PK>>
+    - -
+    name : string
+    faculty : string
+    status : "in_class" | "released" | "at_stop" | "boarded"
+    updatedAt : timestamp
+    .. LGPD ..
+}
+
+entity "bus_location (Coleção)" as bus_location {
+    * active : string <<PK>>
+    - -
+    tripId : string <<FK>>
+    lat : number
+    lng : number
+    speed : number
+    heading : number
+    broadcasterRole : "driver" | "anchor_student"
+    updatedAt : timestamp
+}
+
+entity "emergencies (Coleção)" as emergencies {
+    * id : string <<PK>>
+    - -
+    tripId : string <<FK>>
+    studentUid : string
+    studentName : string
+    faculty : string
+    active : boolean
+    createdAt : timestamp
+}
+
+routes ||- -o{ trips : "define trajeto"
+trips ||- -o{ trip_students : "contém passageiros"
+trips ||- -o| bus_location : "possui telemetria ativa"
+trips ||- -o{ emergencies : "registra alertas"
+
+@enduml
+
+PlantUML version 1.2021.00(Sun Jan 10 07:25:05 BRT 2021)
+(MIT source distribution)
+Java Runtime: Java(TM) SE Runtime Environment
+JVM: Java HotSpot(TM) 64-Bit Server VM
+Default Encoding: UTF-8
+Language: pt
+Country: BR
+--></g></svg>

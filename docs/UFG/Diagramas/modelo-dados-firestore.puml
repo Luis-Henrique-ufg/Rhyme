@@ -1,0 +1,64 @@
+@startuml Diagrama_Modelo_Dados_Firestore
+
+title Modelo de Dados NoSQL - Coleções Cloud Firestore
+
+entity "routes (Coleção)" as routes {
+    * id : string <<PK>>
+    --
+    name : string
+    active : boolean
+    faculties : array<Faculty>
+    createdAt : timestamp
+}
+
+entity "trips (Coleção)" as trips {
+    * tripId : string <<PK>>
+    --
+    routeId : string <<FK>>
+    driverUid : string
+    status : "scheduled" | "in_progress" | "completed"
+    startedAt : timestamp
+    endedAt : timestamp
+}
+
+entity "trips/{tripId}/students (Subcoleção)" as trip_students {
+    * studentUid : string <<PK>>
+    --
+    name : string
+    faculty : string
+    status : "in_class" | "released" | "at_stop" | "boarded"
+    updatedAt : timestamp
+    .. LGPD ..
+    ' Sem coordenadas privadas do aluno;
+    ' telemetria restrita ao veículo em bus_location
+}
+
+entity "bus_location (Coleção)" as bus_location {
+    * active : string <<PK>>
+    --
+    tripId : string <<FK>>
+    lat : number
+    lng : number
+    speed : number
+    heading : number
+    broadcasterRole : "driver" | "anchor_student"
+    updatedAt : timestamp
+}
+
+entity "emergencies (Coleção)" as emergencies {
+    * id : string <<PK>>
+    --
+    tripId : string <<FK>>
+    studentUid : string
+    studentName : string
+    faculty : string
+    active : boolean
+    createdAt : timestamp
+}
+
+routes ||--o{ trips : "define trajeto"
+trips ||--o{ trip_students : "contém passageiros"
+trips ||--o| bus_location : "possui telemetria ativa"
+trips ||--o{ emergencies : "registra alertas"
+
+@enduml
